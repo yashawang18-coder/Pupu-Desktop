@@ -1,0 +1,1529 @@
+{
+  "schemaVersion": 2,
+  "name": "pupu 幼态半写实素材包",
+  "version": "1.11.0-v17-front-facing-silver-coin",
+  "cellSize": 256,
+  "atlases": {
+    "core": {
+      "file": "pupu-core-youthful-v12.png",
+      "columns": 8,
+      "rows": 6,
+      "rowActions": [
+        "趴卧呼吸",
+        "露肚翻滚",
+        "追尾转身",
+        "逗猫棒",
+        "困倦与哈欠",
+        "伸展与卧下"
+      ]
+    },
+    "life": {
+      "file": "pupu-life-youthful-v15.png",
+      "columns": 8,
+      "rows": 8,
+      "rowActions": [
+        "投喂",
+        "猫砂",
+        "摸摸与抗议",
+        "梳毛",
+        "求关注",
+        "捣乱",
+        "陪伴与完整睡姿",
+        "求遛猫"
+      ]
+    },
+    "directions": {
+      "file": "pupu-directions-youthful-v12.png",
+      "columns": 8,
+      "rows": 4,
+      "rowActions": [
+        "向左",
+        "向右",
+        "背向",
+        "正向"
+      ]
+    },
+    "touch": {
+      "file": "pupu-touch-youthful-v15.png",
+      "columns": 8,
+      "rows": 6,
+      "rowActions": [
+        "轻触回应",
+        "放松呼噜",
+        "好奇互动",
+        "需要一点空间",
+        "转身离开",
+        "信任亲近"
+      ]
+    },
+    "routines": {
+      "file": "pupu-routines-youthful-v15.png",
+      "columns": 8,
+      "rows": 8,
+      "rowActions": [
+        "侧躺慢呼吸",
+        "低趴观察",
+        "舔脚吃脚",
+        "猫粮慢吃",
+        "冻干饿猫扑食",
+        "罐头饿猫扑食",
+        "完整背影",
+        "侧面背面转换"
+      ]
+    },
+    "walkModes": {
+      "file": "pupu-walk-modes-youthful-v12.png",
+      "columns": 8,
+      "rows": 8,
+      "rowActions": [
+        "孔雀蓝背带向左",
+        "孔雀蓝背带向右",
+        "孔雀蓝背带背影",
+        "孔雀蓝背带正面",
+        "无背带向左",
+        "无背带向右",
+        "无背带背影",
+        "无背带正面"
+      ]
+    },
+    "activity": {
+      "file": "pupu-activity-youthful-v15.png",
+      "columns": 8,
+      "rows": 8,
+      "rowActions": [
+        "V14 全身视线兼容行 A",
+        "V14 全身视线兼容行 B",
+        "团成一团睡",
+        "四仰八叉睡",
+        "侧身伸展睡",
+        "睡姿平滑转换",
+        "板鸭趴",
+        "兼容占位（不触发）"
+      ]
+    },
+    "lifeEquipment": {
+      "file": "pupu-life-equipment-youthful-v15.png",
+      "columns": 8,
+      "rows": 3,
+      "rowActions": [
+        "低频日常舔毛",
+        "蓝色长方形垫子与窝内睡眠",
+        "孔雀蓝牵引绳互动"
+      ]
+    },
+    "motion": {
+      "file": "pupu-motion-youthful-v15.png",
+      "columns": 8,
+      "rows": 10,
+      "rowActions": [
+        "孔雀蓝背带左前侧步态",
+        "孔雀蓝背带右前侧步态",
+        "孔雀蓝背带左后侧步态",
+        "孔雀蓝背带右后侧步态",
+        "无背带左前侧步态",
+        "无背带右前侧步态",
+        "无背带左后侧步态",
+        "无背带右后侧步态",
+        "扫帚八方向飞行",
+        "矮脚侧躺微动"
+      ]
+    },
+    "gazeCoin": {
+      "file": "pupu-gaze-coin-youthful-v17.png",
+      "columns": 8,
+      "rows": 3,
+      "rowActions": [
+        "鼠标八方向视线与贴地摆尾 A",
+        "鼠标八方向视线与贴地摆尾 B",
+        "V17 正视亮银边四态银币与猫爪背面"
+      ]
+    },
+    "litter": {
+      "file": "pupu-litter-youthful-v15.png",
+      "columns": 8,
+      "rows": 4,
+      "rowActions": [
+        "检查猫砂并进入",
+        "自发如厕低头微动",
+        "如厕概率抬头",
+        "爪爪开花埋屎并离开"
+      ]
+    },
+    "specials": {
+      "file": "pupu-specials-youthful-v13.png",
+      "columns": 8,
+      "rows": 5,
+      "rowActions": [
+        "鼠标八方向视线跟随",
+        "Accio Broom 紫色斗篷与流光",
+        "Apparate 扩大弧光与魔法重现",
+        "Petrificus Totalus 石化与银币高光",
+        "Scourgify 放大光环与擦拭光效"
+      ]
+    },
+    "seasonal": {
+      "file": "pupu-seasonal-youthful-v10.png",
+      "columns": 8,
+      "rows": 4,
+      "rowActions": [
+        "圣诞帽",
+        "万圣节斗篷帽",
+        "春节红围巾",
+        "主人生日祝福"
+      ]
+    }
+  },
+  "coinStates": {
+    "normalColor": {
+      "atlas": "gazeCoin",
+      "row": 2,
+      "frames": [
+        0
+      ],
+      "frameDurations": [
+        1200
+      ]
+    },
+    "normalFaded": {
+      "atlas": "gazeCoin",
+      "row": 2,
+      "frames": [
+        1
+      ],
+      "frameDurations": [
+        1200
+      ]
+    },
+    "unhappyColor": {
+      "atlas": "gazeCoin",
+      "row": 2,
+      "frames": [
+        2
+      ],
+      "frameDurations": [
+        1200
+      ]
+    },
+    "unhappyFaded": {
+      "atlas": "gazeCoin",
+      "row": 2,
+      "frames": [
+        3
+      ],
+      "frameDurations": [
+        1200
+      ]
+    },
+    "back": {
+      "atlas": "gazeCoin",
+      "row": 2,
+      "frames": [
+        4
+      ],
+      "frameDurations": [
+        1200
+      ]
+    }
+  },
+  "actionGroups": {
+    "side-lie-idle": {
+      "groupId": "side-lie-idle",
+      "behaviorId": "idle.side_lie",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "motion",
+        "row": 9
+      },
+      "frameCount": 8,
+      "frameDurationMs": 1600,
+      "frameDurationsMs": [
+        1750,
+        1450,
+        1900,
+        1550,
+        1800,
+        1500,
+        1650,
+        2100
+      ],
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "pingPong",
+      "intro": {
+        "frames": [
+          0,
+          1
+        ]
+      },
+      "loop": {
+        "frames": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "next": "loop"
+      },
+      "exit": {
+        "frames": [
+          2,
+          1,
+          0
+        ]
+      },
+      "directions": {},
+      "compatiblePostures": [
+        "idle.side_lie"
+      ],
+      "mouseGaze": {
+        "supported": true,
+        "directions": [
+          "left",
+          "right",
+          "up"
+        ],
+        "unsupportedFallback": "lightFeedback"
+      },
+      "interactions": {
+        "food": false,
+        "toy": false,
+        "foodFallback": "freeze-dried-eating-loop",
+        "toyFallback": "wand-loop"
+      },
+      "fallback": "",
+      "behaviorTags": [
+        "idle",
+        "quiet",
+        "side_lie"
+      ],
+      "triggerConditions": [
+        "安静待机统一评分选中",
+        "疲劳或低玩耍欲时权重更高",
+        "原地动作不移动窗口"
+      ]
+    },
+    "prone-idle": {
+      "groupId": "prone-idle",
+      "behaviorId": "idle.prone_observe",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "routines",
+        "row": 1
+      },
+      "frameCount": 8,
+      "frameDurationMs": 1500,
+      "frameDurationsMs": [
+        1500,
+        1200,
+        1650,
+        1400,
+        1750,
+        1300,
+        1450,
+        1900
+      ],
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "pingPong",
+      "intro": {
+        "frames": [
+          0
+        ]
+      },
+      "loop": {
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "next": "loop"
+      },
+      "exit": {
+        "frames": [
+          2,
+          1,
+          0
+        ]
+      },
+      "directions": {
+        "eightWay": {
+          "source": {
+            "type": "atlasRow",
+            "atlas": "gazeCoin",
+            "row": 0
+          },
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      "compatiblePostures": [
+        "idle.prone_observe"
+      ],
+      "mouseGaze": {
+        "supported": true,
+        "directions": [
+          "left",
+          "right",
+          "up",
+          "down",
+          "upLeft",
+          "upRight",
+          "downLeft",
+          "downRight"
+        ],
+        "unsupportedFallback": "lightFeedback"
+      },
+      "interactions": {
+        "food": false,
+        "toy": true,
+        "foodFallback": "freeze-dried-eating-loop",
+        "toyFallback": "wand-loop"
+      },
+      "fallback": "side-lie-idle",
+      "behaviorTags": [
+        "idle",
+        "observe",
+        "mouse_gaze"
+      ],
+      "triggerConditions": [
+        "安静待机统一评分选中",
+        "好奇或敏感观察倾向较高",
+        "可切换同体型完整身体视线帧"
+      ]
+    },
+    "sploot": {
+      "groupId": "sploot",
+      "behaviorId": "idle.sploot",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "activity",
+        "row": 6
+      },
+      "frameCount": 8,
+      "frameDurationMs": 1450,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "pingPong",
+      "intro": {
+        "frames": [
+          0
+        ]
+      },
+      "loop": {
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "next": "loop"
+      },
+      "exit": {
+        "frames": [
+          2,
+          1,
+          0
+        ]
+      },
+      "compatiblePostures": [
+        "idle.sploot"
+      ],
+      "mouseGaze": {
+        "supported": true,
+        "directions": [
+          "down",
+          "left",
+          "right"
+        ],
+        "unsupportedFallback": "lightFeedback"
+      },
+      "interactions": {
+        "food": false,
+        "toy": false,
+        "foodFallback": "freeze-dried-eating-loop",
+        "toyFallback": "wand-loop"
+      },
+      "fallback": "prone-idle",
+      "behaviorTags": [
+        "idle",
+        "sploot"
+      ],
+      "triggerConditions": [
+        "白天且安全感较高的安静待机",
+        "低压力、略疲劳时权重提高",
+        "只支持低头和左右局部视线"
+      ]
+    },
+    "wand-loop": {
+      "groupId": "wand-loop",
+      "behaviorId": "play.wand",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "core",
+        "row": 3
+      },
+      "frameCount": 8,
+      "frameDurationMs": 380,
+      "frameDurationsMs": [
+        460,
+        390,
+        340,
+        320,
+        430,
+        360,
+        340,
+        390
+      ],
+      "frames": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        5,
+        4,
+        3
+      ],
+      "loopMode": "loop",
+      "intro": {
+        "frames": [
+          0,
+          1
+        ]
+      },
+      "loop": {
+        "frames": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          5,
+          4,
+          3
+        ],
+        "next": "loop"
+      },
+      "exit": {
+        "frames": [
+          2,
+          1,
+          0
+        ]
+      },
+      "compatiblePostures": [
+        "idle.prone_observe",
+        "idle.sploot"
+      ],
+      "mouseGaze": {
+        "supported": false,
+        "directions": [],
+        "unsupportedFallback": "lightFeedback"
+      },
+      "interactions": {
+        "food": false,
+        "toy": true,
+        "foodFallback": "freeze-dried-eating-loop",
+        "toyFallback": ""
+      },
+      "fallback": "prone-idle",
+      "behaviorTags": [
+        "play",
+        "toy",
+        "anchor"
+      ],
+      "triggerConditions": [
+        "主人选择逗猫棒或玩具锚点到达后",
+        "参与判断接受并通过 BehaviorArbitrator",
+        "玩耍保护期内循环"
+      ]
+    },
+    "freeze-dried-eating-loop": {
+      "groupId": "freeze-dried-eating-loop",
+      "behaviorId": "feed.snack",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "routines",
+        "row": 4
+      },
+      "frameCount": 6,
+      "frameDurationMs": 330,
+      "frameDurationsMs": [
+        360,
+        290,
+        330,
+        420,
+        330,
+        290
+      ],
+      "frames": [
+        4,
+        5,
+        6,
+        7,
+        6,
+        5
+      ],
+      "loopMode": "loop",
+      "intro": {
+        "frames": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "loop": {
+        "frames": [
+          4,
+          5,
+          6,
+          7,
+          6,
+          5
+        ],
+        "next": "loop"
+      },
+      "exit": {
+        "frames": [
+          5,
+          4
+        ]
+      },
+      "compatiblePostures": [
+        "idle.prone_observe",
+        "idle.side_lie"
+      ],
+      "mouseGaze": {
+        "supported": false,
+        "directions": [],
+        "unsupportedFallback": "lightFeedback"
+      },
+      "interactions": {
+        "food": true,
+        "toy": false,
+        "foodFallback": "",
+        "toyFallback": "wand-loop"
+      },
+      "fallback": "prone-idle",
+      "behaviorTags": [
+        "feed",
+        "snack",
+        "anchor"
+      ],
+      "triggerConditions": [
+        "主人投放冻干或食物锚点到达后",
+        "参与判断接受并通过 BehaviorArbitrator",
+        "前四帧扑食后循环后半段"
+      ]
+    },
+    "gaze-fullbody-16": {
+      "groupId": "gaze-fullbody-16",
+      "behaviorId": "attention.mouse.fullbody",
+      "source": {
+        "type": "spriteStrip",
+        "file": "Actions/pupu-gaze-fullbody-youthful-v15.png",
+        "columns": 16,
+        "rows": 1,
+        "frameWidth": 256,
+        "frameHeight": 256
+      },
+      "frameCount": 16,
+      "frameDurationMs": 420,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "loopMode": "hold",
+      "fallback": "prone-idle",
+      "compatiblePostures": [
+        "idle.prone_observe",
+        "idle.side_lie",
+        "idle.sploot",
+        "rest.near_owner"
+      ],
+      "mouseGaze": {
+        "supported": true,
+        "directions": [
+          "left",
+          "up",
+          "right",
+          "nearDown",
+          "slowBlink"
+        ],
+        "unsupportedFallback": "lightFeedback"
+      },
+      "behaviorTags": [
+        "attention",
+        "fullbody",
+        "mouse_gaze"
+      ],
+      "triggerConditions": [
+        "普通鼠标注意力通过 BehaviorArbitrator",
+        "使用完整身体姿态和自然面部视线，不叠加悬浮头",
+        "姿态不兼容时只记录注意力"
+      ]
+    },
+    "laser-chase-8": {
+      "groupId": "laser-chase-8",
+      "behaviorId": "anchor.toy.approach",
+      "source": {
+        "type": "spriteStrip",
+        "file": "Actions/pupu-chase-gait-8dir-youthful-v15.png",
+        "columns": 32,
+        "rows": 1,
+        "frameWidth": 256,
+        "frameHeight": 256
+      },
+      "frameCount": 32,
+      "frameDurationMs": 165,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "loopMode": "loop",
+      "fallback": "prone-idle",
+      "interactions": {
+        "food": false,
+        "toy": true,
+        "foodFallback": "freeze-dried-eating-loop",
+        "toyFallback": "wand-loop"
+      },
+      "behaviorTags": [
+        "anchor",
+        "laser",
+        "movement",
+        "8_direction"
+      ],
+      "triggerConditions": [
+        "主人普通点击桌面投放激光点",
+        "按真实移动向量选择八方向低伏追逐姿态",
+        "到达后短暂扑点",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进"
+      ],
+      "directions": {
+        "left": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "upLeft": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "up": {
+          "frames": [
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "upRight": {
+          "frames": [
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "right": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ]
+        },
+        "downRight": {
+          "frames": [
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "down": {
+          "frames": [
+            24,
+            25,
+            26,
+            27
+          ]
+        },
+        "downLeft": {
+          "frames": [
+            28,
+            29,
+            30,
+            31
+          ]
+        }
+      }
+    },
+    "snack-chase-8": {
+      "groupId": "snack-chase-8",
+      "behaviorId": "anchor.food.approach",
+      "source": {
+        "type": "spriteStrip",
+        "file": "Actions/pupu-chase-gait-8dir-youthful-v15.png",
+        "columns": 32,
+        "rows": 1,
+        "frameWidth": 256,
+        "frameHeight": 256
+      },
+      "frameCount": 32,
+      "frameDurationMs": 165,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "loopMode": "loop",
+      "fallback": "prone-idle",
+      "interactions": {
+        "food": true,
+        "toy": false,
+        "foodFallback": "freeze-dried-eating-loop",
+        "toyFallback": "wand-loop"
+      },
+      "behaviorTags": [
+        "anchor",
+        "freeze_dried",
+        "movement",
+        "8_direction"
+      ],
+      "triggerConditions": [
+        "主人普通点击桌面投放冻干",
+        "按真实移动向量选择八方向急切小跑姿态",
+        "到达后衔接冻干进食",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进"
+      ],
+      "directions": {
+        "left": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "upLeft": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "up": {
+          "frames": [
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "upRight": {
+          "frames": [
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "right": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ]
+        },
+        "downRight": {
+          "frames": [
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "down": {
+          "frames": [
+            24,
+            25,
+            26,
+            27
+          ]
+        },
+        "downLeft": {
+          "frames": [
+            28,
+            29,
+            30,
+            31
+          ]
+        }
+      }
+    },
+    "freeze-dried-target": {
+      "groupId": "freeze-dried-target",
+      "behaviorId": "anchor.food.object",
+      "source": {
+        "type": "singleFile",
+        "file": "Actions/pupu-freeze-dried-target-v15.png",
+        "columns": 1,
+        "rows": 1,
+        "frameWidth": 96,
+        "frameHeight": 96
+      },
+      "frameCount": 1,
+      "frameDurationMs": 1200,
+      "frames": [
+        0
+      ],
+      "loopMode": "hold",
+      "behaviorTags": [
+        "anchor",
+        "food",
+        "object"
+      ],
+      "triggerConditions": [
+        "投放后在桌面显示实体",
+        "到达并吃完后消失"
+      ]
+    },
+    "laser-dot-target": {
+      "groupId": "laser-dot-target",
+      "behaviorId": "anchor.toy.object",
+      "source": {
+        "type": "singleFile",
+        "file": "Actions/pupu-laser-dot-target-v15.png",
+        "columns": 1,
+        "rows": 1,
+        "frameWidth": 64,
+        "frameHeight": 64
+      },
+      "frameCount": 1,
+      "frameDurationMs": 1200,
+      "frames": [
+        0
+      ],
+      "loopMode": "hold",
+      "behaviorTags": [
+        "anchor",
+        "laser",
+        "object"
+      ],
+      "triggerConditions": [
+        "投放后在桌面显示激光点实体",
+        "追到后短暂闪动并消失"
+      ]
+    },
+    "cage-rest-12": {
+      "groupId": "cage-rest-12",
+      "behaviorId": "owner.cage",
+      "source": {
+        "type": "spriteStrip",
+        "file": "Actions/pupu-cage-rest-youthful-v15.png",
+        "columns": 12,
+        "rows": 1,
+        "frameWidth": 256,
+        "frameHeight": 256
+      },
+      "frameCount": 12,
+      "frameDurationMs": 1250,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        2,
+        1,
+        4,
+        5,
+        6,
+        7,
+        6,
+        5
+      ],
+      "loopMode": "loop",
+      "behaviorTags": [
+        "cage",
+        "rest",
+        "front",
+        "side",
+        "back"
+      ],
+      "triggerConditions": [
+        "主人右键选择关起来",
+        "笼中仅循环正面、侧面和背面安静躺卧",
+        "释放后恢复普通待机"
+      ]
+    },
+    "harness-walk-16": {
+      "groupId": "harness-walk-16",
+      "behaviorId": "walk.harnessed.directional",
+      "source": {
+        "type": "spriteStrip",
+        "file": "Actions/pupu-walk-harness-16dir-youthful-v13.png",
+        "columns": 16,
+        "rows": 1,
+        "frameWidth": 256,
+        "frameHeight": 256
+      },
+      "frameCount": 16,
+      "frameDurationMs": 180,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "loopMode": "hold",
+      "fallback": "prone-idle",
+      "behaviorTags": [
+        "walk",
+        "harness",
+        "movement",
+        "16_direction"
+      ],
+      "triggerConditions": [
+        "主人发起孔雀蓝背带遛猫",
+        "随机路线每段按真实向量选择最近的 16 方向视角",
+        "一级停下可随时中断"
+      ]
+    },
+    "magic-accio-broom-intro": {
+      "groupId": "magic-accio-broom-intro",
+      "behaviorId": "magic.accio_broom",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "specials",
+        "row": 1
+      },
+      "frameCount": 8,
+      "frameDurationMs": 500,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "magic",
+        "owner_forced"
+      ],
+      "triggerConditions": [
+        "主人明确选择 Accio Broom 时必定执行",
+        "自主魔法每天最多一次且通过统一评分",
+        "移动前播放召唤与上扫帚"
+      ]
+    },
+    "magic-apparate": {
+      "groupId": "magic-apparate",
+      "behaviorId": "magic.apparate",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "specials",
+        "row": 2
+      },
+      "frameCount": 8,
+      "frameDurationMs": 460,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "magic",
+        "owner_forced"
+      ],
+      "triggerConditions": [
+        "主人明确选择 Apparate 时必定执行",
+        "粒子消失后才移动窗口",
+        "目标位置可用时重现"
+      ]
+    },
+    "magic-petrificus-totalus": {
+      "groupId": "magic-petrificus-totalus",
+      "behaviorId": "magic.petrificus_totalus",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "specials",
+        "row": 3
+      },
+      "frameCount": 8,
+      "frameDurationMs": 560,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "magic",
+        "petrified",
+        "hard_stone"
+      ],
+      "triggerConditions": [
+        "主人明确选择石化时必定执行",
+        "硬质晶面从脚部向上形成",
+        "完成后进入五态银币交互"
+      ]
+    },
+    "magic-scourgify": {
+      "groupId": "magic-scourgify",
+      "behaviorId": "magic.scourgify",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "specials",
+        "row": 4
+      },
+      "frameCount": 8,
+      "frameDurationMs": 320,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "loop",
+      "behaviorTags": [
+        "magic",
+        "clean"
+      ],
+      "triggerConditions": [
+        "主人明确选择 Scourgify 时执行",
+        "Windows 下缩小当前浏览器或文件夹窗口后沿边缘清扫",
+        "平台能力不可用时明确提示并只播放视觉动作"
+      ]
+    },
+    "toilet-relieve": {
+      "groupId": "toilet-relieve",
+      "behaviorId": "routine.toilet",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "litter",
+        "row": 1
+      },
+      "frameCount": 8,
+      "frameDurationMs": 1220,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "pingPong",
+      "behaviorTags": [
+        "routine",
+        "toilet"
+      ],
+      "triggerConditions": [
+        "当日随机计划的 2–3 个如厕时隙到期",
+        "离线错过不追补",
+        "结束后固定进入埋砂收尾"
+      ]
+    },
+    "annoyed-touch": {
+      "groupId": "annoyed-touch",
+      "behaviorId": "touch.needs_space",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "touch",
+        "row": 3
+      },
+      "frameCount": 8,
+      "frameDurationMs": 560,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "touch",
+        "boundary"
+      ],
+      "triggerConditions": [
+        "连续触摸达到敏感度阈值",
+        "先移开视线和低甩尾",
+        "不哈气、不露齿、不攻击"
+      ]
+    },
+    "angry-touch": {
+      "groupId": "angry-touch",
+      "behaviorId": "touch.distance",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "touch",
+        "row": 4
+      },
+      "frameCount": 8,
+      "frameDurationMs": 480,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "touch",
+        "distance"
+      ],
+      "triggerConditions": [
+        "过度 rua 或持续触摸超过容忍阈值",
+        "转身拉开距离",
+        "可中断进入愤怒逃跑但本组自身不移动窗口"
+      ]
+    },
+    "trust-touch": {
+      "groupId": "trust-touch",
+      "behaviorId": "touch.trust_close",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "touch",
+        "row": 5
+      },
+      "frameCount": 8,
+      "frameDurationMs": 820,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "touch",
+        "trust",
+        "close"
+      ],
+      "triggerConditions": [
+        "关系信任较高且当前压力低",
+        "轻触或慢抚被接受",
+        "慢眨眼、靠近并安心趴下"
+      ]
+    },
+    "groom": {
+      "groupId": "groom",
+      "behaviorId": "care.groom",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "life",
+        "row": 3
+      },
+      "frameCount": 8,
+      "frameDurationMs": 520,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "care",
+        "groom"
+      ],
+      "triggerConditions": [
+        "主人选择梳毛且参与判断接受",
+        "孔雀蓝梳子为预设素材，不显示人体",
+        "完成进度才结算状态变化"
+      ]
+    },
+    "attention": {
+      "groupId": "attention",
+      "behaviorId": "social.ask_attention",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "life",
+        "row": 4
+      },
+      "frameCount": 8,
+      "frameDurationMs": 720,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "social",
+        "initiative"
+      ],
+      "triggerConditions": [
+        "自主评分选择且主动行为冷却完成",
+        "主人未回应时自然结束",
+        "不得因主人离线产生惩罚"
+      ]
+    },
+    "ask-walk": {
+      "groupId": "ask-walk",
+      "behaviorId": "social.ask_walk",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "lifeEquipment",
+        "row": 2
+      },
+      "frameCount": 8,
+      "frameDurationMs": 480,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "loopMode": "once",
+      "behaviorTags": [
+        "social",
+        "walk",
+        "initiative"
+      ],
+      "triggerConditions": [
+        "活泼与亲近倾向较高时低频自主触发",
+        "叼起孔雀蓝牵引绳向主人展示",
+        "未回应时放下并结束，不责怪主人"
+      ]
+    }
+  },
+  "qualityRequirements": {
+    "canvasWidth": 256,
+    "canvasHeight": 256,
+    "transparentBackground": true,
+    "minimumTransparentMargin": 20,
+    "scalePolicy": "v14PrimarySubjectContract",
+    "scaleAnchors": [
+      "largestConnectedPetBody",
+      "head",
+      "bodySkeleton",
+      "footBaseline232",
+      "centerOfMass"
+    ],
+    "requiredCoinStates": [
+      "normalColor",
+      "normalFaded",
+      "unhappyColor",
+      "unhappyFaded",
+      "back"
+    ],
+    "mouseGazeRequirements": [
+      "idle.prone_observe:fullBody-left/up/right/nearDown",
+      "idle.side_lie:fullBody-left/up/right/slowBlink",
+      "idle.sploot:fullBody-left/nearDown/right/slowBlink",
+      "rest.near_owner:fullBody-left/up/right/slowBlink",
+      "unsupported:lightFeedback"
+    ],
+    "knownIssues": []
+  }
+}

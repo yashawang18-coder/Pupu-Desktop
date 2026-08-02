@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Pupu.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pupu.Behavior\Pupu.Behavior.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Pupu.Desktop\Models\PetModels.cs" Link="Models\PetModels.cs" />
+    <Compile Include="..\Pupu.Desktop\Models\AlbumModels.cs" Link="Models\AlbumModels.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\AlbumExperienceService.cs" Link="Services\AlbumExperienceService.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\BehaviorDecisionLogger.cs" Link="Services\BehaviorDecisionLogger.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\ConversationSessionStore.cs" Link="Services\ConversationSessionStore.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\DesktopRoutePlanner.cs" Link="Services\DesktopRoutePlanner.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\LocalPetStore.cs" Link="Services\LocalPetStore.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\MemoryEngine.cs" Link="Services\MemoryEngine.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\ModelProtocolAdapter.cs" Link="Services\ModelProtocolAdapter.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\NaturalLanguageRuleService.cs" Link="Services\NaturalLanguageRuleService.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\PhotoAlbumService.cs" Link="Services\PhotoAlbumService.cs" />
+    <Compile Include="..\Pupu.Desktop\Services\StoragePaths.cs" Link="Services\StoragePaths.cs" />
+  </ItemGroup>
+</Project>

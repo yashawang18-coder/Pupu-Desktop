@@ -1,0 +1,250 @@
+<Window x:Class="Pupu.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="pupu"
+        SizeToContent="WidthAndHeight"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Icon="Assets/pupu.ico"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+    <StackPanel Background="{x:Null}">
+        <Border MinWidth="112"
+                MaxWidth="320"
+                MinHeight="38"
+                Margin="0,0,0,2"
+                Padding="13,8"
+                HorizontalAlignment="Center"
+                Background="#F7FFFDF8"
+                BorderBrush="#E7D8CA"
+                BorderThickness="1"
+                CornerRadius="17">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Hidden" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsBubbleVisible, Mode=OneWay}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="15" Opacity="0.2" ShadowDepth="3" Color="#6A4A38" />
+            </Border.Effect>
+            <TextBlock Text="{Binding BubbleText, Mode=OneWay}"
+                       MaxWidth="286"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       FontFamily="Microsoft YaHei UI"
+                       FontSize="12.5"
+                       Foreground="{StaticResource Ink}" />
+        </Border>
+
+        <Grid Width="{Binding PetDisplaySize, Mode=OneWay}"
+              Height="{Binding PetDisplaySize, Mode=OneWay}"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Bottom">
+        <Image x:Name="PetImage"
+               Source="{Binding PetFrame, Mode=OneWay}"
+               Width="{Binding PetDisplaySize, Mode=OneWay}"
+               Height="{Binding PetDisplaySize, Mode=OneWay}"
+               Stretch="Uniform"
+               StretchDirection="Both"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Bottom"
+               SnapsToDevicePixels="True"
+               UseLayoutRounding="True"
+               RenderOptions.BitmapScalingMode="HighQuality"
+               RenderTransformOrigin="0.5,0.72"
+               Cursor="Hand"
+               MouseLeftButtonDown="PetImage_MouseLeftButtonDown"
+               MouseLeftButtonUp="PetImage_MouseLeftButtonUp"
+               MouseMove="PetImage_MouseMove"
+               MouseWheel="PetImage_MouseWheel"
+               ToolTip="左键会区分轻触、轻抚、按住、抱起意图、快速移动窗口、连续触摸和释放；双击仍是两次触摸。右键发起主人互动并打开面板，滚轮缩放">
+            <Image.Style>
+                <Style TargetType="Image">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsPetOnDesktop, Mode=OneWay}" Value="False">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Image.Style>
+            <Image.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleX="{Binding CoinFlipScaleX, Mode=OneWay}" />
+                    <ScaleTransform ScaleX="{Binding InteractionScale, Mode=OneWay}"
+                                    ScaleY="{Binding InteractionScale, Mode=OneWay}" />
+                </TransformGroup>
+            </Image.RenderTransform>
+            <Image.ContextMenu>
+                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                             FontFamily="Microsoft YaHei UI">
+                    <MenuItem Header="吃一下">
+                        <MenuItem Header="猫粮 · 慢慢吃" Command="{Binding FeedKibbleCommand}" />
+                        <MenuItem Header="冻干 · 饿猫扑食" Command="{Binding FeedFreezeDriedCommand}" />
+                        <MenuItem Header="罐头 · 饿猫扑食" Command="{Binding FeedCannedCommand}" />
+                    </MenuItem>
+                    <MenuItem Header="玩一下">
+                        <MenuItem Header="孔雀蓝背带遛猫" Command="{Binding HarnessWalkCommand}" />
+                        <MenuItem Header="解除背带 · 自由探索" Command="{Binding FreeRoamCommand}" />
+                        <Separator />
+                        <MenuItem Header="玩逗猫棒" Command="{Binding PlayWandCommand}" />
+                        <MenuItem Header="玩激光笔" Command="{Binding PlayLaserCommand}" />
+                        <MenuItem Header="侧躺打滚" Command="{Binding RollCommand}" />
+                        <MenuItem Header="原地转圈" Command="{Binding SpinCommand}" />
+                    </MenuItem>
+                    <MenuItem Header="宠物魔法">
+                        <MenuItem Header="Accio Broom" Command="{Binding AccioBroomCommand}" />
+                        <MenuItem Header="Apparate" Command="{Binding ApparateCommand}" />
+                        <MenuItem Header="Petrificus Totalus" Command="{Binding PetrificusTotalusCommand}" />
+                        <MenuItem Header="Scourgify" Command="{Binding ScourgifyCommand}" />
+                        <Separator />
+                        <MenuItem Header="解除石化" Command="{Binding ReleasePetrificationCommand}" />
+                    </MenuItem>
+                    <MenuItem Header="铲屎"
+                              Command="{Binding CleanCommand}"
+                              Visibility="{Binding IsManualLitterCleaningAvailable, Converter={StaticResource BoolToVisibility}}" />
+                    <MenuItem Header="梳毛" Command="{Binding GroomCommand}" />
+                    <MenuItem Header="关起来" Command="{Binding CageCommand}" />
+                    <MenuItem Header="放出来"
+                              Command="{Binding ReleaseCageCommand}"
+                              Visibility="{Binding IsCaged, Converter={StaticResource BoolToVisibility}}" />
+                    <MenuItem Header="停下" Command="{Binding StopCurrentActionCommand}" />
+                    <Separator />
+                    <MenuItem Header="面板">
+                        <MenuItem Header="打开面板" Command="{Binding OpenControlPanelCommand}" />
+                        <Separator />
+                        <MenuItem Header="放大" Command="{Binding ZoomInCommand}" />
+                        <MenuItem Header="缩小" Command="{Binding ZoomOutCommand}" />
+                        <MenuItem Header="恢复 100%" Command="{Binding ResetZoomCommand}" />
+                        <Separator />
+                        <MenuItem Header="退出 pupu" Command="{Binding ExitCommand}" />
+                    </MenuItem>
+                </ContextMenu>
+            </Image.ContextMenu>
+        </Image>
+        </Grid>
+
+        <Button Content="和朴朴说话"
+                Command="{Binding ToggleChatComposerCommand}"
+                HorizontalAlignment="Center"
+                Margin="0,2,0,0"
+                Padding="10,4"
+                ToolTip="按需唤起输入框；也可以在陪伴面板中聊天">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsPetOnDesktop, Mode=OneWay}" Value="False">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+
+        <Grid Width="{Binding PetDisplaySize, Mode=OneWay}"
+              MinWidth="180"
+              Margin="0,2,0,0">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsChatComposerVisible, Mode=OneWay}" Value="True" />
+                                <Condition Binding="{Binding IsPetOnDesktop, Mode=OneWay}" Value="True" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible" />
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0"
+                     Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     MinHeight="30"
+                     Padding="9,5"
+                     VerticalContentAlignment="Center"
+                     FontFamily="Microsoft YaHei UI"
+                     FontSize="12"
+                     BorderBrush="#D9C8BE"
+                     Background="#F2FFFDF9"
+                     ToolTip="直接和pupu说话；回复会显示在宠物上方">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter" Command="{Binding SendChatCommand, Mode=OneWay}" />
+                </TextBox.InputBindings>
+            </TextBox>
+            <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                <Button Content="发送"
+                        Command="{Binding SendChatCommand, Mode=OneWay}"
+                        MinWidth="48"
+                        Padding="8,4"
+                        FontFamily="Microsoft YaHei UI" />
+                <Button Content="收起"
+                        Command="{Binding ToggleChatComposerCommand}"
+                        Margin="0,3,0,0"
+                        Padding="8,3"
+                        FontFamily="Microsoft YaHei UI" />
+            </StackPanel>
+        </Grid>
+
+        <Border Margin="0,4,0,0"
+                Padding="10,6"
+                HorizontalAlignment="Center"
+                Background="#F1E7D8"
+                BorderBrush="#B98A5F"
+                BorderThickness="1"
+                CornerRadius="12"
+                Visibility="{Binding IsCaged, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+                <TextBlock Text="笼中锁定 · 不会移动或切换大姿态"
+                           TextAlignment="Center"
+                           FontFamily="Microsoft YaHei UI"
+                           FontSize="11.5" />
+                <Button Content="释放"
+                        Command="{Binding ReleaseCageCommand, Mode=OneWay}"
+                        HorizontalAlignment="Center"
+                        Margin="0,4,0,0"
+                        Padding="9,3" />
+            </StackPanel>
+        </Border>
+
+        <Border Margin="0,4,0,0"
+                Padding="12,8"
+                HorizontalAlignment="Center"
+                Background="#E5F5F5"
+                BorderBrush="#31868A"
+                BorderThickness="1"
+                CornerRadius="13"
+                Visibility="{Binding IsTraveling, Mode=OneWay, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+                <TextBlock Text="{Binding AwayDesktopStatus, Mode=OneWay}"
+                           MaxWidth="260"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           FontFamily="Microsoft YaHei UI"
+                           FontSize="12" />
+                <WrapPanel HorizontalAlignment="Center" Margin="0,5,0,0">
+                    <Button Content="打开面板"
+                            Command="{Binding OpenControlPanelCommand, Mode=OneWay}"
+                            Padding="9,3" />
+                    <Button Content="召回"
+                            Command="{Binding RecallTravelCommand, Mode=OneWay}"
+                            Padding="9,3" />
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</Window>

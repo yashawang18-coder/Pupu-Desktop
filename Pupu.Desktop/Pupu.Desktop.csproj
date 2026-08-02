@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Pupu</AssemblyName>
+    <RootNamespace>Pupu.Desktop</RootNamespace>
+    <ApplicationIcon>Assets\pupu.ico</ApplicationIcon>
+    <Version>1.11.0</Version>
+    <Authors>Pupu &amp; 主人</Authors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pupu.Behavior\Pupu.Behavior.csproj" />
+    <ProjectReference Include="..\Pupu.Application\Pupu.Application.csproj" />
+    <ProjectReference Include="..\Pupu.Platform.Windows\Pupu.Platform.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\PetModels.cs;Models\AlbumModels.cs" />
+    <Compile Remove="Services\AlbumExperienceService.cs;Services\BehaviorDecisionLogger.cs;Services\CodexIterationService.cs;Services\ConversationSessionStore.cs;Services\DesktopRoutePlanner.cs;Services\EnvironmentContextService.cs;Services\LocalPetStore.cs;Services\MemoryEngine.cs;Services\ModelApiService.cs;Services\ModelProtocolAdapter.cs;Services\NaturalLanguageRuleService.cs;Services\PhotoAlbumService.cs;Services\StoragePaths.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\pupu-assets.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="Assets\pupu-core-youthful-v12.png;Assets\pupu-life-youthful-v15.png;Assets\pupu-directions-youthful-v12.png;Assets\pupu-touch-youthful-v15.png;Assets\pupu-routines-youthful-v15.png;Assets\pupu-walk-modes-youthful-v12.png;Assets\pupu-activity-youthful-v15.png;Assets\pupu-life-equipment-youthful-v15.png;Assets\pupu-motion-youthful-v15.png;Assets\pupu-gaze-coin-youthful-v17.png;Assets\pupu-litter-youthful-v15.png;Assets\pupu-specials-youthful-v13.png;Assets\pupu-seasonal-youthful-v10.png"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest"
+             ExcludeFromSingleFile="true" />
+    <Content Include="Assets\Actions\pupu-cage-rest-youthful-v15.png;Assets\Actions\pupu-chase-gait-8dir-youthful-v15.png;Assets\Actions\pupu-freeze-dried-target-v15.png;Assets\Actions\pupu-gaze-fullbody-youthful-v15.png;Assets\Actions\pupu-laser-dot-target-v15.png;Assets\Actions\pupu-walk-harness-16dir-youthful-v13.png"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest"
+             ExcludeFromSingleFile="true" />
+    <Resource Include="Assets\pupu-icon.png" />
+    <Resource Include="Assets\pupu.ico" />
+  </ItemGroup>
+</Project>

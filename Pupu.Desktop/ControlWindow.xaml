@@ -1,0 +1,568 @@
+<Window x:Class="Pupu.Desktop.ControlWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="朴朴 · 陪伴面板"
+        Width="820"
+        Height="720"
+        MinWidth="720"
+        MinHeight="600"
+        WindowStartupLocation="Manual"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Icon="Assets/pupu.ico"
+        Closing="ControlWindow_Closing"
+        Background="#F3F7F7">
+    <Window.Resources>
+        <SolidColorBrush x:Key="Ink" Color="#243436" />
+        <SolidColorBrush x:Key="MutedInk" Color="#66787A" />
+        <SolidColorBrush x:Key="Panel" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="PanelBorder" Color="#DCE7E5" />
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+            <Setter Property="Padding" Value="7" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+            <Setter Property="Padding" Value="5" />
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Panel}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource MutedInk}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <DataTemplate x:Key="ActionCard">
+            <Border Width="216" MinHeight="285" Margin="5" Padding="10"
+                    Background="#FFFFFCF8" BorderBrush="#E8DBCE"
+                    BorderThickness="1" CornerRadius="12">
+                <StackPanel>
+                    <Image Source="{Binding Thumbnail, Mode=OneWay}"
+                           Width="154" Height="154" Stretch="Uniform" />
+                    <TextBlock Text="{Binding Name, Mode=OneWay}"
+                               FontWeight="SemiBold" FontSize="14" />
+                    <TextBlock Text="{Binding Category, Mode=OneWay}"
+                               Style="{StaticResource Hint}" />
+                    <TextBlock Text="{Binding Description, Mode=OneWay}"
+                               TextWrapping="Wrap" FontSize="11" Margin="0,5,0,0" />
+                    <TextBlock Text="{Binding FrameLabel, Mode=OneWay}"
+                               Style="{StaticResource Hint}" Margin="0,4,0,6" />
+                    <Button Content="独立预览"
+                            Command="{Binding PreviewCommand, Mode=OneWay}"
+                            HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="AssetGroupCard">
+            <Border Style="{StaticResource Card}" Margin="4">
+                <StackPanel>
+                    <TextBlock Text="{Binding GroupId, Mode=OneWay}"
+                               FontFamily="Consolas" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding BehaviorId, Mode=OneWay}"
+                               FontFamily="Consolas" Foreground="#267D82" FontSize="11" />
+                    <TextBlock Text="{Binding Source, Mode=OneWay}"
+                               TextWrapping="Wrap" Margin="0,5,0,0" />
+                    <TextBlock Text="{Binding Timing, Mode=OneWay}"
+                               Style="{StaticResource Hint}" />
+                    <TextBlock Text="{Binding Validation, Mode=OneWay}"
+                               TextWrapping="Wrap" Foreground="#70528C"
+                               FontSize="11" Margin="0,4,0,6" />
+                    <ItemsControl ItemsSource="{Binding PreviewFrames, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="58" Height="58" Margin="2"
+                                        BorderBrush="#DCE7E5" BorderThickness="1">
+                                    <Image Source="{Binding}" Stretch="Uniform" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="CoinStateCard">
+            <Border Width="132" Margin="4" Padding="8"
+                    Background="#FFFBF7EF" BorderBrush="#E4D7C4"
+                    BorderThickness="1" CornerRadius="10">
+                <StackPanel>
+                    <Image Source="{Binding Preview, Mode=OneWay}"
+                           Width="104" Height="104" Stretch="Uniform" />
+                    <TextBlock Text="{Binding Name, Mode=OneWay}"
+                               FontWeight="SemiBold" TextAlignment="Center" />
+                    <TextBlock Text="{Binding StateKey, Mode=OneWay}"
+                               FontFamily="Consolas" FontSize="10"
+                               Foreground="#267D82" TextAlignment="Center" />
+                    <TextBlock Text="{Binding Coordinate, Mode=OneWay}"
+                               Style="{StaticResource Hint}" TextAlignment="Center" />
+                    <TextBlock Text="{Binding Duration, Mode=OneWay}"
+                               Style="{StaticResource Hint}" TextAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel Margin="12">
+        <Grid DockPanel.Dock="Top" Margin="4,0,4,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="朴朴" FontSize="25" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding CurrentBehaviorLabel, Mode=OneWay}"
+                           Foreground="{StaticResource MutedInk}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="缩小" Command="{Binding ZoomOutCommand}" />
+                <Button Content="100%" Command="{Binding ResetZoomCommand}" />
+                <Button Content="放大" Command="{Binding ZoomInCommand}" Margin="0" />
+            </StackPanel>
+        </Grid>
+
+        <TabControl FontFamily="Microsoft YaHei UI">
+            <TabItem Header="主人">
+                <TabControl Margin="8">
+                    <TabItem Header="状态与互动">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="今天的朴朴" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="{Binding EffectivePersonality, Mode=OneWay}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding RuntimeStateSummary, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,5,0,0" />
+                                        <TextBlock Text="{Binding RelationshipStateSummary, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,3,0,0" />
+                                        <UniformGrid Columns="4" Margin="0,10,0,0">
+                                            <TextBlock Text="{Binding Fullness, Mode=OneWay, StringFormat='饱腹 {0:0}'}" />
+                                            <TextBlock Text="{Binding Happiness, Mode=OneWay, StringFormat='心情 {0:0}'}" />
+                                            <TextBlock Text="{Binding Cleanliness, Mode=OneWay, StringFormat='清洁 {0:0}'}" />
+                                            <TextBlock Text="{Binding Energy, Mode=OneWay, StringFormat='精力 {0:0}'}" />
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="常用互动" Style="{StaticResource SectionTitle}" />
+                                        <WrapPanel>
+                                            <Button Content="投放冻干" Command="{Binding StartFoodAnchorCommand}" />
+                                            <Button Content="投放激光点" Command="{Binding StartToyAnchorCommand}" />
+                                            <Button Content="停止" Command="{Binding StopCurrentActionCommand}" />
+                                            <Button Content="关起来" Command="{Binding CageCommand}" />
+                                            <Button Content="放出来" Command="{Binding ReleaseCageCommand}" />
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding MouseInteractionModeLabel, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,8,0,0" />
+                                        <TextBlock Text="{Binding ConfinementStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="和朴朴说话" Style="{StaticResource SectionTitle}" />
+                                        <ListBox ItemsSource="{Binding ChatMessages, Mode=OneWay}"
+                                                 MaxHeight="190" Margin="0,0,0,8" />
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="发送"
+                                                    Command="{Binding SendChatCommand}" Margin="8,0,0,0" />
+                                            <TextBox Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     KeyDown="ChatInput_KeyDown"
+                                                     AcceptsReturn="True" MinHeight="42"
+                                                     TextWrapping="Wrap" />
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="档案">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="宠物与主人" Style="{StaticResource SectionTitle}" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="140" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="140" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="中文名" VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="1" Margin="6"
+                                                     Text="{Binding PetChineseName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Column="2" Text="英文名" VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="3" Margin="6"
+                                                     Text="{Binding PetEnglishName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="1" Text="品种" VerticalAlignment="Center" />
+                                            <TextBox Grid.Row="1" Grid.Column="1" Margin="6"
+                                                     Text="{Binding PetBreed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="1" Grid.Column="2" Text="性别" VerticalAlignment="Center" />
+                                            <TextBox Grid.Row="1" Grid.Column="3" Margin="6"
+                                                     Text="{Binding PetSex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="2" Text="主人称呼" VerticalAlignment="Center" />
+                                            <TextBox Grid.Row="2" Grid.Column="1" Margin="6"
+                                                     Text="{Binding OwnerNickname, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="2" Text="关系" VerticalAlignment="Center" />
+                                            <TextBox Grid.Row="2" Grid.Column="3" Margin="6"
+                                                     Text="{Binding RelationshipToOwner, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        </Grid>
+                                        <Button Content="保存档案"
+                                                Command="{Binding SavePetProfileCommand}"
+                                                HorizontalAlignment="Left" Margin="0,8,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="相册">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="相册三步" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="1. 选择根目录　2. 刷新相册　3. 选择照片补充描述。嵌套索引、模型权限与删除属于高级操作，不占用日常流程。"
+                                                   Style="{StaticResource Hint}" />
+                                        <WrapPanel Margin="0,10,0,0">
+                                            <Button Content="选择相册目录" Command="{Binding SelectAlbumRootCommand}" />
+                                            <Button Content="刷新" Command="{Binding RefreshAlbumsCommand}" />
+                                            <Button Content="打开目录" Command="{Binding OpenAlbumDirectoryCommand}" />
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding AlbumStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,7,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <ListBox ItemsSource="{Binding AlbumPhotos, Mode=OneWay}"
+                                         SelectedItem="{Binding SelectedAlbumPhoto, Mode=TwoWay}"
+                                         DisplayMemberPath="FileName" MinHeight="200" />
+                                <Image Source="{Binding SelectedPhotoPreview, Mode=OneWay}"
+                                       Height="220" Stretch="Uniform" Margin="0,10,0,0" />
+                                <TextBox Text="{Binding SelectedPhotoDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True" MinHeight="70" TextWrapping="Wrap"
+                                         Margin="0,8,0,8" />
+                                <Button Content="保存照片描述"
+                                        Command="{Binding SavePhotoDescriptionCommand}"
+                                        HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+
+            <TabItem Header="功能设置">
+                <TabControl Margin="8">
+                    <TabItem Header="性格与回复">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="天生性格" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="这些是主人明确设定的底色；长期记忆只能影响习惯，不会偷偷覆盖它。"
+                                                   Style="{StaticResource Hint}" />
+                                        <TextBlock Text="活泼" Margin="0,8,0,0" />
+                                        <Slider Minimum="0" Maximum="100" Value="{Binding Playfulness, Mode=TwoWay}" />
+                                        <TextBlock Text="黏人" />
+                                        <Slider Minimum="0" Maximum="100" Value="{Binding Clinginess, Mode=TwoWay}" />
+                                        <TextBlock Text="敏感" />
+                                        <Slider Minimum="0" Maximum="100" Value="{Binding Sensitivity, Mode=TwoWay}" />
+                                        <TextBlock Text="独立" />
+                                        <Slider Minimum="0" Maximum="100" Value="{Binding Independence, Mode=TwoWay}" />
+                                        <TextBlock Text="淘气" />
+                                        <Slider Minimum="0" Maximum="100" Value="{Binding Mischief, Mode=TwoWay}" />
+                                        <Button Content="保存性格底色"
+                                                Command="{Binding SavePersonalityCommand}"
+                                                HorizontalAlignment="Left" Margin="0,8,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="主人自定义宠物性格提示词"
+                                                   Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="默认已填写傲娇猫式大模型提示词。可直接编辑；技术约束在开发者页说明，这里只写朴朴该怎样说话和相处。"
+                                                   Style="{StaticResource Hint}" />
+                                        <TextBox Text="{Binding OwnerPersonalityPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 MinHeight="190" Margin="0,8,0,8" />
+                                        <Button Content="保存性格提示词"
+                                                Command="{Binding SavePetProfileCommand}"
+                                                HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="长期记忆">
+                        <Grid Margin="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="相处记忆与习惯" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="记录重要拖拽/放置位置、主人纠正和相处事件；逐渐形成的习惯与互动偏好以 -100 到 100 展示。这里不放行为规则。"
+                                               Style="{StaticResource Hint}" />
+                                    <TextBlock Text="{Binding PersonalityMemoryMatchSummary, Mode=OneWay}"
+                                               TextWrapping="Wrap" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <TextBox Grid.Row="1"
+                                     Text="{Binding EditableMemoryText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" AcceptsTab="True"
+                                     FontFamily="Consolas" TextWrapping="NoWrap"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     VerticalScrollBarVisibility="Auto" />
+                            <StackPanel Grid.Row="2" Margin="0,8,0,0">
+                                <WrapPanel>
+                                    <Button Content="保存记忆" Command="{Binding SaveEditableMemoryCommand}" />
+                                    <Button Content="重新载入" Command="{Binding ReloadEditableMemoryCommand}" />
+                                    <Button Content="打开记忆文件" Command="{Binding OpenEditableMemoryCommand}" />
+                                </WrapPanel>
+                                <TextBlock Text="{Binding EditableMemoryStatus, Mode=OneWay}"
+                                           Style="{StaticResource Hint}" Margin="0,5,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="动作规则">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="用自然语言设规则" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="{Binding NaturalPolicySummary, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" />
+                                        <DockPanel Margin="0,10,0,0">
+                                            <Button DockPanel.Dock="Right" Content="应用"
+                                                    Command="{Binding ApplyNaturalRuleCommand}"
+                                                    Margin="8,0,0,0" />
+                                            <TextBox Text="{Binding NaturalRuleInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     MinHeight="58" AcceptsReturn="True"
+                                                     TextWrapping="Wrap" />
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding NaturalRuleStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="已生效规则" Style="{StaticResource SectionTitle}" />
+                                        <ItemsControl ItemsSource="{Binding NaturalRules, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
+                                <Expander Header="计算方式（开发者说明）" IsExpanded="False">
+                                    <ItemsControl ItemsSource="{Binding HiddenActionRules, Mode=OneWay}" />
+                                </Expander>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="大模型">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="回复模型" Style="{StaticResource SectionTitle}" />
+                                        <CheckBox Content="启用大模型回复"
+                                                  IsChecked="{Binding ModelApiEnabled, Mode=TwoWay}" />
+                                        <TextBlock Text="API 地址" Margin="0,8,0,0" />
+                                        <TextBox Text="{Binding ModelApiEndpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="模型名称" Margin="0,8,0,0" />
+                                        <TextBox Text="{Binding ModelApiModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="API 密钥" Margin="0,8,0,0" />
+                                        <PasswordBox x:Name="ModelApiKeyBox"
+                                                     PasswordChanged="ModelApiKeyBox_PasswordChanged"
+                                                     Padding="7" />
+                                        <WrapPanel Margin="0,10,0,0">
+                                            <Button Content="保存" Command="{Binding SaveModelApiCommand}" />
+                                            <Button Content="测试" Command="{Binding TestModelApiCommand}" />
+                                            <Button Content="删除密钥" Command="{Binding DeleteModelApiKeyCommand}" />
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding ModelApiStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,7,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+
+            <TabItem Header="素材库">
+                <TabControl Margin="8">
+                    <TabItem Header="动作预览">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding ActionGallery, Mode=OneWay}"
+                                          ItemTemplate="{StaticResource ActionCard}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="技术与存储">
+                        <Grid Margin="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="素材映射、校验与编辑入口"
+                                               Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="{Binding AssetPackStatus, Mode=OneWay}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding AssetCompatibilityStatus, Mode=OneWay}"
+                                               Style="{StaticResource Hint}" Margin="0,4,0,0" />
+                                    <WrapPanel Margin="0,9,0,0">
+                                        <Button Content="打开可编辑素材目录"
+                                                Command="{Binding OpenAssetFolderCommand}" />
+                                    </WrapPanel>
+                                    <TextBlock Text="下面按行为 ID 展示真实来源、帧序、循环、回退和校验结果；用户动作名称与技术/存储字段分开，避免把内部术语混进日常操作。"
+                                               Style="{StaticResource Hint}" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Border Style="{StaticResource Card}" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="银币组合更新"
+                                                       Style="{StaticResource SectionTitle}" />
+                                            <TextBlock Text="V16 圆眼正脸四种正面状态与猫爪背面；下列实图、状态键、图集坐标和时长均直接读取当前正式清单。"
+                                                       Style="{StaticResource Hint}" />
+                                            <ItemsControl ItemsSource="{Binding CoinUpdateStates, Mode=OneWay}"
+                                                          ItemTemplate="{StaticResource CoinStateCard}"
+                                                          Margin="0,8,0,0">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                    <ItemsControl ItemsSource="{Binding AssetActionGroups, Mode=OneWay}"
+                                                  ItemTemplate="{StaticResource AssetGroupCard}" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+
+            <TabItem Header="开发者">
+                <TabControl Margin="8">
+                    <TabItem Header="诊断">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="运行诊断" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="{Binding CurrentIntent, Mode=OneWay}" />
+                                        <TextBlock Text="{Binding LastArbitrationResult, Mode=OneWay}"
+                                                   TextWrapping="Wrap" Margin="0,5,0,0" />
+                                        <TextBlock Text="{Binding LastProposalResult, Mode=OneWay}"
+                                                   TextWrapping="Wrap" Margin="0,5,0,0" />
+                                        <TextBlock Text="{Binding CursorAttentionStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,5,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Expander Header="最近行为评分" IsExpanded="True">
+                                    <ItemsControl ItemsSource="{Binding BehaviorScoreItems, Mode=OneWay}" />
+                                </Expander>
+                                <Expander Header="仲裁记录" Margin="0,8,0,0">
+                                    <ItemsControl ItemsSource="{Binding ArbitrationItems, Mode=OneWay}" />
+                                </Expander>
+                                <Expander Header="提案记录" Margin="0,8,0,0">
+                                    <ItemsControl ItemsSource="{Binding BehaviorProposalItems, Mode=OneWay}" />
+                                </Expander>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="技术说明">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="模块边界" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="性格设定：主人显式底色与大模型说话方式。长期记忆：相处事件、位置回忆、纠正和 -100～100 的习惯证据。动作规则：决定何时选动作，不存进记忆正文。三者在“功能设置”中相邻，但数据职责互不混写。"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="桌面与平台" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="缩放、鼠标注意力、锚点投放、窗口移动和笼中锁定属于桌面运行能力，已并入对应交互与动作说明，不再占一个独立栏目。Windows 使用 WPF 与系统窗口接口；跨平台能力必须经平台适配层实现，不能把 Windows API 标成 macOS 已兼容。"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="素材契约" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="{Binding AssetGenerationRequirements, Mode=OneWay}"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <ItemsControl ItemsSource="{Binding CodeImplementationCards, Mode=OneWay}" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="Codex 迭代">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="生成开发任务" Style="{StaticResource SectionTitle}" />
+                                        <TextBox Text="{Binding CodexProjectPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,8" />
+                                        <TextBox Text="{Binding CodexIterationRequest, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                                 MinHeight="150" />
+                                        <Button Content="生成任务说明"
+                                                Command="{Binding CreateCodexIterationCommand}"
+                                                HorizontalAlignment="Left" Margin="0,8,0,0" />
+                                        <TextBlock Text="{Binding CodexIterationStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

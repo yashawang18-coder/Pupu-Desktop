@@ -1,0 +1,43 @@
+name: Windows x64 build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-package:
+    name: Build, test, and package
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Display .NET environment
+        shell: pwsh
+        run: dotnet --info
+
+      - name: Restore, build, test, gate, publish, and package
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -Runtime win-x64
+
+      - name: Upload Windows installer and portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pupu-Windows-x64-1.11.0
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            artifacts/Pupu-Setup-x64-1.11.0.exe
+            artifacts/Pupu-Windows-x64-1.11.0.zip
