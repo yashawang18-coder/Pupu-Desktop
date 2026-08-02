@@ -53,6 +53,14 @@
             <Setter Property="Foreground" Value="{StaticResource MutedInk}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
+        <Style x:Key="TraitCard" TargetType="Border">
+            <Setter Property="Background" Value="#FFF9F4" />
+            <Setter Property="BorderBrush" Value="#F1DED1" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="Margin" Value="4" />
+        </Style>
         <DataTemplate x:Key="ActionCard">
             <Border Width="216" MinHeight="285" Margin="5" Padding="10"
                     Background="#FFFFFCF8" BorderBrush="#E8DBCE"
@@ -154,7 +162,8 @@
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <TextBlock Text="今天的朴朴" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="{Binding EffectivePersonality, Mode=OneWay}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding PetProfileTitle, Mode=OneWay}" FontSize="19" FontWeight="SemiBold" />
+                                        <TextBlock Text="一只有自己节奏、也会悄悄在意主人的小猫。" Style="{StaticResource Hint}" />
                                         <TextBlock Text="{Binding RuntimeStateSummary, Mode=OneWay}"
                                                    Style="{StaticResource Hint}" Margin="0,5,0,0" />
                                         <TextBlock Text="{Binding RelationshipStateSummary, Mode=OneWay}"
@@ -165,14 +174,23 @@
                                             <TextBlock Text="{Binding Cleanliness, Mode=OneWay, StringFormat='清洁 {0:0}'}" />
                                             <TextBlock Text="{Binding Energy, Mode=OneWay, StringFormat='精力 {0:0}'}" />
                                         </UniformGrid>
+                                        <UniformGrid Columns="5" Margin="0,10,0,0">
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="活泼" FontWeight="SemiBold"/><ProgressBar Value="{Binding Playfulness}" Maximum="100" Height="7"/><TextBlock Text="{Binding Playfulness, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="黏人" FontWeight="SemiBold"/><ProgressBar Value="{Binding Clinginess}" Maximum="100" Height="7"/><TextBlock Text="{Binding Clinginess, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="敏感" FontWeight="SemiBold"/><ProgressBar Value="{Binding Sensitivity}" Maximum="100" Height="7"/><TextBlock Text="{Binding Sensitivity, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="独立" FontWeight="SemiBold"/><ProgressBar Value="{Binding Independence}" Maximum="100" Height="7"/><TextBlock Text="{Binding Independence, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="淘气" FontWeight="SemiBold"/><ProgressBar Value="{Binding Mischief}" Maximum="100" Height="7"/><TextBlock Text="{Binding Mischief, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                        </UniformGrid>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <TextBlock Text="常用互动" Style="{StaticResource SectionTitle}" />
                                         <WrapPanel>
-                                            <Button Content="投放冻干" Command="{Binding StartFoodAnchorCommand}" />
-                                            <Button Content="投放激光点" Command="{Binding StartToyAnchorCommand}" />
+                                            <Button Content="喂冻干" Command="{Binding FeedFreezeDriedCommand}" />
+                                            <Button Content="逗猫棒" Command="{Binding PlayWandCommand}" />
+                                            <Button Content="梳毛" Command="{Binding GroomCommand}" />
+                                            <Button Content="散散步" Command="{Binding FreeRoamCommand}" />
                                             <Button Content="停止" Command="{Binding StopCurrentActionCommand}" />
                                             <Button Content="关起来" Command="{Binding CageCommand}" />
                                             <Button Content="放出来" Command="{Binding ReleaseCageCommand}" />
@@ -205,7 +223,18 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
-                                    <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="160" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="132" Height="132" CornerRadius="66"
+                                                Background="#FFF7F0" BorderBrush="#EBCFC0"
+                                                BorderThickness="2" VerticalAlignment="Top">
+                                            <Image Source="{Binding PetProfilePortrait, Mode=OneWay}"
+                                                   Stretch="Uniform" Margin="8" />
+                                        </Border>
+                                    <StackPanel Grid.Column="1">
                                         <TextBlock Text="宠物与主人" Style="{StaticResource SectionTitle}" />
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -215,6 +244,7 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
@@ -237,11 +267,17 @@
                                             <TextBlock Grid.Row="2" Grid.Column="2" Text="关系" VerticalAlignment="Center" />
                                             <TextBox Grid.Row="2" Grid.Column="3" Margin="6"
                                                      Text="{Binding RelationshipToOwner, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="3" Text="宠物生日" VerticalAlignment="Center" />
+                                            <DatePicker Grid.Row="3" Grid.Column="1" Margin="6" SelectedDate="{Binding PetBirthday, Mode=TwoWay}" />
+                                            <TextBlock Grid.Row="3" Grid.Column="2" Text="主人生日" VerticalAlignment="Center" />
+                                            <DatePicker Grid.Row="3" Grid.Column="3" Margin="6" SelectedDate="{Binding OwnerBirthday, Mode=TwoWay}" />
                                         </Grid>
+                                        <TextBlock Text="{Binding PetProfileSummary, Mode=OneWay}" Style="{StaticResource Hint}" Margin="6,6,0,0" />
                                         <Button Content="保存档案"
                                                 Command="{Binding SavePetProfileCommand}"
                                                 HorizontalAlignment="Left" Margin="0,8,0,0" />
                                     </StackPanel>
+                                    </Grid>
                                 </Border>
                             </StackPanel>
                         </ScrollViewer>
@@ -265,15 +301,11 @@
                                 </Border>
                                 <ListBox ItemsSource="{Binding AlbumPhotos, Mode=OneWay}"
                                          SelectedItem="{Binding SelectedAlbumPhoto, Mode=TwoWay}"
-                                         DisplayMemberPath="FileName" MinHeight="200" />
-                                <Image Source="{Binding SelectedPhotoPreview, Mode=OneWay}"
-                                       Height="220" Stretch="Uniform" Margin="0,10,0,0" />
-                                <TextBox Text="{Binding SelectedPhotoDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         AcceptsReturn="True" MinHeight="70" TextWrapping="Wrap"
-                                         Margin="0,8,0,8" />
-                                <Button Content="保存照片描述"
-                                        Command="{Binding SavePhotoDescriptionCommand}"
-                                        HorizontalAlignment="Left" />
+                                         MinHeight="240" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate><DataTemplate><Border Width="150" Margin="5" Padding="7" Background="White" BorderBrush="#E4DDDA" BorderThickness="1" CornerRadius="10"><StackPanel><Image Source="{Binding Thumbnail}" Width="132" Height="106" Stretch="UniformToFill"/><TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" Margin="0,5,0,0"/><TextBlock Text="{Binding AlbumName}" Style="{StaticResource Hint}"/></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
+                                </ListBox>
+                                <Border Style="{StaticResource Card}" Margin="0,10,0,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="260"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Image Source="{Binding SelectedPhotoPreview, Mode=OneWay}" Height="220" Stretch="Uniform"/><StackPanel Grid.Column="1" Margin="12,0,0,0"><TextBlock Text="照片记忆" Style="{StaticResource SectionTitle}"/><TextBox Text="{Binding SelectedPhotoDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="120" TextWrapping="Wrap" Margin="0,0,0,8"/><Button Content="保存照片描述" Command="{Binding SavePhotoDescriptionCommand}" HorizontalAlignment="Left"/></StackPanel></Grid></Border>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -396,6 +428,11 @@
                                         <TextBlock Text="回复模型" Style="{StaticResource SectionTitle}" />
                                         <CheckBox Content="启用大模型回复"
                                                   IsChecked="{Binding ModelApiEnabled, Mode=TwoWay}" />
+                                        <TextBlock Text="服务商" Margin="0,8,0,0" />
+                                        <ComboBox ItemsSource="{Binding ModelProviderOptions, Mode=OneWay}" SelectedItem="{Binding ModelApiProvider, Mode=TwoWay}" />
+                                        <TextBlock Text="接口协议" Margin="0,8,0,0" />
+                                        <ComboBox ItemsSource="{Binding ModelApiFormatOptions, Mode=OneWay}" SelectedItem="{Binding ModelApiRequestFormat, Mode=TwoWay}" />
+                                        <TextBlock Text="{Binding ModelApiProviderCapability, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,5,0,0" />
                                         <TextBlock Text="API 地址" Margin="0,8,0,0" />
                                         <TextBox Text="{Binding ModelApiEndpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                         <TextBlock Text="模型名称" Margin="0,8,0,0" />
@@ -422,16 +459,11 @@
             <TabItem Header="素材库">
                 <TabControl Margin="8">
                     <TabItem Header="动作预览">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding ActionGallery, Mode=OneWay}"
-                                          ItemTemplate="{StaticResource ActionCard}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
-                        </ScrollViewer>
+                        <TabControl Margin="6">
+                            <TabItem Header="普通动作"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding RegularActionGalleryGroups, Mode=OneWay}"><ItemsControl.ItemTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding Name, Mode=OneWay}" Style="{StaticResource SectionTitle}" Margin="8,12,8,4"/><ItemsControl ItemsSource="{Binding Items, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer></TabItem>
+                            <TabItem Header="魔法特辑"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding MagicActionGallery, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></ScrollViewer></TabItem>
+                            <TabItem Header="节日特辑"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding SeasonalActionGallery, Mode=OneWay}"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource Card}" Margin="5"><StackPanel><TextBlock Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" FontSize="15"/><TextBlock Text="{Binding Description, Mode=OneWay}" TextWrapping="Wrap" Margin="0,5,0,0"/><TextBlock Text="{Binding AvailabilityLabel, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,5,0,0"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer></TabItem>
+                        </TabControl>
                     </TabItem>
                     <TabItem Header="技术与存储">
                         <Grid Margin="8">
