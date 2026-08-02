@@ -59,6 +59,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("travel blocks ordinary behavior until return or recall", TestTravelArbitration),
     ("local commands work without a model API", TestLocalInteractionCommands),
     ("food and toy anchors are accepted cooled down or state-blocked", TestAnchorArbitration),
+    ("owner-triggered magic interrupts ordinary behavior but respects hard states", TestOwnerForcedMagicArbitration),
     ("coin drag click and double click remain distinct", TestCoinPointerGestures),
     ("asset manifest keeps schema 1 and normalizes schema 2 action groups", TestAssetActionGroupCompatibility),
     ("default persona round-trips without changing Pupu identity", TestDefaultPersonaCompatibility),
@@ -834,6 +835,59 @@ static Task TestAnchorArbitration()
     var anchor = new InteractionAnchor(InteractionAnchorKind.Food, 420, 360, now);
     Assert(anchor.Kind == InteractionAnchorKind.Food && anchor.X == 420 && anchor.Y == 360,
         "food anchor target was not generated");
+    return Task.CompletedTask;
+}
+
+static Task TestOwnerForcedMagicArbitration()
+{
+    var now = DateTimeOffset.Now;
+    var arbitrator = new BehaviorArbitrator();
+    var request = new BehaviorArbitrationRequest
+    {
+        BehaviorId = "magic.accio_broom",
+        Source = BehaviorArbitrationSource.OwnerForced,
+        Priority = BehaviorPriority.OwnerForced,
+        RequestedAt = now,
+        ForceInterrupt = true,
+        Interruptible = false,
+        ForbiddenStates =
+            BehaviorStateBlockers.Caged |
+            BehaviorStateBlockers.Traveling |
+            BehaviorStateBlockers.Petrified
+    };
+    var ordinary = new BehaviorArbitrationContext
+    {
+        CurrentBehaviorId = "play.wand",
+        CurrentPriority = BehaviorPriority.ExplicitCommand,
+        CurrentStartedAt = now.AddSeconds(-1),
+        CurrentMinimumDuration = TimeSpan.FromMinutes(1),
+        CurrentInterruptible = false,
+        ActiveStates = BehaviorStateBlockers.Playing
+    };
+    Assert(arbitrator.Evaluate(request, ordinary).Accepted,
+        "owner-forced magic did not interrupt ordinary protected play");
+
+    var blocked = new BehaviorArbitrationContext
+    {
+        CurrentBehaviorId = "owner.cage",
+        CurrentPriority = BehaviorPriority.OwnerForced,
+        CurrentStartedAt = now,
+        CurrentInterruptible = false,
+        ActiveStates = BehaviorStateBlockers.Caged
+    };
+    var blockedRequest = new BehaviorArbitrationRequest
+    {
+        BehaviorId = request.BehaviorId,
+        Source = request.Source,
+        Priority = request.Priority,
+        RequestedAt = now.AddSeconds(1),
+        ForceInterrupt = request.ForceInterrupt,
+        Interruptible = request.Interruptible,
+        ForbiddenStates = request.ForbiddenStates
+    };
+    var result = new BehaviorArbitrator().Evaluate(blockedRequest, blocked);
+    Assert(!result.Accepted && result.ReasonCode == "state_forbidden",
+        "owner-forced magic bypassed the cage hard-state gate");
     return Task.CompletedTask;
 }
 

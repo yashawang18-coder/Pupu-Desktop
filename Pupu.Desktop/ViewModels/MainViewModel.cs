@@ -423,6 +423,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         new[] { 165, 165, 165, 165 },
         0, 1, 2, 3);
 
+    private static readonly AnimationSequence LaserPounceSequence = Sequence(
+        "laser-pounce", SpriteAtlas.Activity, 0,
+        new[] { 360, 280, 240, 260, 320, 260, 240, 300 },
+        0, 1, 2, 3, 4, 5, 6, 7);
+
     private static readonly AnimationSequence SleepCurledSequence = Sequence(
         "sleep-curled", SpriteAtlas.Activity, 2,
         new[] { 2300, 1900, 2500, 2100, 2400, 1850, 2550, 2050, 2550, 1850, 2400, 2100, 2500, 1900 },
@@ -859,6 +864,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ObservableCollection<string> BehaviorProposalItems { get; } = new();
     public ObservableCollection<ActionGalleryItem> ActionGallery { get; } = new();
     public ObservableCollection<ActionGalleryGroupItem> RegularActionGalleryGroups { get; } = new();
+    public ObservableCollection<ActionGalleryItem> AutonomousActionGallery { get; } = new();
+    public ObservableCollection<ActionGalleryItem> InteractiveActionGallery { get; } = new();
     public ObservableCollection<ActionGalleryItem> MagicActionGallery { get; } = new();
     public ObservableCollection<SeasonalGalleryItem> SeasonalActionGallery { get; } = new();
     public ObservableCollection<InformationCardItem> ProductDesignCards { get; } = new();
@@ -978,7 +985,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         : "模型未启用：当前使用本地规则 PetAgent。";
     public string AssetCompatibilityStatus => _assetPack.CompatibilityStatus;
     public string AssetGenerationRequirements =>
-        "统一 256×256 画布与透明背景；以头部、身体骨架、脚底线和重心建立固定身体坐标系，禁止按整只宠物外接框逐帧铺满。每个动作组独立输出、维护和逐帧预览，记录帧数、帧时长、循环方式、行为标签与触发条件。V13 已补齐等比例魔法、五态银币、局部视线覆盖层、16 方向锚点追逐和背带遛猫；姿态不支持局部视线时只做轻反馈。";
+        "V18 素材契约：每格 256×256 RGBA，四边至少 20px 透明安全区；同一动作行共享身体尺度、重心和脚底线，完整保留耳朵、四肢与大尾巴。循环动作使用语义帧率与往返序列，八方向追逐每个方向至少四个独立步态相位。正式文件只由 pupu-assets.json 引用，旧底图退出运行目录但保留在 Git 历史中；替换时必须同时校验行为 ID、动作回退、预览分类和运行引用。";
     public string TravelDestinationInput
     {
         get => _travelDestinationInput;
@@ -2450,40 +2457,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         if (mode is MouseInteractionMode.Attention) return;
         var isFood = mode == MouseInteractionMode.FoodAnchor;
-        if (!TryAcceptBehaviorRequest(
-                isFood ? "anchor.food.prepare" : "anchor.toy.prepare",
-                BehaviorArbitrationSource.OwnerAnchor,
-                BehaviorPriority.OwnerAnchor,
-                TimeSpan.Zero,
-                TimeSpan.FromSeconds(2),
-                interruptible: true,
-                BehaviorStateBlockers.Caged |
-                BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Sleeping |
-                BehaviorStateBlockers.Toilet |
-                BehaviorStateBlockers.Magic |
-                BehaviorStateBlockers.Movement |
-                BehaviorStateBlockers.TouchReaction |
-                BehaviorStateBlockers.Feeding |
-                BehaviorStateBlockers.Playing |
-                BehaviorStateBlockers.Petrified,
-                cooldownKey: isFood ? "anchor.food" : "anchor.toy"))
-            return;
-
+        // Selecting a placement cursor is UI state, not a pet behavior. The old
+        // implementation admitted an "anchor.*.prepare" lease here, then the
+        // real approach proposal was rejected by that lease. Admission now
+        // happens exactly once, after the owner chooses the desktop target.
         EndCursorGaze();
         MouseInteractionMode = mode;
-        SetBehavior(
-            isFood ? "anchor.food.prepare" : "anchor.toy.prepare",
-            isFood
-                ? "等待主人点击桌面位置投放食物锚点"
-                : "等待主人点击桌面位置投放玩具锚点",
-            "owner_anchor",
-            "desktop",
-            "local:anchor-cursor");
         _ = ShowBubbleAsync(
             isFood
-                ? "好吧，把吃的放在哪里？点一下桌面位置给我看。"
-                : "玩具藏在哪里？点一下桌面，我先看看要不要追。",
+                ? "把冻干丢到哪里？点一下桌面位置。"
+                : "激光点放在哪里？点一下桌面，我去抓。",
             5200,
             isFood ? PetSpeechIntent.General : PetSpeechIntent.Play);
     }
@@ -2510,8 +2493,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             target.Y,
             _clock.Now);
         var participates = await TryParticipateAsync(
-            isFood ? OwnerInteractionKind.Feeding : OwnerInteractionKind.WandPlay,
-            isFood ? "追到食物锚点" : "追到玩具锚点");
+            isFood ? OwnerInteractionKind.Feeding : OwnerInteractionKind.LaserPlay,
+            isFood ? "追到冻干落点" : "追到激光点");
         if (!participates)
         {
             ResetArbitrationToIdle();
@@ -2529,7 +2512,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 ExpiresAt = _clock.Now.AddSeconds(18),
                 Cancellable = true,
                 AllowDelay = true,
-                Reason = isFood ? "主人放置食物锚点" : "主人放置玩具锚点",
+                Reason = isFood ? "主人投掷冻干" : "主人放置激光点",
                 MinimumDuration = TimeSpan.FromSeconds(5),
                 Cooldown = TimeSpan.FromSeconds(4),
                 Interruptible = false,
@@ -2597,9 +2580,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 return false;
             }
 
-            PlaySequence(isFood ? FreezeDriedEatingLoopSequence : WandLoopSequence);
+            PlaySequence(isFood ? FreezeDriedEatingLoopSequence : LaserPounceSequence);
             _ = ShowBubbleAsync(
-                isFood ? "找到了。这个位置吃起来很安心。" : "抓到你了。再晃一下试试。",
+                isFood ? "找到了。这个位置吃起来很安心。" : "抓到光点了。再放一个试试。",
                 3600,
                 isFood ? PetSpeechIntent.General : PetSpeechIntent.Play);
             if (!await WaitPhaseAsync(TimeSpan.FromSeconds(isFood ? 4.5 : 5.5), token))
@@ -2624,14 +2607,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "owner_anchor",
                 isFood
                     ? "主人在桌面投放食物锚点，pupu接受后移动到目标并短暂进食。"
-                    : "主人在桌面投放玩具锚点，pupu接受后移动到目标并短暂扑玩。",
+                    : "主人在桌面放置激光点，pupu接受后低伏追到目标并短暂扑抓。",
                 proposal.BehaviorId,
                 0.46,
                 0.52,
                 true,
-                isFood ? "feed_anchor" : "toy_anchor",
+                isFood ? "feed_anchor" : "laser_anchor",
                 $"x={anchor.X:0};y={anchor.Y:0};created={anchor.CreatedAt:O}",
-                isFood ? "routines:freeze-dried-eating-loop" : "core:wand-loop");
+                isFood ? "routines:freeze-dried-eating-loop" : "activity:laser-pounce");
             await _memory.SaveStateAsync();
             return true;
         }
@@ -3544,16 +3527,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(8),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -3617,16 +3601,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(5),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -3694,16 +3679,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(5),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -3916,16 +3902,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(8),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -5475,6 +5462,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void BuildActionGallery()
     {
+        ActionGallery.Clear();
+        RegularActionGalleryGroups.Clear();
+        AutonomousActionGallery.Clear();
+        InteractiveActionGallery.Clear();
+        MagicActionGallery.Clear();
+        SeasonalActionGallery.Clear();
         AddGallery("侧躺慢呼吸", "安静待机", "最常用的幼猫侧躺姿态，慢呼吸、眨眼和尾尖轻动", SideLieIdleSequence);
         AddGallery("低趴观察", "安静待机", "胸口贴地趴着，从侧面观察主人", ProneIdleSequence);
         AddGallery("舔脚吃脚", "安静待机", "抱住后脚舔毛并轻轻啃爪子", PawNibbleSequence);
@@ -5677,6 +5670,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             return;
         }
         ActionGallery.Add(item);
+        if (IsInteractiveGalleryCategory(category))
+            InteractiveActionGallery.Add(item);
+        else
+            AutonomousActionGallery.Add(item);
         var group = RegularActionGalleryGroups.FirstOrDefault(x =>
             string.Equals(x.Name, category, StringComparison.Ordinal));
         if (group is null)
@@ -5686,6 +5683,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         group.Items.Add(item);
     }
+
+    private static bool IsInteractiveGalleryCategory(string category) => category is
+        "触摸反应" or
+        "投喂互动" or
+        "生活互动" or
+        "玩耍服务" or
+        "移动互动" or
+        "限制状态" or
+        "背带遛猫" or
+        "无背带遛猫";
 
     private void BuildInformationCards()
     {
@@ -5711,8 +5718,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      ("界面架构", "MainWindow 承载透明宠物窗、气泡和真实坐标移动；ControlWindow 承载产品设置、档案、相册、动作库、模型、记忆和调试视图；两者共享同一个 MainViewModel。"),
                      ("行为核心", "Pupu.Behavior 将资格过滤、效用评分、选择策略和动作调度分层。状态、关系、天生性格和具体 LearnedPreference 各自独立，互动不会偷偷回写天生性格。"),
                      ("行为仲裁与提案执行", "BehaviorArbitrator 继续负责优先级、保护期、可打断性、冷却和状态禁用；BehaviorProposalQueue／Executor 为口令、锚点和相册经历建议提供统一路径。暂时不能打断的提案可延迟，过期后取消；接受和拒绝原因都进入调试。"),
+                     ("主人强制与普通互动", "主人从魔法菜单明确发起时使用 OwnerForced 优先级和 ForceInterrupt，只允许笼中、旅行中或已石化等硬状态阻止；自主魔法仍受每日一次、冷却和资格评分限制。普通照料与玩耍不使用强制优先级，继续尊重疲劳、压力和动作保护期。"),
+                     ("冻干／激光投放链路", "点击按钮只进入一次性选点模式，不创建行为租约；主人选中桌面坐标后才生成一个 OwnerAnchor 提案。仲裁通过后显示冻干或激光实体、按目标向量选择八方向四相步态、同步移动窗口，到达后分别衔接进食或低伏扑光点。取消、拒绝、超时和路径不可达都会退出选点模式并给出反馈。"),
                      ("PetAgent／Persona", "RulePetAgent 是不依赖 API 的薄层，接收聊天、口令、面板、锚点、经历、旅游和自主定时器等结构化事件，输出回复草稿、行为提案、记忆候选和调试信息。Persona 不只是提示词，也保存默认性格、行为偏好和记忆偏好；默认朴朴配置保持原效果。"),
                      ("素材运行时", "AssetPackService 同时支持 schema 1 的 SpriteAtlas + row 和 schema 2 动作组。播放时优先解析动作组，来源缺失或无效则回到动作组 fallback 或原硬编码序列；单文件 PNG 与条带动作文件已预留解析和预览能力。"),
+                     ("动作预览分类", "动作页按行为来源划分为自发行为、互动行为、魔法特辑和节日特辑四个页签。卡片保留更细的动作类别、行为 ID、动画来源、帧数、循环方式和预览；节日卡只展示日期门禁说明，不允许通过预览绕过日期规则。"),
                      ("模型协议", "ModelProtocolAdapter 负责 Chat Completions / Responses 的请求与响应翻译；ModelApiService 负责 HTTPS、凭据、重试和安全错误。OpenAI、Qwen、DeepSeek 与 Custom 共用同一会话管线。"),
                      ("系统提示词", "固定角色安全边界由 PetSpeechComposer 生成；宠物档案、状态、关系、自然语言规则和 pupu-memory.md 的宠物系统提示词作为 system 背景注入。模型回复仍要通过宠物语言边界。"),
                      ("相册与经历索引", "PhotoAlbumService 继续维护 albums.json、子相册和逐图描述；AlbumExperienceService 以独立 schema 版本索引图片、Markdown／JSON 和 travelEvent，后台扫描带取消与过期保护，索引只保存相对素材引用。"),

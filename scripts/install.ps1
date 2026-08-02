@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-$version = "1.11.0"
+$version = "1.11.1"
 $source = Join-Path $root "dist\Pupu-$Runtime-$version"
 $destination = Join-Path $env:LOCALAPPDATA "Programs\Pupu"
 $exe = Join-Path $destination "Pupu.exe"

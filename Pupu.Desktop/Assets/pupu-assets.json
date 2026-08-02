@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "name": "pupu 幼态半写实素材包",
-  "version": "1.11.0-v17-front-facing-silver-coin",
+  "version": "1.11.1-v18-identity-unified-interactions",
   "cellSize": 256,
   "atlases": {
     "core": {
-      "file": "pupu-core-youthful-v12.png",
+      "file": "pupu-core-youthful-v18.png",
       "columns": 8,
       "rows": 6,
       "rowActions": [
@@ -18,7 +18,7 @@
       ]
     },
     "life": {
-      "file": "pupu-life-youthful-v15.png",
+      "file": "pupu-life-youthful-v18.png",
       "columns": 8,
       "rows": 8,
       "rowActions": [
@@ -57,7 +57,7 @@
       ]
     },
     "routines": {
-      "file": "pupu-routines-youthful-v15.png",
+      "file": "pupu-routines-youthful-v18.png",
       "columns": 8,
       "rows": 8,
       "rowActions": [
@@ -87,7 +87,7 @@
       ]
     },
     "activity": {
-      "file": "pupu-activity-youthful-v15.png",
+      "file": "pupu-activity-youthful-v18.png",
       "columns": 8,
       "rows": 8,
       "rowActions": [
@@ -102,7 +102,7 @@
       ]
     },
     "lifeEquipment": {
-      "file": "pupu-life-equipment-youthful-v15.png",
+      "file": "pupu-life-equipment-youthful-v18.png",
       "columns": 8,
       "rows": 3,
       "rowActions": [
@@ -112,7 +112,7 @@
       ]
     },
     "motion": {
-      "file": "pupu-motion-youthful-v15.png",
+      "file": "pupu-motion-youthful-v18.png",
       "columns": 8,
       "rows": 10,
       "rowActions": [
@@ -139,7 +139,7 @@
       ]
     },
     "litter": {
-      "file": "pupu-litter-youthful-v15.png",
+      "file": "pupu-litter-youthful-v18.png",
       "columns": 8,
       "rows": 4,
       "rowActions": [
@@ -727,7 +727,7 @@
       "behaviorId": "anchor.toy.approach",
       "source": {
         "type": "spriteStrip",
-        "file": "Actions/pupu-chase-gait-8dir-youthful-v15.png",
+        "file": "Actions/pupu-laser-chase-gait-8dir-youthful-v18.png",
         "columns": 32,
         "rows": 1,
         "frameWidth": 256,
@@ -798,7 +798,8 @@
         "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
         "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
         "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进"
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个独立脚步相位；窗口位移严格随换帧推进"
       ],
       "directions": {
         "left": {
@@ -872,7 +873,7 @@
       "behaviorId": "anchor.food.approach",
       "source": {
         "type": "spriteStrip",
-        "file": "Actions/pupu-chase-gait-8dir-youthful-v15.png",
+        "file": "Actions/pupu-snack-chase-gait-8dir-youthful-v18.png",
         "columns": 32,
         "rows": 1,
         "frameWidth": 256,
@@ -943,7 +944,8 @@
         "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
         "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
         "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进"
+        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
+        "每个方向包含四个独立脚步相位；窗口位移严格随换帧推进"
       ],
       "directions": {
         "left": {

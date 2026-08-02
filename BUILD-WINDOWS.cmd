@@ -9,6 +9,6 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-echo 构建完成：dist\Pupu-win-x64-1.11.0\Pupu.exe
-echo 一键安装程序：dist\Pupu-Setup-x64-1.11.0.exe
+echo 构建完成：dist\Pupu-win-x64-1.11.1\Pupu.exe
+echo 一键安装程序：dist\Pupu-Setup-x64-1.11.1.exe
 pause

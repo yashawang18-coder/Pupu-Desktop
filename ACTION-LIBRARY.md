@@ -1,26 +1,34 @@
 # pupu 动作素材库
 
-所有正式图集单元格均为 256×256 RGBA，8 列，四边至少 20px 透明安全区。运行时“动作素材库”把普通动作按类别页签展示，魔法使用独立“魔法特辑”，节日限定只在“节日特辑”显示文字标签，不暴露缩略图或预览。
+所有正式图集单元格均为 256×256 RGBA，8 列，四边至少 20px 透明安全区。运行时“动作素材库”按自发行为、互动行为、魔法特辑、节日特辑四个页签展示；节日限定只显示文字标签，不允许预览绕过日期门禁。
 
 ## 正式图集
 
 | 图集 ID | 文件 | 尺寸 | 行 | 内容 |
 | --- | --- | ---: | ---: | --- |
-| `core` | `pupu-core-youthful-v12.png` | 2048×1536 | 0–5 | 趴卧呼吸、露肚翻滚、追尾转圈、逗猫棒、困倦哈欠、伸展卧下 |
-| `life` | `pupu-life-youthful-v13.png` | 2048×2048 | 0–7 | 投喂、检查猫砂、摸摸与过度 rua、孔雀蓝梳毛、求关注、偷偷捣乱、陪伴睡姿、求遛猫 |
+| `core` | `pupu-core-youthful-v18.png` | 2048×1536 | 0–5 | V18 趴卧呼吸、露肚翻滚、追尾转圈、逗猫棒、眨眼哈欠、伸展卧下 |
+| `life` | `pupu-life-youthful-v18.png` | 2048×2048 | 0–7 | 投喂、检查猫砂、摸摸与过度 rua、孔雀蓝梳毛、求关注、偷偷捣乱、V18 陪伴睡姿与叼绳求遛 |
 | `directions` | `pupu-directions-youthful-v12.png` | 2048×1024 | 0–3 | 左、右、背向、正向移动 |
 | `touch` | `pupu-touch-youthful-v13.png` | 2048×1536 | 0–5 | 轻触、呼噜、好奇、需要空间、转身离开、信任亲近 |
-| `routines` | `pupu-routines-youthful-v12.png` | 2048×2048 | 0–7 | 侧躺慢呼吸、低趴观察、舔脚吃脚、猫粮慢吃、冻干／罐头饿猫扑食、完整背影、侧背转换 |
+| `routines` | `pupu-routines-youthful-v18.png` | 2048×2048 | 0–7 | V18 侧躺慢呼吸、低趴观察、甜脚吃脚、猫粮慢吃、冻干追食、罐头扑食、完整背影、侧背转换 |
 | `walkModes` | `pupu-walk-modes-youthful-v12.png` | 2048×2048 | 0–7 | 孔雀蓝背带与无背带的左、右、背向、正向连续步态 |
-| `activity` | `pupu-activity-youthful-v13.png` | 2048×2048 | 0–7 | 激光笔、三种睡姿、睡姿转换、板鸭趴、兼容占位 |
-| `lifeEquipment` | `pupu-life-equipment-youthful-v13.png` | 2048×768 | 0–2 | 低频日常舔毛、蓝色长方垫窝内睡眠、孔雀蓝牵引绳 |
-| `motion` | `pupu-motion-youthful-v13.png` | 2048×2560 | 0–9 | 背带／无背带四个斜向步态、扫帚八方向、矮脚侧躺微动 |
+| `activity` | `pupu-activity-youthful-v18.png` | 2048×2048 | 0–7 | V18 激光扑抓、三种睡姿、趴睡转换、板鸭趴、兼容占位 |
+| `lifeEquipment` | `pupu-life-equipment-youthful-v18.png` | 2048×768 | 0–2 | V18 日常舔毛、蓝色长方形小窝睡眠、孔雀蓝牵引绳 |
+| `motion` | `pupu-motion-youthful-v18.png` | 2048×2560 | 0–9 | V18 背带／无背带左前右前步态、其余斜向步态、扫帚八方向、侧躺微动 |
 | `gazeCoin` | `pupu-gaze-coin-youthful-v17.png` | 2048×768 | 0–2 | 两相贴地视线摆尾、V17 正视亮银边五态银币 |
-| `litter` | `pupu-litter-youthful-v13.png` | 2048×1024 | 0–3 | 检查进入、低头如厕、概率抬头、爪爪开花埋屎并离开 |
+| `litter` | `pupu-litter-youthful-v18.png` | 2048×1024 | 0–3 | V18 检查进入、低头如厕、概率抬头、爪爪开花埋屎并离开 |
 | `specials` | `pupu-specials-youthful-v13.png` | 2048×1280 | 0–4 | 旧视线兼容行与四种等比例紫色星星斗篷魔法 |
 | `seasonal` | `pupu-seasonal-youthful-v10.png` | 2048×1024 | 0–3 | 圣诞、万圣节、春节和主人生日限定 |
 
-合计 13 张图集、77 行、616 格，另有 48 帧 V13 独立动作条带。
+合计 13 张图集、77 行、616 格；V18 运行清单共引用 20 个 PNG，独立素材合计 110 帧。
+
+## V18 形象统一与交互修复
+
+- 以“好奇询问／开心摸摸”的幼态银灰黑白矮脚猫为身份基线，替换主人点名的旧脸型、旧体型和错误睡姿。
+- `laser-chase-8` 与 `snack-chase-8` 不再共用追逐图；两者各自拥有八方向、每方向四个无重影相位。
+- 选择冻干或激光落点只进入一次性选点模式，不提前申请行为租约；落点后才生成单个 OwnerAnchor 提案。
+- 主人明确点击魔法使用 OwnerForced，可中断普通动作；自主魔法仍保留每日一次和统一仲裁规则。
+- 被替换的旧运行 PNG 已从打包目录移除；`AssetSources/v18` 与 `scripts/rebuild-v18-assets.py` 可确定性重建新图集。
 
 ## V17 银币组合更新
 

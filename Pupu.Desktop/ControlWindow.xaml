@@ -191,6 +191,10 @@
                                             <Button Content="逗猫棒" Command="{Binding PlayWandCommand}" />
                                             <Button Content="梳毛" Command="{Binding GroomCommand}" />
                                             <Button Content="散散步" Command="{Binding FreeRoamCommand}" />
+                                            <Button Content="投掷冻干" Command="{Binding StartFoodAnchorCommand}"
+                                                    ToolTip="进入一次性选点模式，再点击桌面落点" />
+                                            <Button Content="投放激光点" Command="{Binding StartToyAnchorCommand}"
+                                                    ToolTip="进入一次性选点模式，再点击桌面落点" />
                                             <Button Content="停止" Command="{Binding StopCurrentActionCommand}" />
                                             <Button Content="关起来" Command="{Binding CageCommand}" />
                                             <Button Content="放出来" Command="{Binding ReleaseCageCommand}" />
@@ -460,7 +464,8 @@
                 <TabControl Margin="8">
                     <TabItem Header="动作预览">
                         <TabControl Margin="6">
-                            <TabItem Header="普通动作"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding RegularActionGalleryGroups, Mode=OneWay}"><ItemsControl.ItemTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding Name, Mode=OneWay}" Style="{StaticResource SectionTitle}" Margin="8,12,8,4"/><ItemsControl ItemsSource="{Binding Items, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer></TabItem>
+                            <TabItem Header="自发行为"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding AutonomousActionGallery, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></ScrollViewer></TabItem>
+                            <TabItem Header="互动行为"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding InteractiveActionGallery, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></ScrollViewer></TabItem>
                             <TabItem Header="魔法特辑"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding MagicActionGallery, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></ScrollViewer></TabItem>
                             <TabItem Header="节日特辑"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding SeasonalActionGallery, Mode=OneWay}"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource Card}" Margin="5"><StackPanel><TextBlock Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" FontSize="15"/><TextBlock Text="{Binding Description, Mode=OneWay}" TextWrapping="Wrap" Margin="0,5,0,0"/><TextBlock Text="{Binding AvailabilityLabel, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,5,0,0"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer></TabItem>
                         </TabControl>
@@ -549,15 +554,22 @@
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="模块边界" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="性格设定：主人显式底色与大模型说话方式。长期记忆：相处事件、位置回忆、纠正和 -100～100 的习惯证据。动作规则：决定何时选动作，不存进记忆正文。三者在“功能设置”中相邻，但数据职责互不混写。"
+                                        <TextBlock Text="从输入到表现的完整链路" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="桌面输入／面板命令／定时器 → 结构化事件或行为提案 → BehaviorArbitrator 统一判断硬状态、优先级、保护期、可打断性与冷却 → Agent 内核输出表现意图 → WPF 表现适配器解析图集并同步窗口坐标 → 生命周期按 Started／Progressed／Completed／Interrupted／Failed 写入记忆。模型只增强对话文本，不能绕过仲裁器直接播放动作。"
                                                    TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="桌面与平台" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="缩放、鼠标注意力、锚点投放、窗口移动和笼中锁定属于桌面运行能力，已并入对应交互与动作说明，不再占一个独立栏目。Windows 使用 WPF 与系统窗口接口；跨平台能力必须经平台适配层实现，不能把 Windows API 标成 macOS 已兼容。"
+                                        <TextBlock Text="优先级与强制规则" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="主人明确发起魔法属于 OwnerForced，可中断普通待机、玩耍和散步；笼中、旅行中、石化等硬状态仍会阻止不兼容魔法。冻干和激光选点本身不占行为租约，只有落点后才提交一次 OwnerAnchor 提案。普通鼠标靠近始终是最低优先级注意力，不抢睡眠、如厕、进食、魔法或移动。"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="数据与平台边界" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="性格底色、运行状态、关系、具体行为偏好、长期记忆和动作规则分别存储；普通互动不会改写天生性格。Windows WPF 仅负责窗口、输入、渲染、文件选择和凭据；跨平台实现必须通过平台端口复用行为核心，不把 Windows API 伪装成 macOS 兼容。"
                                                    TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>

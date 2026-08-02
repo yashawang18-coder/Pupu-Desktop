@@ -126,8 +126,8 @@ public partial class MainWindow : Window
         _anchorPlacementWindow = new AnchorPlacementWindow(
             new Rect(work.Left, work.Top, work.Width, work.Height),
             _viewModel.MouseInteractionMode == MouseInteractionMode.FoodAnchor
-                ? "点击一个位置投放食物锚点"
-                : "点击一个位置投放玩具锚点");
+                ? "点击桌面位置投掷冻干"
+                : "点击桌面位置投放激光点");
         _anchorPlacementWindow.AnchorSelected += point =>
         {
             _anchorPlacementWindow = null;
