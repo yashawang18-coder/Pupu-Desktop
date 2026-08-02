@@ -3,9 +3,12 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Win32;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace Pupu.Installer;
 
