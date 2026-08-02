@@ -5,7 +5,7 @@ using Pupu.Desktop.Services;
 
 namespace Pupu.Desktop;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private bool _errorDialogShown;
 

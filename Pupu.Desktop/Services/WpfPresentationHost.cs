@@ -59,7 +59,7 @@ public sealed class WpfPresentationHost : IDesktopPresentationHost
             loop ? "独立循环预览；不会改变当前行为或冷却。" : "独立单次预览；不会改变当前行为或冷却。",
             imageFrames,
             frameDurations);
-        var control = Application.Current.Windows
+        var control = System.Windows.Application.Current.Windows
             .OfType<ControlWindow>()
             .FirstOrDefault(window => window.IsVisible);
         if (control is not null) _previewWindow.Owner = control;
@@ -71,7 +71,7 @@ public sealed class WpfPresentationHost : IDesktopPresentationHost
     public void ReportRecoverableException(Exception exception, string context) =>
         App.ReportRecoverableException(exception, context);
 
-    public void Shutdown() => Application.Current.Shutdown();
+    public void Shutdown() => System.Windows.Application.Current.Shutdown();
 
     private sealed class WpfUiTimer : IUiTimer
     {
