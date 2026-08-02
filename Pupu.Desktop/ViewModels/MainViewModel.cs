@@ -865,6 +865,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ObservableCollection<InformationCardItem> CodeImplementationCards { get; } = new();
     public ObservableCollection<AssetActionGroupViewItem> AssetActionGroups { get; } = new();
     public ObservableCollection<CoinStateViewItem> CoinUpdateStates { get; } = new();
+    public IReadOnlyList<ModelProvider> ModelProviderOptions { get; } =
+        Enum.GetValues<ModelProvider>();
+    public IReadOnlyList<ModelApiFormat> ModelApiFormatOptions { get; } =
+        Enum.GetValues<ModelApiFormat>();
     public AssetActionGroupViewItem? SelectedAssetActionGroup
     {
         get => _selectedAssetActionGroup;
@@ -4188,8 +4192,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 _memory.Personality,
                 _memory.Profile.SelfIdentity,
                 _lifetimeCancellation.Token);
+            _modelApiSettings.Enabled = true;
+            await _modelApi.SaveAsync(_modelApiSettings, null);
+            OnPropertyChanged(nameof(ModelApiEnabled));
             OnPropertyChanged(nameof(HasStoredModelApiKey));
-            ModelApiStatus = "连接测试成功。此测试只验证地址、模型、密钥与协议，不要求先启用模型对话。";
+            ModelApiStatus = "连接测试成功，已启用模型回复；现在可直接在桌面或主人页和朴朴说话。";
             _ = ShowBubbleAsync(null, 3600, PetSpeechIntent.Conversation);
         }
         catch (Exception ex)
@@ -4418,6 +4425,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private async Task SavePetProfileAsync()
     {
+        if (string.IsNullOrWhiteSpace(_editableProfile.SystemPrompt))
+        {
+            _editableProfile.SystemPrompt = PetProfile.DefaultSystemPrompt;
+            OnPropertyChanged(nameof(OwnerPersonalityPrompt));
+        }
         _editableProfile.Normalize();
         await _memory.SaveProfileAsync(_editableProfile);
         _editableProfile = _memory.Profile.Clone();
