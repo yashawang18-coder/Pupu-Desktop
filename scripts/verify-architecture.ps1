@@ -30,7 +30,7 @@ Assert-NoMatch $applicationFiles 'System\.Windows|Microsoft\.Win32|DllImport|Lib
 
 $viewModels = Get-ChildItem (Join-Path $root "Pupu.Desktop\ViewModels") -File -Filter "*.cs" |
     ForEach-Object FullName
-Assert-NoMatch $viewModels 'System\.Windows\.(?!Input)|ImageSource|BitmapSource|BitmapImage|CroppedBitmap|Int32Rect|DispatcherTimer|Application\.Current|global::Pupu\.Desktop\.App|\bApp\.|EnvironmentContextService|WindowsCredentialVault|new ModelApiService|new AssetPackService|new CodexIterationService' `
+Assert-NoMatch $viewModels 'System\.Windows\.(?!Input)|MessageBox|ImageSource|BitmapSource|BitmapImage|CroppedBitmap|Int32Rect|DispatcherTimer|Application\.Current|global::Pupu\.Desktop\.App|\bApp\.|EnvironmentContextService|WindowsCredentialVault|new ModelApiService|new AssetPackService|new CodexIterationService' `
     "MainViewModel bypasses a presentation or platform port."
 
 $testsProject = Get-Content (Join-Path $root "Pupu.Tests\Pupu.Tests.csproj") -Raw

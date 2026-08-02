@@ -4438,12 +4438,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private async Task ResetLearningAsync()
     {
-        var result = MessageBox.Show(
-            "这会清除跨天形成的习惯与互动证据，并重新应用仍有效的主人纠正；天生性格不会改变。继续吗？",
+        var confirmed = _presentationHost.Confirm(
             "重置习惯与偏好",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-        if (result != MessageBoxResult.Yes) return;
+            "这会清除跨天形成的习惯与互动证据，并重新应用仍有效的主人纠正；天生性格不会改变。继续吗？");
+        if (!confirmed) return;
         await _memory.ResetLearningAsync();
         _ = ShowBubbleAsync("好，过去学来的小习惯先忘掉。朴朴还是朴朴。", 4100);
         RefreshAll();

@@ -757,12 +757,10 @@ public sealed partial class MainViewModel
             AlbumStatus = "这是从真实子目录自动发现的卡片；不会从面板删除或改动本地文件夹。";
             return;
         }
-        var answer = MessageBox.Show(
-            $"只删除子相册“{SelectedAlbumCard.Name}”的索引吗？本地文件夹和照片不会被删除。",
+        var confirmed = _presentationHost.Confirm(
             "删除子相册索引",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-        if (answer != MessageBoxResult.Yes) return;
+            $"只删除子相册“{SelectedAlbumCard.Name}”的索引吗？本地文件夹和照片不会被删除。");
+        if (!confirmed) return;
         try
         {
             await _photoAlbums.DeleteSubAlbumAsync(SelectedAlbumCard.AlbumId);

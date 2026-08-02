@@ -68,6 +68,13 @@ public sealed class WpfPresentationHost : IDesktopPresentationHost
         _previewWindow.Activate();
     }
 
+    public bool Confirm(string title, string message) =>
+        MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question) == MessageBoxResult.Yes;
+
     public void ReportRecoverableException(Exception exception, string context) =>
         App.ReportRecoverableException(exception, context);
 
