@@ -166,6 +166,13 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ChatBlankArea_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is MainViewModel viewModel && viewModel.ToggleChatComposerCommand.CanExecute(null))
+            viewModel.ToggleChatComposerCommand.Execute(null);
+        e.Handled = true;
+    }
+
     private void PetImage_MouseMove(object sender, MouseEventArgs e)
     {
         var local = e.GetPosition(sender as IInputElement);
