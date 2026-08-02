@@ -29,7 +29,6 @@ $readOnlyBindings = @(
     "NaturalRules",
     "HiddenActionRules",
     "ModelApiStatus",
-    "ActionGallery",
     "AssetPackStatus",
     "AssetCompatibilityStatus",
     "AssetActionGroups",
@@ -71,9 +70,19 @@ if ($controlXaml -match "<TabItem\s+Header=`"(桌面设置|素材包|性格|记�
 if ($controlXaml -notmatch "\{Binding\s+OwnerPersonalityPrompt,\s+Mode=TwoWay") {
     throw "主人自定义宠物性格提示词没有可编辑绑定。"
 }
-if ($controlXaml -notmatch "\{Binding\s+ActionGallery,\s+Mode=OneWay" -or
-    $controlXaml -notmatch "\{Binding\s+AssetActionGroups,\s+Mode=OneWay") {
-    throw "素材库没有同时提供用户动作预览与技术映射。"
+$requiredGalleries = @(
+    "AutonomousActionGallery",
+    "InteractiveActionGallery",
+    "MagicActionGallery",
+    "SeasonalActionGallery"
+)
+foreach ($gallery in $requiredGalleries) {
+    if ($controlXaml -notmatch "\{Binding\s+$gallery,\s+Mode=OneWay") {
+        throw "素材库缺少动作分类绑定：$gallery"
+    }
+}
+if ($controlXaml -notmatch "\{Binding\s+AssetActionGroups,\s+Mode=OneWay") {
+    throw "素材库缺少技术动作映射。"
 }
 
 Write-Host "绑定与面板信息架构检查通过。" -ForegroundColor Green
