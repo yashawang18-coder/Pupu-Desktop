@@ -1,0 +1,10 @@
+bin/
+obj/
+dist/
+.asset-work/
+.vs/
+*.user
+*.suo
+*.pfx
+*.snk
+appsettings.*.json
