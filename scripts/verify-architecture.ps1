@@ -17,6 +17,7 @@ Assert-NoMatch $behaviorFiles 'System\.Windows|Microsoft\.Win32|DllImport|Librar
 
 $applicationFiles = @()
 $applicationFiles += Get-ChildItem (Join-Path $root "Pupu.Application") -Recurse -File |
+    Where-Object { $_.Extension -in ".cs", ".csproj" } |
     ForEach-Object FullName
 $applicationFiles += Get-ChildItem (Join-Path $root "Pupu.Desktop\Models") -File |
     ForEach-Object FullName
