@@ -133,23 +133,12 @@
         </Image>
         </Grid>
 
-        <Button Content="和朴朴说话"
-                Command="{Binding ToggleChatComposerCommand}"
-                HorizontalAlignment="Center"
-                Margin="0,2,0,0"
-                Padding="10,4"
-                ToolTip="按需唤起输入框；也可以在陪伴面板中聊天">
-            <Button.Style>
-                <Style TargetType="Button">
-                    <Setter Property="Visibility" Value="Visible" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsPetOnDesktop, Mode=OneWay}" Value="False">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Button.Style>
-        </Button>
+        <Border Height="16"
+                MinWidth="120"
+                Background="Transparent"
+                Cursor="IBeam"
+                ToolTip="点击朴朴下方的空白处开始说话"
+                MouseLeftButtonUp="ChatBlankArea_MouseLeftButtonUp" />
 
         <Grid Width="{Binding PetDisplaySize, Mode=OneWay}"
               MinWidth="180"
