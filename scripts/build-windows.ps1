@@ -21,18 +21,28 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     throw ".NET 8 SDK 未安装。请先访问 https://dotnet.microsoft.com/download/dotnet/8.0"
 }
 
+function Assert-NativeSuccess([string]$Step) {
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Step 失败，退出码：$LASTEXITCODE"
+    }
+}
+
 Remove-Item $output -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item $installerWork -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 New-Item -ItemType Directory -Force -Path $installerWork | Out-Null
 
 dotnet --info
+Assert-NativeSuccess "dotnet --info"
 dotnet restore (Join-Path $root "Pupu.sln") --runtime $Runtime
+Assert-NativeSuccess "dotnet restore"
 dotnet build (Join-Path $root "Pupu.sln") --configuration Release --no-restore
+Assert-NativeSuccess "dotnet build"
 & (Join-Path $PSScriptRoot "verify-architecture.ps1")
 & (Join-Path $PSScriptRoot "verify-bindings.ps1")
 & (Join-Path $PSScriptRoot "verify-assets.ps1")
 dotnet run --project (Join-Path $root "Pupu.Tests\Pupu.Tests.csproj") --configuration Release --no-build
+Assert-NativeSuccess "dotnet test runner"
 dotnet publish $project `
     --configuration Release `
     --runtime $Runtime `
@@ -43,6 +53,7 @@ dotnet publish $project `
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -p:DebugType=None `
     -p:DebugSymbols=false
+Assert-NativeSuccess "dotnet publish Pupu.Desktop"
 
 Copy-Item (Join-Path $root "README.md") $output -Force
 Copy-Item (Join-Path $root "CHANGELOG.md") $output -Force
@@ -108,6 +119,7 @@ dotnet publish $installerProject `
     -p:DebugType=None `
     -p:DebugSymbols=false `
     -p:PupuPayloadZip="$payloadZip"
+Assert-NativeSuccess "dotnet publish Pupu.Installer"
 
 $builtSetup = Join-Path $installerOutput "Pupu.Installer.exe"
 if (-not (Test-Path $builtSetup)) {

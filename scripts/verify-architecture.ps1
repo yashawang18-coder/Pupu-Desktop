@@ -25,14 +25,12 @@ $applicationFiles += @(
     "DesktopRoutePlanner.cs", "LocalPetStore.cs", "MemoryEngine.cs", "ModelProtocolAdapter.cs",
     "NaturalLanguageRuleService.cs", "PhotoAlbumService.cs", "StoragePaths.cs"
 ) | ForEach-Object { Join-Path $root "Pupu.Desktop\Services\$_" }
-Assert-NoMatch $applicationFiles 'System\.Windows|Microsoft\.Win32|DllImport|LibraryImport|OperatingSystem\.IsWindows' `
+Assert-NoMatch $applicationFiles 'System\.Windows|Microsoft\.Win32|DllImport|LibraryImport|OperatingSystem\.IsWindows|global::Pupu\.Desktop\.App|\bApp\.' `
     "Pupu.Application ownership set contains a UI or Windows dependency."
 
-$viewModels = @(
-    Join-Path $root "Pupu.Desktop\ViewModels\MainViewModel.cs"
-    Join-Path $root "Pupu.Desktop\ViewModels\MainViewModel.Albums.cs"
-)
-Assert-NoMatch $viewModels 'System\.Windows\.(?!Input)|ImageSource|BitmapSource|BitmapImage|CroppedBitmap|Int32Rect|DispatcherTimer|Application\.Current|EnvironmentContextService|WindowsCredentialVault|new ModelApiService|new AssetPackService|new CodexIterationService' `
+$viewModels = Get-ChildItem (Join-Path $root "Pupu.Desktop\ViewModels") -File -Filter "*.cs" |
+    ForEach-Object FullName
+Assert-NoMatch $viewModels 'System\.Windows\.(?!Input)|ImageSource|BitmapSource|BitmapImage|CroppedBitmap|Int32Rect|DispatcherTimer|Application\.Current|global::Pupu\.Desktop\.App|\bApp\.|EnvironmentContextService|WindowsCredentialVault|new ModelApiService|new AssetPackService|new CodexIterationService' `
     "MainViewModel bypasses a presentation or platform port."
 
 $testsProject = Get-Content (Join-Path $root "Pupu.Tests\Pupu.Tests.csproj") -Raw

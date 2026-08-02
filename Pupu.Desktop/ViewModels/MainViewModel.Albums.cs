@@ -552,27 +552,27 @@ public sealed partial class MainViewModel
     }
 
     public ICommand SelectAlbumRootCommand =>
-        _selectAlbumRootCommand ??= new AsyncRelayCommand(SelectAlbumRootAsync);
+        _selectAlbumRootCommand ??= AsyncCommand(SelectAlbumRootAsync);
     public ICommand AddSubAlbumCommand =>
-        _addSubAlbumCommand ??= new AsyncRelayCommand(AddSubAlbumAsync);
+        _addSubAlbumCommand ??= AsyncCommand(AddSubAlbumAsync);
     public ICommand DeleteSubAlbumCommand =>
-        _deleteSubAlbumCommand ??= new AsyncRelayCommand(DeleteSelectedSubAlbumAsync);
+        _deleteSubAlbumCommand ??= AsyncCommand(DeleteSelectedSubAlbumAsync);
     public ICommand RefreshAlbumsCommand =>
-        _refreshAlbumsCommand ??= new AsyncRelayCommand(RefreshAlbumsAsync);
+        _refreshAlbumsCommand ??= AsyncCommand(RefreshAlbumsAsync);
     public ICommand OpenAlbumDirectoryCommand =>
         _openAlbumDirectoryCommand ??= new RelayCommand(OpenSelectedAlbumDirectory);
     public ICommand SearchAlbumPhotosCommand =>
-        _searchAlbumPhotosCommand ??= new AsyncRelayCommand(SearchAlbumPhotosAsync);
+        _searchAlbumPhotosCommand ??= AsyncCommand(SearchAlbumPhotosAsync);
     public ICommand SavePhotoDescriptionCommand =>
-        _savePhotoDescriptionCommand ??= new AsyncRelayCommand(SaveSelectedPhotoDescriptionAsync);
+        _savePhotoDescriptionCommand ??= AsyncCommand(SaveSelectedPhotoDescriptionAsync);
     public ICommand SaveRelationshipStageCommand =>
-        _saveRelationshipStageCommand ??= new AsyncRelayCommand(SaveRelationshipStageAsync);
+        _saveRelationshipStageCommand ??= AsyncCommand(SaveRelationshipStageAsync);
     public ICommand SaveExperienceSettingsCommand =>
-        _saveExperienceSettingsCommand ??= new AsyncRelayCommand(SaveExperienceSettingsAsync);
+        _saveExperienceSettingsCommand ??= AsyncCommand(SaveExperienceSettingsAsync);
     public ICommand RebuildExperienceIndexCommand =>
-        _rebuildExperienceIndexCommand ??= new AsyncRelayCommand(RebuildExperienceIndexAsync);
+        _rebuildExperienceIndexCommand ??= AsyncCommand(RebuildExperienceIndexAsync);
     public ICommand SearchExperiencesCommand =>
-        _searchExperiencesCommand ??= new AsyncRelayCommand(SearchExperiencesFromPanelAsync);
+        _searchExperiencesCommand ??= AsyncCommand(SearchExperiencesFromPanelAsync);
 
     private void BeginAlbumLoad()
     {

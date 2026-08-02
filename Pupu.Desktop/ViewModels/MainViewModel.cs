@@ -586,7 +586,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly OwnerInteractionParticipationEvaluator _participationEvaluator = new();
     private readonly DailyToiletPlanner _dailyToiletPlanner = new();
     private readonly IRandomSource _dailyToiletRandom = new SystemRandomSource();
-    private readonly BehaviorDecisionLogger _decisionLogger = new();
+    private readonly BehaviorDecisionLogger _decisionLogger;
     private readonly PetBehaviorRuntime _behaviorRuntime;
     private BehaviorArbitrator _behaviorArbitrator => _behaviorRuntime.Arbitrator;
     private PetAgentKernel _agentKernel => _behaviorRuntime.Kernel;
@@ -690,6 +690,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         _modelApi = modelApi ?? throw new ArgumentNullException(nameof(modelApi));
         _codexIteration = codexIteration ?? throw new ArgumentNullException(nameof(codexIteration));
         _desktopEnvironmentProbe = desktopEnvironmentProbe ?? throw new ArgumentNullException(nameof(desktopEnvironmentProbe));
+        _decisionLogger = new BehaviorDecisionLogger(_presentationHost.ReportRecoverableException);
         _clock = clock ?? new SystemClock();
         var behaviorRandom = randomSource ?? new SystemRandomSource();
         _gestureInterpreter = new GestureInterpreter(_clock);
@@ -719,7 +720,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         // Retained as a disabled compatibility command for old bindings. Litter
         // use is autonomous from this release onward and never creates a care
         // debt for the owner.
-        CleanCommand = new AsyncRelayCommand(
+        CleanCommand = AsyncCommand(
             () => Task.CompletedTask,
             () => false);
         PetCommand = new RelayCommand(RegisterPetClick, () => IsReady && !_busyAction && !_isTouchEscaping);
@@ -733,7 +734,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         ApparateCommand = ActionCommand(() => ApparateAsync(false));
         PetrificusTotalusCommand = ActionCommand(() => PetrificusTotalusAsync(false));
         ScourgifyCommand = ActionCommand(() => ScourgifyAsync(false));
-        ReleasePetrificationCommand = new AsyncRelayCommand(
+        ReleasePetrificationCommand = AsyncCommand(
             ReleasePetrificationAsync,
             () => IsReady && IsPetrified);
         StartFoodAnchorCommand = new RelayCommand(
@@ -745,39 +746,39 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         CancelMouseModeCommand = new RelayCommand(
             CancelAnchorMode,
             () => MouseInteractionMode is not MouseInteractionMode.Attention);
-        CageCommand = new AsyncRelayCommand(
+        CageCommand = AsyncCommand(
             CageAsync,
             () => IsReady && !IsCaged && !IsTraveling);
-        ReleaseCageCommand = new AsyncRelayCommand(
+        ReleaseCageCommand = AsyncCommand(
             ReleaseCageAsync,
             () => IsReady && IsCaged);
-        StartTravelCommand = new AsyncRelayCommand(
+        StartTravelCommand = AsyncCommand(
             () => StartTravelAsync(TravelDestinationInput, TimeSpan.FromHours(TravelDurationHours)),
             () => IsReady && !IsTraveling && !IsCaged);
-        RecallTravelCommand = new AsyncRelayCommand(
+        RecallTravelCommand = AsyncCommand(
             () => ReturnFromTravelAsync(recalled: true),
             () => IsReady && IsTraveling);
         StopCurrentActionCommand = new RelayCommand(StopCurrentAction, () => IsReady);
         ToggleQuickActionsCommand = new RelayCommand(() => AreQuickActionsVisible = !AreQuickActionsVisible);
         ToggleChatComposerCommand = new RelayCommand(() => IsChatComposerVisible = !IsChatComposerVisible);
-        SendChatCommand = new AsyncRelayCommand(SendChatAsync, () => IsReady && !IsChatBusy && !string.IsNullOrWhiteSpace(ChatInput));
-        SaveModelApiCommand = new AsyncRelayCommand(SaveModelApiAsync, () => IsReady && !IsChatBusy);
-        TestModelApiCommand = new AsyncRelayCommand(TestModelApiAsync, () => IsReady && !IsChatBusy);
-        DeleteModelApiKeyCommand = new AsyncRelayCommand(DeleteModelApiKeyAsync, () => IsReady && !IsChatBusy && HasStoredModelApiKey);
-        ApplyNaturalRuleCommand = new AsyncRelayCommand(ApplyNaturalRuleAsync, () => IsReady && !string.IsNullOrWhiteSpace(NaturalRuleInput));
-        SaveEditableMemoryCommand = new AsyncRelayCommand(SaveEditableMemoryAsync, () => IsReady && !string.IsNullOrWhiteSpace(EditableMemoryText));
-        ReloadEditableMemoryCommand = new AsyncRelayCommand(ReloadEditableMemoryAsync, () => IsReady);
+        SendChatCommand = AsyncCommand(SendChatAsync, () => IsReady && !IsChatBusy && !string.IsNullOrWhiteSpace(ChatInput));
+        SaveModelApiCommand = AsyncCommand(SaveModelApiAsync, () => IsReady && !IsChatBusy);
+        TestModelApiCommand = AsyncCommand(TestModelApiAsync, () => IsReady && !IsChatBusy);
+        DeleteModelApiKeyCommand = AsyncCommand(DeleteModelApiKeyAsync, () => IsReady && !IsChatBusy && HasStoredModelApiKey);
+        ApplyNaturalRuleCommand = AsyncCommand(ApplyNaturalRuleAsync, () => IsReady && !string.IsNullOrWhiteSpace(NaturalRuleInput));
+        SaveEditableMemoryCommand = AsyncCommand(SaveEditableMemoryAsync, () => IsReady && !string.IsNullOrWhiteSpace(EditableMemoryText));
+        ReloadEditableMemoryCommand = AsyncCommand(ReloadEditableMemoryAsync, () => IsReady);
         OpenEditableMemoryCommand = new RelayCommand(OpenEditableMemoryFile, () => IsReady);
-        CreateCodexIterationCommand = new AsyncRelayCommand(CreateCodexIterationAsync, () => IsReady && !string.IsNullOrWhiteSpace(CodexIterationRequest));
-        LikeBehaviorCommand = new AsyncRelayCommand(() => CorrectBehaviorAsync(1), () => IsReady);
-        DislikeBehaviorCommand = new AsyncRelayCommand(() => CorrectBehaviorAsync(-1), () => IsReady);
-        UndoCorrectionCommand = new AsyncRelayCommand(UndoCorrectionAsync, () => IsReady);
-        SavePersonalityCommand = new AsyncRelayCommand(SavePersonalityAsync, () => IsReady);
-        SavePetProfileCommand = new AsyncRelayCommand(SavePetProfileAsync, () => IsReady);
-        ResetLearningCommand = new AsyncRelayCommand(ResetLearningAsync, () => IsReady);
-        ZoomInCommand = new AsyncRelayCommand(() => ChangeScaleAsync(0.1), () => IsReady);
-        ZoomOutCommand = new AsyncRelayCommand(() => ChangeScaleAsync(-0.1), () => IsReady);
-        ResetZoomCommand = new AsyncRelayCommand(ResetScaleAsync, () => IsReady);
+        CreateCodexIterationCommand = AsyncCommand(CreateCodexIterationAsync, () => IsReady && !string.IsNullOrWhiteSpace(CodexIterationRequest));
+        LikeBehaviorCommand = AsyncCommand(() => CorrectBehaviorAsync(1), () => IsReady);
+        DislikeBehaviorCommand = AsyncCommand(() => CorrectBehaviorAsync(-1), () => IsReady);
+        UndoCorrectionCommand = AsyncCommand(UndoCorrectionAsync, () => IsReady);
+        SavePersonalityCommand = AsyncCommand(SavePersonalityAsync, () => IsReady);
+        SavePetProfileCommand = AsyncCommand(SavePetProfileAsync, () => IsReady);
+        ResetLearningCommand = AsyncCommand(ResetLearningAsync, () => IsReady);
+        ZoomInCommand = AsyncCommand(() => ChangeScaleAsync(0.1), () => IsReady);
+        ZoomOutCommand = AsyncCommand(() => ChangeScaleAsync(-0.1), () => IsReady);
+        ResetZoomCommand = AsyncCommand(ResetScaleAsync, () => IsReady);
         OpenControlPanelCommand = new RelayCommand(() => ControlPanelRequested?.Invoke(this, EventArgs.Empty));
         OpenMemoryFolderCommand = new RelayCommand(OpenMemoryFolder);
         OpenAssetFolderCommand = new RelayCommand(OpenAssetFolder);
@@ -1499,10 +1500,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     }
 
     private AsyncRelayCommand ActionCommand(Func<Task> action) =>
-        new(action, () => IsReady && !_busyAction && !IsCaged && !IsTraveling);
+        AsyncCommand(action, () => IsReady && !_busyAction && !IsCaged && !IsTraveling);
 
     private AsyncRelayCommand WalkActionCommand(Func<Task> action) =>
-        new(action, () => IsReady && !_busyAction && !IsCaged && !IsTraveling);
+        AsyncCommand(action, () => IsReady && !_busyAction && !IsCaged && !IsTraveling);
+
+    private AsyncRelayCommand AsyncCommand(Func<Task> action, Func<bool>? canExecute = null) =>
+        new(action, canExecute, _presentationHost.ReportRecoverableException);
 
     private bool TryAcceptBehaviorRequest(
         string behaviorId,
@@ -5321,7 +5325,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         catch (Exception ex)
         {
-            App.ReportRecoverableException(ex, "behavior decision log");
+            _presentationHost.ReportRecoverableException(ex, "behavior decision log");
         }
     }
 

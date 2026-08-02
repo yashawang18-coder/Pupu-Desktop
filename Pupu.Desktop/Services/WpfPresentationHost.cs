@@ -68,6 +68,9 @@ public sealed class WpfPresentationHost : IDesktopPresentationHost
         _previewWindow.Activate();
     }
 
+    public void ReportRecoverableException(Exception exception, string context) =>
+        App.ReportRecoverableException(exception, context);
+
     public void Shutdown() => Application.Current.Shutdown();
 
     private sealed class WpfUiTimer : IUiTimer

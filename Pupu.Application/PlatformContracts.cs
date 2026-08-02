@@ -24,6 +24,7 @@ public interface IDesktopPresentationHost
         IReadOnlyList<object> frames,
         IReadOnlyList<int> frameDurations,
         bool loop);
+    void ReportRecoverableException(Exception exception, string context);
     void Shutdown();
 }
 

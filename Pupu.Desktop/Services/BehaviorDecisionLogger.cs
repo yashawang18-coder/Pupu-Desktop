@@ -9,6 +9,12 @@ public sealed class BehaviorDecisionLogger
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly JsonSerializerOptions _json = new(JsonSerializerDefaults.Web);
+    private readonly Action<Exception, string>? _reportRecoverableException;
+
+    public BehaviorDecisionLogger(Action<Exception, string>? reportRecoverableException = null)
+    {
+        _reportRecoverableException = reportRecoverableException;
+    }
 
     public async Task AppendAsync(BehaviorDecision decision)
     {
@@ -79,9 +85,7 @@ public sealed class BehaviorDecisionLogger
         }
         catch (Exception ex)
         {
-            global::Pupu.Desktop.App.ReportRecoverableException(
-                ex,
-                "behavior arbitration log");
+            _reportRecoverableException?.Invoke(ex, "behavior arbitration log");
         }
         finally
         {

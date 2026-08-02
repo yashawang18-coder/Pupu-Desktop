@@ -28,12 +28,17 @@ public sealed class AsyncRelayCommand : ICommand
 {
     private readonly Func<Task> _execute;
     private readonly Func<bool>? _canExecute;
+    private readonly Action<Exception, string>? _reportRecoverableException;
     private bool _running;
 
-    public AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null)
+    public AsyncRelayCommand(
+        Func<Task> execute,
+        Func<bool>? canExecute = null,
+        Action<Exception, string>? reportRecoverableException = null)
     {
         _execute = execute;
         _canExecute = canExecute;
+        _reportRecoverableException = reportRecoverableException;
     }
 
     public bool CanExecute(object? parameter) => !_running && (_canExecute?.Invoke() ?? true);
@@ -50,7 +55,7 @@ public sealed class AsyncRelayCommand : ICommand
         }
         catch (Exception ex)
         {
-            global::Pupu.Desktop.App.ReportRecoverableException(ex, "async command");
+            _reportRecoverableException?.Invoke(ex, "async command");
         }
         finally
         {
