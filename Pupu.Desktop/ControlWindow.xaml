@@ -164,6 +164,8 @@
                                         <TextBlock Text="今天的朴朴" Style="{StaticResource SectionTitle}" />
                                         <TextBlock Text="{Binding PetProfileTitle, Mode=OneWay}" FontSize="19" FontWeight="SemiBold" />
                                         <TextBlock Text="一只有自己节奏、也会悄悄在意主人的小猫。" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="{Binding EffectivePersonality, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,4,0,0" />
                                         <TextBlock Text="{Binding RuntimeStateSummary, Mode=OneWay}"
                                                    Style="{StaticResource Hint}" Margin="0,5,0,0" />
                                         <TextBlock Text="{Binding RelationshipStateSummary, Mode=OneWay}"
