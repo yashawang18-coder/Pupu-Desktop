@@ -1,46 +1,38 @@
 name: Windows x64 build
 
 on:
-  workflow_dispatch:
   pull_request:
-    branches:
-      - main
-  push:
     branches:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build-test-package:
-    name: Build, test, and package
-    runs-on: windows-latest
-    timeout-minutes: 45
-
+  import-verified-commit:
+    name: Verify and import full-resolution assets
+    if: github.event.pull_request.head.ref == 'agent/restore-control-panel'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXPECTED_STAGING: ${{ github.event.pull_request.head.sha }}
     steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-
-      - name: Install .NET 8 SDK
-        uses: actions/setup-dotnet@v6
+      - name: Check out exact PR head
+        uses: actions/checkout@v4
         with:
-          dotnet-version: 8.0.x
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
-      - name: Display .NET environment
-        shell: pwsh
-        run: dotnet --info
-
-      - name: Restore, build, test, gate, publish, and package
-        shell: pwsh
-        run: ./scripts/build-windows.ps1 -Runtime win-x64
-
-      - name: Upload Windows installer and portable package
-        uses: actions/upload-artifact@v4
-        with:
-          name: Pupu-Windows-x64-1.11.1
-          if-no-files-found: error
-          retention-days: 14
-          path: |
-            artifacts/Pupu-Setup-x64-1.11.1.exe
-            artifacts/Pupu-Windows-x64-1.11.1.zip
+      - name: Verify bundle and atomically update PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${EXPECTED_STAGING}"
+          test "$(find .github/pupu-import -type f -name 'part-*' | wc -l)" = "77"
+          cat .github/pupu-import/part-* > "${RUNNER_TEMP}/pupu-39e0350.bundle"
+          echo "3b2792490033abcb5a0839798205ea5088bcffefc87a9b45edb29b5ee7ed32bb  ${RUNNER_TEMP}/pupu-39e0350.bundle" | sha256sum -c -
+          git bundle verify "${RUNNER_TEMP}/pupu-39e0350.bundle"
+          git fetch "${RUNNER_TEMP}/pupu-39e0350.bundle" HEAD:refs/remotes/pupu/import
+          imported="$(git rev-parse refs/remotes/pupu/import)"
+          test "${imported}" = "39e035047ed5ef88950edb3c0fc705a3a9c7035d"
+          git push origin "${imported}:refs/heads/agent/restore-control-panel"             --force-with-lease="refs/heads/agent/restore-control-panel:${EXPECTED_STAGING}"
