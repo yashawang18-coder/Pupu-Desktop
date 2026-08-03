@@ -17,6 +17,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+from repair_runtime_assets import repair_runtime_assets
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "Pupu.Desktop" / "Assets"
@@ -265,12 +267,49 @@ def main() -> None:
         group["frames"] = list(range(32))
         group["loopMode"] = "loop"
         group["directions"] = {
-            name: {"frames": list(range(index * 4, index * 4 + 4))}
+            name: {
+                "frames": [
+                    index * 4,
+                    index * 4 + 1,
+                    index * 4 + 2,
+                    index * 4 + 3,
+                    index * 4 + 2,
+                    index * 4 + 1,
+                ]
+            }
             for index, name in enumerate(direction_names)
         }
-        condition = "每个方向包含四个独立脚步相位；窗口位移严格随换帧推进"
-        if condition not in group["triggerConditions"]:
-            group["triggerConditions"].append(condition)
+        group["triggerConditions"] = [
+            condition
+            for condition in group["triggerConditions"]
+            if not condition.startswith("每个方向包含四个")
+            and not condition.startswith("每方向四个独立源相位")
+        ]
+        group["triggerConditions"].append(
+            "每方向四个独立源相位按 0-1-2-3-2-1 往返播放；窗口位移严格随换帧推进"
+        )
+
+    manifest["actionGroups"]["fur-groom-daily"] = {
+        "groupId": "fur-groom-daily",
+        "behaviorId": "self.groom",
+        "source": {
+            "type": "atlasRow",
+            "atlas": "lifeEquipment",
+            "row": 0,
+        },
+        "frameCount": 8,
+        "frameDurationMs": 860,
+        "frameDurationsMs": [980, 760, 820, 720, 900, 760, 860, 1120],
+        "frames": list(range(8)),
+        "loopMode": "pingPong",
+        "fallback": "prone-idle",
+        "behaviorTags": ["self_care", "groom", "quiet"],
+        "triggerConditions": [
+            "自主舔毛经 BehaviorArbitrator 选中",
+            "往返播放避免末帧直接跳回首帧",
+            "原地动作不移动窗口",
+        ],
+    }
 
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
@@ -290,9 +329,15 @@ def main() -> None:
             continue
         path.unlink()
 
+    repaired_files, repaired_pixels = repair_runtime_assets()
+
     print("V18 assets rebuilt")
     print(f"Runtime manifest references {len(referenced)} image files")
     print(f"Laser and snack pursuit use separate sources: {laser_file} / {snack_file}")
+    print(
+        f"Runtime despill repaired {repaired_files} files / "
+        f"{repaired_pixels} boundary pixels"
+    )
 
 
 if __name__ == "__main__":

@@ -5635,7 +5635,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             });
             return;
         }
-        sequence = ResolveAnimationSequence(sequence);
+        sequence = GalleryPreviewSequence(sequence);
         var sheet = sequence.ExternalSheet ?? SheetFor(sequence.Atlas);
         var x = sequence.VerticalStrip ? 0 : sequence.Frames[0] * sequence.FrameWidth;
         var y = sequence.ExternalSheet is null || sequence.AtlasRowSource
@@ -5682,6 +5682,24 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             RegularActionGalleryGroups.Add(group);
         }
         group.Items.Add(item);
+    }
+
+    private static AnimationSequence GalleryPreviewSequence(AnimationSequence sequence)
+    {
+        if (sequence.ExternalSheet is null ||
+            (!string.Equals(sequence.Name, "laser-chase-8", StringComparison.Ordinal) &&
+             !string.Equals(sequence.Name, "snack-chase-8", StringComparison.Ordinal)))
+            return sequence;
+
+        // A direction-major strip is eight separate gait loops, not one
+        // continuous 32-frame movie.  The gallery previews one right-facing
+        // gait and closes it as A-B-C-D-C-B to avoid a pose snap.
+        return sequence with
+        {
+            Frames = new[] { 16, 17, 18, 19, 18, 17 },
+            FrameDurations = Enumerable.Repeat(165, 6).ToArray(),
+            Loop = true
+        };
     }
 
     private static bool IsInteractiveGalleryCategory(string category) => category is
@@ -5850,8 +5868,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             _ => 4
         };
         var isFourPhaseAnchor = mode == DesktopMoveMode.AnchorApproach;
+        var firstDirectionFrame = direction8 * 4;
         var frames = isFourPhaseAnchor
-            ? Enumerable.Range(direction8 * 4, 4).ToArray()
+            ? new[]
+            {
+                firstDirectionFrame,
+                firstDirectionFrame + 1,
+                firstDirectionFrame + 2,
+                firstDirectionFrame + 3,
+                firstDirectionFrame + 2,
+                firstDirectionFrame + 1
+            }
             : new[] { direction16 };
         var sequence = new AnimationSequence(
             $"{groupId}-{(isFourPhaseAnchor ? direction8 : direction16):00}",

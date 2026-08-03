@@ -16,16 +16,20 @@ public sealed class ActionPreviewWindow : Window
     private readonly Image _image;
     private readonly TextBlock _frameLabel;
     private readonly DispatcherTimer _timer;
+    private readonly Button _replay;
+    private readonly bool _loop;
     private int _position;
 
     public ActionPreviewWindow(
         string title,
         string description,
         IReadOnlyList<ImageSource> frames,
-        IReadOnlyList<int> durations)
+        IReadOnlyList<int> durations,
+        bool loop)
     {
         _frames = frames;
         _durations = durations;
+        _loop = loop;
         Title = $"素材预览 · {title}";
         Width = 430;
         Height = 500;
@@ -59,6 +63,14 @@ public sealed class ActionPreviewWindow : Window
             Margin = new Thickness(0, 12, 0, 0)
         };
         close.Click += (_, _) => Close();
+        _replay = new Button
+        {
+            Content = "重新播放",
+            Padding = new Thickness(14, 6, 14, 6),
+            Margin = new Thickness(0, 12, 8, 0),
+            Visibility = _loop ? Visibility.Collapsed : Visibility.Visible
+        };
+        _replay.Click += (_, _) => Restart();
 
         Content = new Border
         {
@@ -91,7 +103,12 @@ public sealed class ActionPreviewWindow : Window
                     },
                     _image,
                     _frameLabel,
-                    close
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Children = { _replay, close }
+                    }
                 }
             }
         };
@@ -109,10 +126,26 @@ public sealed class ActionPreviewWindow : Window
     private void Advance()
     {
         if (_frames.Count == 0) return;
+        if (!_loop && _position == _frames.Count - 1)
+        {
+            _timer.Stop();
+            _frameLabel.Text = $"帧 {_position + 1} / {_frames.Count} · 播放完成";
+            return;
+        }
         _position = (_position + 1) % _frames.Count;
         _image.Source = _frames[_position];
         _frameLabel.Text = FrameText();
         SetInterval();
+    }
+
+    private void Restart()
+    {
+        if (_frames.Count == 0) return;
+        _position = 0;
+        _image.Source = _frames[0];
+        _frameLabel.Text = FrameText();
+        SetInterval();
+        if (_frames.Count > 1) _timer.Start();
     }
 
     private void SetInterval()

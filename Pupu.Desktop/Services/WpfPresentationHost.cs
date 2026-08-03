@@ -58,7 +58,8 @@ public sealed class WpfPresentationHost : IDesktopPresentationHost
             title,
             loop ? "独立循环预览；不会改变当前行为或冷却。" : "独立单次预览；不会改变当前行为或冷却。",
             imageFrames,
-            frameDurations);
+            frameDurations,
+            loop);
         var control = System.Windows.Application.Current.Windows
             .OfType<ControlWindow>()
             .FirstOrDefault(window => window.IsVisible);

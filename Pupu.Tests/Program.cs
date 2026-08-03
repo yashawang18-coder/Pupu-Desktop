@@ -430,6 +430,30 @@ static Task TestAssetActionGroupCompatibility()
            !strip.IsLooping &&
            strip.TriggerConditions.SequenceEqual(new[] { "owner anchor accepted" }),
         "independent action file source did not normalize");
+
+    var pingPong = new AssetActionGroupDefinition
+    {
+        GroupId = "closed-gait",
+        BehaviorId = "anchor.closed_gait",
+        Source = new AssetActionSourceDefinition
+        {
+            Type = AssetActionSourceKinds.SpriteStrip,
+            File = "gait.png",
+            FrameWidth = 256,
+            FrameHeight = 256,
+            Columns = 4
+        },
+        FrameCount = 4,
+        Frames = new List<int> { 0, 1, 2, 3 },
+        FrameDurationMs = 165,
+        LoopMode = AssetLoopModes.PingPong
+    };
+    pingPong.Normalize(pingPong.GroupId, 256, sourceFrameCapacity: 4);
+    Assert(
+        pingPong.Frames.SequenceEqual(new[] { 0, 1, 2, 3, 2, 1 }) &&
+        pingPong.FrameDurationsMs.Count == 6 &&
+        pingPong.IsLooping,
+        "ping-pong gait did not close without a last-to-first pose snap");
     return Task.CompletedTask;
 }
 
