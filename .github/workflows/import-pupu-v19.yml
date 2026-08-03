@@ -37,7 +37,7 @@ jobs:
           cat .github/pupu-import/part-* > "${bundle}"
           echo "049680d0c07b7aa5fc5ea1bbaea288a9cec68a57ce3d44f1d16feb18f5501a41  ${bundle}" | sha256sum -c -
           git bundle verify "${bundle}"
-          git fetch "${bundle}" HEAD:refs/remotes/pupu/import
+          git fetch "${bundle}" refs/heads/agent/restore-control-panel:refs/remotes/pupu/import
           imported="$(git rev-parse refs/remotes/pupu/import)"
           test "${imported}" = "a8b08b4b473bce413d544092740c0fd1a76f9acf"
 
