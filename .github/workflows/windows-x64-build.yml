@@ -51,9 +51,9 @@ jobs:
       - name: Upload Windows installer and portable package
         uses: actions/upload-artifact@v4
         with:
-          name: Pupu-Windows-x64-1.11.2
+          name: Pupu-Windows-x64-1.11.3
           if-no-files-found: error
           retention-days: 14
           path: |
-            artifacts/Pupu-Setup-x64-1.11.2.exe
-            artifacts/Pupu-Windows-x64-1.11.2.zip
+            artifacts/Pupu-Setup-x64-1.11.3.exe
+            artifacts/Pupu-Windows-x64-1.11.3.zip

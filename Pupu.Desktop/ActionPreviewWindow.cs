@@ -32,9 +32,9 @@ public sealed class ActionPreviewWindow : Window
         _loop = loop;
         Title = $"素材预览 · {title}";
         Width = 430;
-        Height = 500;
+        Height = 650;
         MinWidth = 360;
-        MinHeight = 430;
+        MinHeight = 580;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
         Topmost = false;

@@ -63,7 +63,15 @@ foreach ($id in $requiredRows.Keys) {
     }
 }
 
-$requiredCoinStates = @("normalColor", "normalFaded", "unhappyColor", "unhappyFaded", "back")
+$requiredCoinStates = @(
+    "normalColor",
+    "normalFaded",
+    "unhappyColor",
+    "unhappyFaded",
+    "back",
+    "normalEdge",
+    "backEdge"
+)
 if ($null -ne $manifest.coinStates) {
     foreach ($state in $requiredCoinStates) {
         $definition = $manifest.coinStates.$state

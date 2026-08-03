@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private bool _walking;
     private bool _petPointerArmed;
     private bool _petPointerDragged;
+    private bool _coinDoubleClickHandled;
     private Point _petPointerDown;
     private DateTimeOffset _petPointerDownAt;
     private readonly DispatcherTimer _environmentTimer;
@@ -160,7 +161,7 @@ public partial class MainWindow : Window
         _anchorPlacementWindow.Focus();
     }
 
-    private void PetImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private async void PetImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.LeftButton == MouseButtonState.Pressed && !_walking)
         {
@@ -173,11 +174,17 @@ public partial class MainWindow : Window
                 _viewModel.RegisterPointerDown(local.X, local.Y);
             if (sender is UIElement element) element.CaptureMouse();
             e.Handled = true;
+            if (_viewModel.IsPetrified && e.ClickCount >= 2)
+            {
+                _coinDoubleClickHandled = true;
+                await _viewModel.FlipPetrifiedCoinAsync();
+            }
         }
     }
 
-    private void ChatBlankArea_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void ChatBlankArea_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (e.ClickCount < 2) return;
         if (DataContext is MainViewModel viewModel && viewModel.ToggleChatComposerCommand.CanExecute(null))
             viewModel.ToggleChatComposerCommand.Execute(null);
         e.Handled = true;
@@ -217,6 +224,12 @@ public partial class MainWindow : Window
         var local = e.GetPosition(sender as IInputElement);
         if (_viewModel.IsPetrified)
         {
+            if (_coinDoubleClickHandled)
+            {
+                _coinDoubleClickHandled = false;
+                e.Handled = true;
+                return;
+            }
             switch (CoinPointerGestureClassifier.Classify(
                         _petPointerDragged,
                         e.ClickCount))
@@ -390,8 +403,9 @@ public partial class MainWindow : Window
                     out var segment))
                 return false;
 
-            _viewModel.SetMovementDirection(
-                ToPetDirection(segment.Direction),
+            _viewModel.SetMovementHeading(
+                segment.End.X - segment.Start.X,
+                segment.End.Y - segment.Start.Y,
                 DesktopMoveMode.BroomFlight);
             await AnimateRouteSegmentAsync(
                 segment,

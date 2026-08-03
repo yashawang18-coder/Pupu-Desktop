@@ -505,6 +505,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         new[] { 620, 520, 520, 560, 620, 720 },
         0, 1, 2, 3, 4, 5));
 
+    private static readonly AnimationSequence PetrifyStoneHoldSequence = Sequence(
+        "magic-petrificus-stone-hold", SpriteAtlas.Specials, 3,
+        new[] { 720, 820, 720, 820 },
+        6, 7, 6, 7);
+
     private static readonly AnimationSequence SilverCoinSequence = Sequence(
         "magic-petrificus-coin-front", SpriteAtlas.GazeCoin, 2,
         new[] { 920, 1180 },
@@ -514,6 +519,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         "magic-petrificus-coin-back", SpriteAtlas.GazeCoin, 2,
         new[] { 980, 1220 },
         4, 5);
+
+    private static readonly AnimationSequence SilverCoinFrontEdgeSequence = Sequence(
+        "magic-petrificus-coin-front-edge", SpriteAtlas.GazeCoin, 2,
+        new[] { 90 },
+        5);
+
+    private static readonly AnimationSequence SilverCoinBackEdgeSequence = Sequence(
+        "magic-petrificus-coin-back-edge", SpriteAtlas.GazeCoin, 2,
+        new[] { 90 },
+        6);
 
     private static readonly AnimationSequence PetrificationReleaseStretchSequence = OneShot(Sequence(
         "magic-petrificus-release-stretch", SpriteAtlas.Core, 5,
@@ -766,6 +781,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         ReleaseCageCommand = AsyncCommand(
             ReleaseCageAsync,
             () => IsReady && IsCaged);
+        ToggleCageCommand = AsyncCommand(
+            ToggleCageAsync,
+            () => IsReady && !IsTraveling);
         StartTravelCommand = AsyncCommand(
             () => StartTravelAsync(TravelDestinationInput, TimeSpan.FromHours(TravelDurationHours)),
             () => IsReady && !IsTraveling && !IsCaged);
@@ -836,6 +854,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand CancelMouseModeCommand { get; }
     public ICommand CageCommand { get; }
     public ICommand ReleaseCageCommand { get; }
+    public ICommand ToggleCageCommand { get; }
     public ICommand StartTravelCommand { get; }
     public ICommand RecallTravelCommand { get; }
     public ICommand StopCurrentActionCommand { get; }
@@ -926,6 +945,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public bool IsTraveling => IsReady && _memory.State.Travel.IsTraveling;
     public bool IsPetOnDesktop => !IsTraveling;
     public bool IsMovementLocked => IsCaged || IsTraveling;
+    public string CageToggleLabel => IsCaged ? "笼子 · 放出来" : "笼子 · 关起来";
     public string ConfinementStatus => IsCaged
         ? "关笼子／锁定中：不会移动或切换普通大姿态，需主人释放。"
         : "未关笼子";
@@ -2661,7 +2681,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             "关笼子／原地锁定，等待主人释放",
             "owner_forced",
             "desktop",
-            "Actions:pupu-cage-rest-youthful-v14.png");
+            "Actions:pupu-cage-rest-youthful-v19.png");
         PlaySequence(CageRestSequence);
         await _memory.SaveStateAsync();
         await _memory.RecordAsync(
@@ -2677,6 +2697,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         RaiseRestrictedStateProperties();
         _ = ShowBubbleAsync("我先待在这里。记得等会儿放我出来。", 5200);
     }
+
+    private Task ToggleCageAsync() => IsCaged ? ReleaseCageAsync() : CageAsync();
 
     private async Task ReleaseCageAsync()
     {
@@ -2854,6 +2876,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private void RaiseRestrictedStateProperties()
     {
         OnPropertyChanged(nameof(IsCaged));
+        OnPropertyChanged(nameof(CageToggleLabel));
         OnPropertyChanged(nameof(IsTraveling));
         OnPropertyChanged(nameof(IsPetOnDesktop));
         OnPropertyChanged(nameof(IsMovementLocked));
@@ -3564,6 +3587,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             _ = ShowBubbleAsync("Accio Broom！扫帚，过来。", 4200, PetSpeechIntent.Play);
             if (!await WaitPhaseAsync(TimeSpan.FromSeconds(3.2), token)) return;
+            InteractionScale = 1.14;
             PlaySequence(BroomFlightSequence);
             var move = new DesktopMoveRequestEventArgs(
                 DesktopMoveMode.BroomFlight,
@@ -3593,6 +3617,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         finally
         {
+            InteractionScale = 1;
             if (!session.IsTerminal)
                 await _interactionLifecycle.InterruptAsync(session, StopReasonFor(token));
             if (ReferenceEquals(_activeInteraction, session)) _activeInteraction = null;
@@ -3718,7 +3743,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "Petrificus Totalus！等我变成银币以后，要记得解除。",
                 4600,
                 PetSpeechIntent.Play);
-            if (!await WaitPhaseAsync(TimeSpan.FromSeconds(4.1), token))
+            if (!await WaitPhaseAsync(TimeSpan.FromSeconds(3.45), token))
+            {
+                await _interactionLifecycle.InterruptAsync(session, StopReasonFor(token));
+                _petrificationSession = null;
+                if (ReferenceEquals(_activeInteraction, session)) _activeInteraction = null;
+                return;
+            }
+            PlaySequence(PetrifyStoneHoldSequence);
+            if (!await WaitPhaseAsync(TimeSpan.FromSeconds(1.85), token))
             {
                 await _interactionLifecycle.InterruptAsync(session, StopReasonFor(token));
                 _petrificationSession = null;
@@ -3768,18 +3801,25 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             for (var index = 1; index <= halfSteps; index++)
             {
                 if (!_isPetrified) return;
-                CoinFlipScaleX = 1 - 0.84 * (index / (double)halfSteps);
-                await Task.Delay(45, _lifetimeCancellation.Token);
+                CoinFlipScaleX = 1 - 0.66 * (index / (double)halfSteps);
+                await Task.Delay(38, _lifetimeCancellation.Token);
             }
+            PlaySequence(
+                _isCoinBackVisible
+                    ? ResolveCoinSequence("backEdge", SilverCoinBackEdgeSequence)
+                    : ResolveCoinSequence("normalEdge", SilverCoinFrontEdgeSequence));
+            CoinFlipScaleX = 1;
+            await Task.Delay(105, _lifetimeCancellation.Token);
             PlaySequence(
                 turnToBack
                     ? ResolveCoinSequence("back", SilverCoinBackSequence)
                     : ResolveCurrentCoinFrontSequence());
+            CoinFlipScaleX = 0.34;
             for (var index = 1; index <= halfSteps; index++)
             {
                 if (!_isPetrified) return;
-                CoinFlipScaleX = 0.16 + 0.84 * (index / (double)halfSteps);
-                await Task.Delay(45, _lifetimeCancellation.Token);
+                CoinFlipScaleX = 0.34 + 0.66 * (index / (double)halfSteps);
+                await Task.Delay(38, _lifetimeCancellation.Token);
             }
             _isCoinBackVisible = turnToBack;
             PlaySequence(
@@ -4192,7 +4232,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             await _modelApi.SaveAsync(_modelApiSettings, null);
             OnPropertyChanged(nameof(ModelApiEnabled));
             OnPropertyChanged(nameof(HasStoredModelApiKey));
-            ModelApiStatus = "连接测试成功，已启用模型回复；现在可直接在桌面对话条、主人页或大模型联调栏和朴朴说话。";
+            ModelApiStatus = "连接测试成功，已启用模型回复；现在可在桌宠下方空白处双击展开对话，或在主人页／大模型联调栏直接发送。";
             _ = ShowBubbleAsync(null, 3600, PetSpeechIntent.Conversation);
         }
         catch (Exception ex)
@@ -4240,118 +4280,124 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 reply = localCommandReply;
                 ModelApiStatus = "本次口令由本地规则识别并经行为仲裁执行；未让模型控制状态。";
             }
-            else if (!TryAcceptBehaviorRequest(
-                         "conversation",
-                         BehaviorArbitrationSource.DialogueCommand,
-                         BehaviorPriority.ExplicitCommand,
-                         TimeSpan.FromSeconds(3),
-                         TimeSpan.FromMilliseconds(800),
-                         interruptible: true,
-                         BehaviorStateBlockers.Caged |
-                         BehaviorStateBlockers.Traveling |
-                         BehaviorStateBlockers.Toilet |
-                         BehaviorStateBlockers.Magic |
-                         BehaviorStateBlockers.Movement |
-                         BehaviorStateBlockers.TouchReaction |
-                         BehaviorStateBlockers.Feeding |
-                         BehaviorStateBlockers.Playing |
-                         BehaviorStateBlockers.Petrified,
-                         cooldownKey: "conversation"))
-            {
-                reply = "我听见了，不过现在正忙着把这个动作做完整。等一下再认真回答你。";
-                ModelApiStatus = "本次对话行为被统一仲裁拒绝；未调用模型。";
-            }
-            else if (_modelApiSettings.Enabled)
-            {
-                SetBehavior("conversation", "听主人说话并按照当前性格回应", "conversation");
-                PlaySequence(ExpressionSequence);
-                var memoryContext = await _memory.BuildChatContextAsync();
-                memoryContext =
-                    $"{_persona.PromptSummary()}{Environment.NewLine}{memoryContext.TrimStart()}";
-                var albumMemory = await BuildAlbumConversationMemoryAsync(
-                    input,
-                    includeLlmPayload: true,
-                    cancellationToken: _lifetimeCancellation.Token);
-                if (!string.IsNullOrWhiteSpace(albumMemory.Context))
-                    memoryContext = $"{memoryContext.TrimEnd()}{Environment.NewLine}{albumMemory.Context}";
-                var history = await _conversationSession.LoadAsync(
-                    _modelApiSettings.ConversationTurns,
-                    _lifetimeCancellation.Token);
-                reply = await _modelApi.SendAsync(
-                    _modelApiSettings,
-                    _memory.Personality,
-                    _memory.Profile.SelfIdentity,
-                    memoryContext,
-                    input,
-                    history,
-                    albumMemory.Images,
-                    _lifetimeCancellation.Token);
-                LastExperienceRuleUsed = false;
-                OnPropertyChanged(nameof(ExperienceDebugStatus));
-                ModelApiStatus = albumMemory.Images.Count > 0
-                    ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条经历摘要，并读取了 {albumMemory.Images.Count} 张主人授权的相册图片。"
-                    : albumMemory.InjectedExperienceCount > 0
-                        ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条主人授权的经历摘要。"
-                        : "最近一次模型回复已通过角色边界检查。";
-            }
             else
             {
-                SetBehavior("conversation", "听主人说话并按照当前性格回应", "conversation");
-                PlaySequence(ExpressionSequence);
-                var localAgent = _agentKernel.Handle(
-                    new PetAgentEvent
-                    {
-                        Kind = PetAgentEventKind.UserChat,
-                        At = _clock.Now,
-                        Text = input
-                    },
-                    new PetAgentContext
-                    {
-                        CurrentStateSummary = RuntimeStateSummary,
-                        Temperament = _memory.Personality.Temperament.Clone(),
-                        RelationshipSummary = RelationshipStateSummary,
-                        RecentConversation = ChatMessages
-                            .TakeLast(4)
-                            .Select(message => message.Text)
-                            .ToList(),
-                        CurrentBehaviorId = _currentBehaviorKey,
-                        ArbitrationSummary = LastArbitrationResult
-                    });
-                var albumMemory = await BuildAlbumConversationMemoryAsync(
-                    input,
-                    includeLlmPayload: false,
-                    cancellationToken: _lifetimeCancellation.Token);
-                var ruleRecord = albumMemory.Matches
-                    .Select(x => x.Record)
-                    .FirstOrDefault(x =>
-                        x.AllowRules &&
-                        x.IncludeInConversation &&
-                        _experienceSettings.AllowConversation &&
-                        _experienceSettings.AllowRuleMode);
-                if (ruleRecord is not null ||
-                    (AlbumExperienceService.LooksLikeExperienceQuery(input) &&
-                     _experienceSettings.AllowConversation &&
-                     _experienceSettings.AllowRuleMode))
+                // Arbitration decides whether the expression animation may
+                // interrupt the current action; it never suppresses the text
+                // reply or the configured model request.
+                var conversationPresentationAccepted = TryAcceptBehaviorRequest(
+                    "conversation",
+                    BehaviorArbitrationSource.DialogueCommand,
+                    BehaviorPriority.ExplicitCommand,
+                    TimeSpan.FromSeconds(3),
+                    TimeSpan.FromMilliseconds(800),
+                    interruptible: true,
+                    BehaviorStateBlockers.Caged |
+                    BehaviorStateBlockers.Traveling |
+                    BehaviorStateBlockers.Toilet |
+                    BehaviorStateBlockers.Magic |
+                    BehaviorStateBlockers.Movement |
+                    BehaviorStateBlockers.TouchReaction |
+                    BehaviorStateBlockers.Feeding |
+                    BehaviorStateBlockers.Playing |
+                    BehaviorStateBlockers.Petrified,
+                    showRejectedBubble: false,
+                    cooldownKey: "conversation");
+                if (conversationPresentationAccepted)
                 {
-                    reply = AlbumExperienceService.ComposeRuleReply(ruleRecord);
-                    LastExperienceRuleUsed = true;
-                    LastExperienceLlmCount = 0;
-                    LastExperienceImageCount = 0;
-                    await TryApplyExperienceBehaviorSuggestionAsync(ruleRecord);
-                    ModelApiStatus = ruleRecord is null
-                        ? "模型对话未启用；本地经历检索没有命中。"
-                        : "模型对话未启用；本次使用本地经历摘要和规则模板。";
+                    SetBehavior("conversation", "听主人说话并按照当前性格回应", "conversation");
+                    PlaySequence(ExpressionSequence);
+                }
+
+                if (_modelApiSettings.Enabled)
+                {
+                    ModelApiStatus = "正在请求模型回复…";
+                    var memoryContext = await _memory.BuildChatContextAsync();
+                    memoryContext =
+                        $"{_persona.PromptSummary()}{Environment.NewLine}{memoryContext.TrimStart()}";
+                    var albumMemory = await BuildAlbumConversationMemoryAsync(
+                        input,
+                        includeLlmPayload: true,
+                        cancellationToken: _lifetimeCancellation.Token);
+                    if (!string.IsNullOrWhiteSpace(albumMemory.Context))
+                        memoryContext = $"{memoryContext.TrimEnd()}{Environment.NewLine}{albumMemory.Context}";
+                    var history = await _conversationSession.LoadAsync(
+                        _modelApiSettings.ConversationTurns,
+                        _lifetimeCancellation.Token);
+                    reply = await _modelApi.SendAsync(
+                        _modelApiSettings,
+                        _memory.Personality,
+                        _memory.Profile.SelfIdentity,
+                        memoryContext,
+                        input,
+                        history,
+                        albumMemory.Images,
+                        _lifetimeCancellation.Token);
+                    LastExperienceRuleUsed = false;
+                    OnPropertyChanged(nameof(ExperienceDebugStatus));
+                    ModelApiStatus = albumMemory.Images.Count > 0
+                        ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条经历摘要，并读取了 {albumMemory.Images.Count} 张主人授权的相册图片。"
+                        : albumMemory.InjectedExperienceCount > 0
+                            ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条主人授权的经历摘要。"
+                            : "最近一次模型回复已通过角色边界检查。";
                 }
                 else
                 {
-                    // Preserve the existing default Pupu phrasing while still
-                    // running the same Persona-backed local PetAgent pipeline.
-                    CurrentIntent = string.Join(" · ", localAgent.Debug);
-                    reply = ComposePetSpeech(PetSpeechIntent.Conversation);
-                    LastExperienceRuleUsed = false;
-                    ModelApiStatus = "模型对话未启用，本次使用本地性格台词。";
+                    var localAgent = _agentKernel.Handle(
+                        new PetAgentEvent
+                        {
+                            Kind = PetAgentEventKind.UserChat,
+                            At = _clock.Now,
+                            Text = input
+                        },
+                        new PetAgentContext
+                        {
+                            CurrentStateSummary = RuntimeStateSummary,
+                            Temperament = _memory.Personality.Temperament.Clone(),
+                            RelationshipSummary = RelationshipStateSummary,
+                            RecentConversation = ChatMessages
+                                .TakeLast(4)
+                                .Select(message => message.Text)
+                                .ToList(),
+                            CurrentBehaviorId = _currentBehaviorKey,
+                            ArbitrationSummary = LastArbitrationResult
+                        });
+                    var albumMemory = await BuildAlbumConversationMemoryAsync(
+                        input,
+                        includeLlmPayload: false,
+                        cancellationToken: _lifetimeCancellation.Token);
+                    var ruleRecord = albumMemory.Matches
+                        .Select(x => x.Record)
+                        .FirstOrDefault(x =>
+                            x.AllowRules &&
+                            x.IncludeInConversation &&
+                            _experienceSettings.AllowConversation &&
+                            _experienceSettings.AllowRuleMode);
+                    if (ruleRecord is not null ||
+                        (AlbumExperienceService.LooksLikeExperienceQuery(input) &&
+                         _experienceSettings.AllowConversation &&
+                         _experienceSettings.AllowRuleMode))
+                    {
+                        reply = AlbumExperienceService.ComposeRuleReply(ruleRecord);
+                        LastExperienceRuleUsed = true;
+                        LastExperienceLlmCount = 0;
+                        LastExperienceImageCount = 0;
+                        await TryApplyExperienceBehaviorSuggestionAsync(ruleRecord);
+                        ModelApiStatus = ruleRecord is null
+                            ? "模型对话未启用；本地经历检索没有命中。"
+                            : "模型对话未启用；本次使用本地经历摘要和规则模板。";
+                    }
+                    else
+                    {
+                        CurrentIntent = string.Join(" · ", localAgent.Debug);
+                        reply = ComposePetSpeech(
+                            PetSpeechIntent.Conversation,
+                            localAgent.ReplyText);
+                        LastExperienceRuleUsed = false;
+                        ModelApiStatus = "模型对话未启用，本次使用一岁朴朴的本地性格台词。";
+                    }
+                    OnPropertyChanged(nameof(ExperienceDebugStatus));
                 }
-                OnPropertyChanged(nameof(ExperienceDebugStatus));
             }
             ChatMessages.Add(new ChatMessage { Text = reply });
             await PersistConversationExchangeAsync(input, reply);
@@ -4378,7 +4424,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         finally
         {
             IsChatBusy = false;
-            IsChatComposerVisible = false;
             if (!IsCaged &&
                 !IsTraveling &&
                 MouseInteractionMode is MouseInteractionMode.Attention)
@@ -5196,7 +5241,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "关笼子／原地锁定，等待主人释放",
                 "owner_forced",
                 "desktop",
-                "Actions:pupu-cage-rest-youthful-v14.png");
+                "Actions:pupu-cage-rest-youthful-v19.png");
             PlaySequence(CageRestSequence, restart: false);
         }
         else
@@ -5410,8 +5455,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "关笼子／原地锁定，等待主人释放",
                 "owner_forced",
                 "desktop",
-                "routines:prone-idle");
-            PlaySequence(ProneIdleSequence, restart: false);
+                "Actions:pupu-cage-rest-youthful-v19.png");
+            PlaySequence(CageRestSequence, restart: false);
             return;
         }
         ResetArbitrationToIdle();
@@ -5961,6 +6006,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         };
         var groupId = mode == DesktopMoveMode.AnchorApproach
             ? (_activeAnchorIsFood ? "snack-chase-8" : "laser-chase-8")
+            : mode == DesktopMoveMode.BroomFlight
+                ? "magic-accio-broom-flight-8dir"
             : mode == DesktopMoveMode.HarnessedWalk
                 ? "harness-walk-16"
                 : string.Empty;
@@ -5982,17 +6029,20 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             PetDirection.DownLeft => 7,
             _ => 4
         };
-        var isEightPhaseAnchor = mode == DesktopMoveMode.AnchorApproach;
+        var isEightPhaseMovement = mode is DesktopMoveMode.AnchorApproach or DesktopMoveMode.BroomFlight;
         var firstDirectionFrame = direction8 * 8;
-        var frames = isEightPhaseAnchor
+        var frames = isEightPhaseMovement
             ? Enumerable.Range(firstDirectionFrame, 8).ToArray()
             : new[] { direction16 };
         var sequence = new AnimationSequence(
-            $"{groupId}-{(isEightPhaseAnchor ? direction8 : direction16):00}",
+            $"{groupId}-{(isEightPhaseMovement ? direction8 : direction16):00}",
             SpriteAtlas.Directions,
             0,
             frames,
-            Enumerable.Repeat(isEightPhaseAnchor ? 150 : 180, frames.Length).ToArray())
+            Enumerable.Repeat(
+                mode == DesktopMoveMode.BroomFlight ? 115 :
+                isEightPhaseMovement ? 150 : 180,
+                frames.Length).ToArray())
         {
             Loop = true,
             ExternalSheet = resolved.Sheet,
@@ -6249,6 +6299,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(AutomaticPersonalitySummary));
         OnPropertyChanged(nameof(RelationshipStageDisplay));
         OnPropertyChanged(nameof(IsCaged));
+        OnPropertyChanged(nameof(CageToggleLabel));
         OnPropertyChanged(nameof(IsTraveling));
         OnPropertyChanged(nameof(IsPetOnDesktop));
         OnPropertyChanged(nameof(IsMovementLocked));
@@ -6270,7 +6321,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      CleanCommand, PetCommand, GroomCommand,
                      PlayWandCommand, PlayLaserCommand, LieDownCommand, RollCommand, SpinCommand, SendChatCommand,
                      AccioBroomCommand, ApparateCommand, PetrificusTotalusCommand, ScourgifyCommand,
-                     ReleasePetrificationCommand, CageCommand, ReleaseCageCommand,
+                     ReleasePetrificationCommand, CageCommand, ReleaseCageCommand, ToggleCageCommand,
                      StartTravelCommand, RecallTravelCommand,
                      SaveModelApiCommand, TestModelApiCommand, DeleteModelApiKeyCommand, ApplyNaturalRuleCommand,
                      SaveEditableMemoryCommand, ReloadEditableMemoryCommand, CreateCodexIterationCommand,

@@ -498,6 +498,17 @@ static Task TestRulePetAgent()
     Assert(result.MemoryCandidates.Count == 0 &&
            result.Debug.Contains("backend=local-rules"),
         "rule PetAgent wrote memory or failed to report local backend");
+    var chat = agent.Handle(
+        new PetAgentEvent
+        {
+            Kind = PetAgentEventKind.UserChat,
+            Text = "朴朴你好可爱"
+        },
+        new PetAgentContext());
+    Assert(chat.ReplyText.Contains("眼光不错", StringComparison.Ordinal) &&
+           !chat.ReplyText.Contains("动作做完整", StringComparison.Ordinal) &&
+           !chat.ReplyText.Contains("认真回答", StringComparison.Ordinal),
+        "local chat did not use the short energetic one-year-old Pupu persona");
     return Task.CompletedTask;
 }
 
@@ -956,7 +967,12 @@ static Task TestV19RuntimeAssetContract()
         Assert(file.Contains("v19", StringComparison.OrdinalIgnoreCase),
             $"cat atlas {atlas.Name} still references an inherited file: {file}");
     }
-    foreach (var id in new[] { "laser-chase-8", "snack-chase-8" })
+    foreach (var id in new[]
+             {
+                 "laser-chase-8",
+                 "snack-chase-8",
+                 "magic-accio-broom-flight-8dir"
+             })
     {
         var group = manifest.GetProperty("actionGroups").GetProperty(id);
         Assert(group.GetProperty("frameCount").GetInt32() == 64,
@@ -968,6 +984,14 @@ static Task TestV19RuntimeAssetContract()
     var askWalk = manifest.GetProperty("actionGroups").GetProperty("ask-walk");
     Assert(askWalk.GetProperty("behaviorId").GetString() == "social.ask_walk",
         "ask-walk still aliases another behavior");
+    var cage = manifest.GetProperty("actionGroups").GetProperty("cage-rest-12");
+    Assert(cage.GetProperty("source").GetProperty("file").GetString() ==
+           "Actions/pupu-cage-rest-youthful-v19.png",
+        "cage rest does not use the V19 closed-carrier strip");
+    var coinStates = manifest.GetProperty("coinStates");
+    Assert(coinStates.TryGetProperty("normalEdge", out _) &&
+           coinStates.TryGetProperty("backEdge", out _),
+        "coin flip is missing real front/back edge frames");
     return Task.CompletedTask;
 }
 
@@ -2019,10 +2043,10 @@ static Task TestBroomRouteCoverage()
                 $"broom segment {bucket}:{index} was disconnected");
             Assert(segment.Distance >= 24,
                 $"broom segment {bucket}:{index} was too small");
-            Assert(segment.Duration >= TimeSpan.FromMilliseconds(500) &&
-                   segment.Duration <= TimeSpan.FromMilliseconds(900),
-                $"broom segment {bucket}:{index} was outside the 500-900ms cruise window");
-            Assert(Math.Abs(segment.Bend) <= 82.001 && Math.Abs(segment.Flutter) <= 2.001,
+            Assert(segment.Duration >= TimeSpan.FromMilliseconds(850) &&
+                   segment.Duration <= TimeSpan.FromMilliseconds(1550),
+                $"broom segment {bucket}:{index} was outside the 850-1550ms cruise window");
+            Assert(Math.Abs(segment.Bend) <= 48.001 && Math.Abs(segment.Flutter) <= 1.501,
                 $"broom segment {bucket}:{index} used an excessive arc or flutter");
             Assert(directions.Add(segment.Direction),
                 $"broom bucket {bucket} repeated {segment.Direction}");

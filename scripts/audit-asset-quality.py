@@ -203,6 +203,8 @@ def main() -> int:
         "unhappyColor",
         "unhappyFaded",
         "back",
+        "normalEdge",
+        "backEdge",
     }
     coin_states = manifest.get("coinStates")
     if coin_states is not None:
@@ -332,13 +334,13 @@ def main() -> int:
                 failures.append(
                     f"{source_file} frame {frame_index} is too soft ({focus:.1f})"
                 )
-        if "chase-gait-8dir" in source_file:
+        if "chase-gait-8dir" in source_file or "broom-flight-8dir" in source_file:
             frame_count = image.shape[1] // frame_width
             if frame_count != 64:
                 failures.append(
-                    f"{source_file} must contain 8 directions x 8 gait phases"
+                    f"{source_file} must contain 8 directions x 8 motion phases"
                 )
-            else:
+            elif "chase-gait-8dir" in source_file:
                 for direction in range(8):
                     lower_body_hashes: set[str] = set()
                     for phase in range(8):

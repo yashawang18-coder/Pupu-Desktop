@@ -137,19 +137,10 @@
 
     <DockPanel Margin="12">
         <Grid DockPanel.Dock="Top" Margin="4,0,4,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="朴朴" FontSize="25" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding CurrentBehaviorLabel, Mode=OneWay}"
                            Foreground="{StaticResource MutedInk}" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Content="缩小" Command="{Binding ZoomOutCommand}" />
-                <Button Content="100%" Command="{Binding ResetZoomCommand}" />
-                <Button Content="放大" Command="{Binding ZoomInCommand}" Margin="0" />
             </StackPanel>
         </Grid>
 
@@ -159,6 +150,29 @@
                     <TabItem Header="状态与互动">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="朴朴的产品与角色设计" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="朴朴不是通用助手的猫形皮肤，而是一只有持续身份、身体尺度、情绪节奏和行为边界的一岁桌面幼猫。正式形象固定为银灰黑白长毛拿破仑／曼基康：幼态宽圆脸、黄绿色圆眼、额头白色中轴、粉黑鼻头中央小黑斑、自然偏长躯干、明显短腿和完整大尾巴。魔法、节日、装备与笼子只能叠加道具，不能改变脸型、腿长、躯干和尾巴比例。"
+                                                   TextWrapping="Wrap" />
+                                        <Grid Margin="0,9,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="125"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                            <TextBlock Text="年龄与性格" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="一岁；傲娇、活泼、元气、嘴硬心软。短句及时回应，不使用客服式等待话术。" TextWrapping="Wrap"/>
+                                            <TextBlock Grid.Row="1" Text="视觉锚点" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="1" Grid.Column="1" Text="256×256 统一身体坐标系；20px 安全区；同组共享缩放、重心与脚底线。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                            <TextBlock Grid.Row="2" Text="默认节奏" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="2" Grid.Column="1" Text="安静待机以侧躺、低趴、舔脚为主；不把长时间端坐当作默认姿态。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                            <TextBlock Grid.Row="3" Text="移动边界" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="3" Grid.Column="1" Text="原地动作不改窗口坐标；步行、追逐、逃跑和扫帚飞行才由实时路径驱动。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                            <TextBlock Grid.Row="4" Text="关系原则" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="4" Grid.Column="1" Text="离线不惩罚、不生成照料欠账；互动只改变当下状态、关系与具体偏好，不暗改天生性格。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="交互表面与手势优先级" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="宠物本体：单击进入触摸解释，短拖移动窗口，滚轮缩放；银币形态改为单击恢复亮银、双击经正面→侧缘→背面翻转、拖拽移动。宠物下方空白区：双击才展开对话栏，单击不会抢触摸或按钮。面板对话栏与桌面对话栏共享 ChatInput、SendChatCommand、会话历史和模型回退链路。右键笼子入口是一个随状态变化的开关；停下始终保留为一级命令。"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <TextBlock Text="今天的朴朴" Style="{StaticResource SectionTitle}" />
@@ -525,7 +539,7 @@
                                         <StackPanel>
                                             <TextBlock Text="银币组合更新"
                                                        Style="{StaticResource SectionTitle}" />
-                                            <TextBlock Text="V19 正脸银币：先呈现高饱和亮银与高光，再自然褪色做旧并出现轻微暖棕锈迹；不是简单置灰。单击恢复亮彩，双击翻面，按住拖拽移动。下列实图与坐标直接读取正式清单。"
+                                            <TextBlock Text="V19 正脸银币：先呈现亮银与清晰高光，再自然降低光泽成为仍保留冷银色与头像色彩的暗银；不置灰，也不添加故意可见的锈迹。单击恢复亮银，双击经过真实侧缘翻面，按住拖拽移动。下列实图与坐标直接读取正式清单。"
                                                        Style="{StaticResource Hint}" />
                                             <ItemsControl ItemsSource="{Binding CoinUpdateStates, Mode=OneWay}"
                                                           ItemTemplate="{StaticResource CoinStateCard}"

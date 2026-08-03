@@ -16,7 +16,7 @@ internal static class Program
 {
     private const string AppName = "Pupu";
     private const string DisplayName = "朴朴桌面宠物";
-    private const string Version = "1.11.2";
+    private const string Version = "1.11.3";
     private const string PayloadResource = "Pupu.Installer.Payload.zip";
     private const string UninstallKey =
         @"Software\Microsoft\Windows\CurrentVersion\Uninstall\Pupu";
@@ -44,7 +44,7 @@ internal static class Program
     private static void InstallAndLaunch()
     {
         if (!Environment.Is64BitOperatingSystem)
-            throw new PlatformNotSupportedException("朴朴 1.11.2 需要 64 位 Windows 10 或 Windows 11。");
+            throw new PlatformNotSupportedException("朴朴 1.11.3 需要 64 位 Windows 10 或 Windows 11。");
 
         var installRoot = GetInstallRoot();
         var installParent = Directory.GetParent(installRoot)?.FullName

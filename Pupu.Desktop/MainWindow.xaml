@@ -113,10 +113,8 @@
                               Command="{Binding CleanCommand}"
                               Visibility="{Binding IsManualLitterCleaningAvailable, Converter={StaticResource BoolToVisibility}}" />
                     <MenuItem Header="梳毛" Command="{Binding GroomCommand}" />
-                    <MenuItem Header="关起来" Command="{Binding CageCommand}" />
-                    <MenuItem Header="放出来"
-                              Command="{Binding ReleaseCageCommand}"
-                              Visibility="{Binding IsCaged, Converter={StaticResource BoolToVisibility}}" />
+                    <MenuItem Header="{Binding CageToggleLabel, Mode=OneWay}"
+                              Command="{Binding ToggleCageCommand, Mode=OneWay}" />
                     <MenuItem Header="停下" Command="{Binding StopCurrentActionCommand}" />
                     <Separator />
                     <MenuItem Header="面板">
@@ -133,37 +131,15 @@
         </Image>
         </Grid>
 
+        <!-- A quiet blank hit area: double-clicking it toggles chat without
+             competing with the pet's click, drag, touch or context menu. -->
         <Border Width="{Binding PetDisplaySize, Mode=OneWay}"
                 MinWidth="190"
-                MinHeight="46"
-                Margin="0,4,0,2"
-                Padding="12,7"
-                CornerRadius="14"
-                Background="#EFFFFFFB"
-                BorderBrush="#D8BBAE"
-                BorderThickness="1"
-                Cursor="IBeam"
-                ToolTip="点击整条对话感应区，打开输入栏"
-                MouseLeftButtonUp="ChatBlankArea_MouseLeftButtonUp">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="💬" FontSize="18" VerticalAlignment="Center" />
-                <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                    <TextBlock Text="和朴朴说话"
-                               FontFamily="Microsoft YaHei UI"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               Foreground="#5B4038" />
-                    <TextBlock Text="点击这里打开对话栏"
-                               FontFamily="Microsoft YaHei UI"
-                               FontSize="10"
-                               Foreground="#8D7167" />
-                </StackPanel>
-            </Grid>
-        </Border>
+                Height="26"
+                Margin="0,2,0,2"
+                Background="#01FFFFFF"
+                Cursor="Arrow"
+                MouseLeftButtonDown="ChatBlankArea_MouseLeftButtonDown" />
 
         <Grid Width="{Binding PetDisplaySize, Mode=OneWay}"
               MinWidth="180"

@@ -42,6 +42,22 @@ def split(path: Path) -> list[list[Image.Image]]:
     return V18_HELPERS.split_grid(path)
 
 
+def split_regular(path: Path, *, rows: int, columns: int) -> list[list[Image.Image]]:
+    """Split a generated chroma sheet with a declared regular grid."""
+    image = Image.open(path).convert("RGB")
+    result: list[list[Image.Image]] = []
+    for row in range(rows):
+        frames: list[Image.Image] = []
+        y0 = round(row * image.height / rows)
+        y1 = round((row + 1) * image.height / rows)
+        for column in range(columns):
+            x0 = round(column * image.width / columns)
+            x1 = round((column + 1) * image.width / columns)
+            frames.append(H.key_cell(image.crop((x0, y0, x1, y1))))
+        result.append(frames)
+    return result
+
+
 def micro_phase(
     frame: Image.Image,
     *,
@@ -161,6 +177,25 @@ def strip_eight_phase(direction_rows: list[list[Image.Image]]) -> list[list[Imag
     return [[frame for row in direction_rows for frame in row]]
 
 
+def flight_phase(source: Image.Image) -> list[Image.Image]:
+    """Give one real flight heading a smooth eight-phase cape/body cadence."""
+    base = H.normalize_row([source], max_width=208, max_height=208)[0]
+    variants = (
+        (1.000, 0, 0),
+        (0.998, 1, -2),
+        (0.994, 1, -3),
+        (0.997, 0, -2),
+        (1.000, -1, 0),
+        (0.997, -1, 2),
+        (0.995, 0, 3),
+        (0.998, 0, 1),
+    )
+    return [
+        base.copy() if index == 0 else micro_phase(base, scale=scale, dx=dx, dy=dy)
+        for index, (scale, dx, dy) in enumerate(variants)
+    ]
+
+
 def build_coin_row(source_row: list[Image.Image]) -> list[Image.Image]:
     normal_source = source_row[0]
     unhappy_source = source_row[2] if len(source_row) > 2 else source_row[0]
@@ -179,25 +214,26 @@ def build_coin_row(source_row: list[Image.Image]) -> list[Image.Image]:
         ).astype(np.uint8)
         return Image.fromarray(rgba, "RGBA")
 
-    def faded(frame: Image.Image, seed: int) -> Image.Image:
+    def faded(frame: Image.Image) -> Image.Image:
         rgba = np.asarray(frame.convert("RGBA")).copy()
         alpha = rgba[..., 3]
         rgb = rgba[..., :3].astype(np.float32)
-        luminance = rgb.mean(axis=2, keepdims=True)
-        sepia = np.concatenate((luminance * 1.03, luminance * 0.94, luminance * 0.78), axis=2)
-        rgb = rgb * 0.30 + sepia * 0.70
-        yy, xx = np.mgrid[:CELL, :CELL]
-        mask = alpha > 32
-        rust = np.zeros((CELL, CELL), dtype=np.float32)
-        centres = ((79 + seed, 74), (173, 92 + seed), (109, 184), (187 - seed, 167))
-        for cx, cy in centres:
-            rust += np.exp(-((xx - cx) ** 2 + (yy - cy) ** 2) / 155.0)
-        rust = np.clip(rust, 0, 0.70)[..., None] * mask[..., None]
-        rust_colour = np.array([116.0, 72.0, 39.0], dtype=np.float32)
-        rgb = rgb * (1.0 - rust) + rust_colour * rust
-        rgba[..., :3] = np.clip(rgb * 0.88, 0, 255).astype(np.uint8)
+        luminance = (
+            rgb[..., 0:1] * 0.24 +
+            rgb[..., 1:2] * 0.68 +
+            rgb[..., 2:3] * 0.08
+        )
+        # Keep a trace of the original engraving colour while shifting the
+        # metal toward cool, low-contrast silver.  There are deliberately no
+        # brown spots, rust masks or grayscale conversion.
+        cool_silver = np.concatenate(
+            (luminance * 0.96, luminance * 0.99, luminance * 1.04), axis=2
+        )
+        rgb = rgb * 0.62 + cool_silver * 0.38
+        rgb = (rgb - 128.0) * 0.82 + 128.0
+        rgba[..., :3] = np.clip(rgb * 0.84, 0, 255).astype(np.uint8)
         rgba[alpha == 0, :3] = 0
-        return Image.fromarray(rgba, "RGBA").filter(ImageFilter.UnsharpMask(1.2, 110, 2))
+        return Image.fromarray(rgba, "RGBA").filter(ImageFilter.UnsharpMask(1.0, 80, 2))
 
     normal = bright(normal_source)
     unhappy = bright(unhappy_source)
@@ -210,9 +246,9 @@ def build_coin_row(source_row: list[Image.Image]) -> list[Image.Image]:
 
     return [
         normal,
-        faded(normal_source, 0),
+        faded(normal_source),
         unhappy,
-        faded(unhappy_source, 9),
+        faded(unhappy_source),
         back,
         edge(normal, 84),
         edge(back, 84),
@@ -233,6 +269,12 @@ def source_map() -> dict[str, list[list[Image.Image]]]:
         "laser": split(V18 / "pupu-laser-chase-v18-chroma.png"),
         "magic": split(V19 / "pupu-magic-v19-chroma.png"),
         "seasonal": split(V19 / "pupu-seasonal-v19-chroma.png"),
+        "broom_flight": split_regular(
+            V19 / "pupu-broom-flight-8dir-v19-chroma.png", rows=2, columns=4
+        ),
+        "cage": split_regular(
+            V19 / "pupu-cage-rest-v19-chroma.png", rows=3, columns=4
+        ),
     }
 
 
@@ -355,8 +397,8 @@ def main() -> None:
         for row in s["seasonal"]
     ], "pupu-seasonal-youthful-v19.png")
 
-    # Rebuild the engraving from stable source masters, then create a true
-    # colourful/high-glint state and a distinct sepia/tarnished state.
+    # Rebuild the engraving from stable source masters, then create a bright
+    # high-glint state and a lower-gloss cool-silver state without rust masks.
     coin_front = V17_COIN.fit_front_master()
     coin_base = Image.open(V17_COIN.BASE).convert("RGBA")
     coin_back = V17_COIN.clear_outside_coin(
@@ -388,8 +430,16 @@ def main() -> None:
         "Actions/pupu-gaze-fullbody-youthful-v19.png",
     )
     cage_strip = save(
-        [H.normalize_row(flattened(s["sleep"])[:12], max_width=214, max_height=206)],
+        [H.normalize_row(flattened(s["cage"]), max_width=216, max_height=216)],
         "Actions/pupu-cage-rest-youthful-v19.png",
+    )
+    broom_strip = save(
+        [[
+            phase
+            for direction in flattened(s["broom_flight"])
+            for phase in flight_phase(direction)
+        ]],
+        "Actions/pupu-broom-flight-8dir-youthful-v19.png",
     )
     harness_strip = save(
         [H.normalize_row(flattened(s["diagonal"]), max_width=202, max_height=212)],
@@ -398,7 +448,7 @@ def main() -> None:
 
     manifest_path = ASSETS / "pupu-assets.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest["version"] = "1.11.2-v19-unified-transition-chat"
+    manifest["version"] = "1.11.3-v19-refined-flight-chat"
     for atlas_id, filename in files.items():
         manifest["atlases"][atlas_id]["file"] = filename
 
@@ -411,6 +461,35 @@ def main() -> None:
     }
     for group_id, filename in action_files.items():
         manifest["actionGroups"][group_id]["source"]["file"] = filename
+
+    manifest["actionGroups"]["magic-accio-broom-flight-8dir"] = {
+        "groupId": "magic-accio-broom-flight-8dir",
+        "behaviorId": "magic.accio_broom",
+        "source": {
+            "type": "spriteStrip",
+            "file": broom_strip,
+            "columns": 64,
+            "rows": 1,
+            "frameWidth": CELL,
+            "frameHeight": CELL,
+        },
+        "frameCount": 64,
+        "frameDurationMs": 115,
+        "frames": list(range(64)),
+        "loopMode": "loop",
+        "behaviorTags": ["magic", "movement", "broom", "eight_direction"],
+        "directions": {
+            name: {"frames": list(range(index * 8, index * 8 + 8))}
+            for index, name in enumerate(
+                ("left", "upLeft", "up", "upRight", "right", "downRight", "down", "downLeft")
+            )
+        },
+        "triggerConditions": [
+            "召唤与上扫帚结束后进入飞行循环",
+            "八方向各使用八个连续相位并保持换向相位",
+            "窗口路线使用连续相邻方向而非无序折返",
+        ],
+    }
 
     for group_id in ("laser-chase-8", "snack-chase-8"):
         group = manifest["actionGroups"][group_id]
@@ -476,6 +555,13 @@ def main() -> None:
             group["frameCount"] = len(group["frames"])
 
     manifest["actionGroups"]["ask-walk"]["behaviorId"] = "social.ask_walk"
+    cage_group = manifest["actionGroups"]["cage-rest-12"]
+    cage_group["behaviorTags"] = ["cage", "rest", "closed_carrier"]
+    cage_group["triggerConditions"] = [
+        "主人通过同一个笼子菜单项切换为关起来",
+        "笼中循环完整闭门载具与猫咪安静微动",
+        "再次触发同一菜单项后放出并恢复普通待机",
+    ]
     manifest["atlases"]["activity"]["rowActions"][0] = "V19 低伏追逐激光点"
     manifest["atlases"]["activity"]["rowActions"][1] = "V19 低趴视线兼容"
     manifest["atlases"]["activity"]["rowActions"][7] = "V19 安静卧下兼容"
@@ -492,6 +578,12 @@ def main() -> None:
         "V19 春节红围巾低趴微动",
         "V19 主人生日帽与轻量彩纸",
     ]
+    manifest["coinStates"]["normalEdge"] = {
+        "atlas": "gazeCoin", "row": 2, "frames": [5], "frameDurations": [90]
+    }
+    manifest["coinStates"]["backEdge"] = {
+        "atlas": "gazeCoin", "row": 2, "frames": [6], "frameDurations": [90]
+    }
     manifest["qualityRequirements"]["knownIssues"] = []
     manifest["qualityRequirements"]["frameExpansion"] = (
         "4 个生成关键姿态 + 4 个无重影呼吸/重心相位；禁止相邻重复帧"

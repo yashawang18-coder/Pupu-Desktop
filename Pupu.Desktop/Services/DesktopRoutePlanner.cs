@@ -85,16 +85,16 @@ public sealed record DesktopRouteSegment(
 /// </summary>
 public sealed class DesktopRoutePlanner
 {
-    private static readonly RouteDirection[] AllDirections =
+    private static readonly RouteDirection[] BroomCompass =
     {
-        RouteDirection.Left,
         RouteDirection.Right,
-        RouteDirection.Up,
+        RouteDirection.DownRight,
         RouteDirection.Down,
-        RouteDirection.UpLeft,
-        RouteDirection.UpRight,
         RouteDirection.DownLeft,
-        RouteDirection.DownRight
+        RouteDirection.Left,
+        RouteDirection.UpLeft,
+        RouteDirection.Up,
+        RouteDirection.UpRight
     };
 
     private readonly Random _random;
@@ -327,9 +327,9 @@ public sealed class DesktopRoutePlanner
         bool isReposition = false)
     {
         var distance = current.DistanceTo(target);
-        var speed = 540 + _random.NextDouble() * 180;
-        var durationMs = Math.Clamp(distance / speed * 1000, 500, 900);
-        var maximumBend = Math.Min(82, Math.Max(18, distance * 0.16));
+        var speed = 360 + _random.NextDouble() * 140;
+        var durationMs = Math.Clamp(distance / speed * 1000, 850, 1550);
+        var maximumBend = Math.Min(48, Math.Max(10, distance * 0.10));
         var bend = (_random.NextDouble() < 0.5 ? -1 : 1) *
                    maximumBend *
                    (0.56 + _random.NextDouble() * 0.44);
@@ -340,7 +340,7 @@ public sealed class DesktopRoutePlanner
             direction,
             bend,
             0,
-            2);
+            1.5);
         return new DesktopRouteSegment(
             current,
             target,
@@ -552,79 +552,22 @@ public sealed class DesktopRoutePlanner
     private void EnsureBroomDirectionBucket()
     {
         if (_broomDirectionBucket.Count > 0) return;
-        var shuffled = AllDirections.ToArray();
-        for (var index = shuffled.Length - 1; index > 0; index--)
+        var clockwise = _random.Next(2) == 0;
+        var start = _random.Next(BroomCompass.Length);
+        if (_lastBroomDirection is { } previous)
         {
-            var swap = _random.Next(index + 1);
-            (shuffled[index], shuffled[swap]) = (shuffled[swap], shuffled[index]);
+            var previousIndex = Array.IndexOf(BroomCompass, previous);
+            start = (previousIndex + (clockwise ? 1 : BroomCompass.Length - 1)) %
+                    BroomCompass.Length;
         }
-
-        var ordered = new List<RouteDirection>(shuffled.Length);
-        if (!TryBuildCompatibleOrder(
-                shuffled.ToList(),
-                ordered,
-                _lastBroomDirection))
+        for (var offset = 0; offset < BroomCompass.Length; offset++)
         {
-            ordered.Clear();
-            ordered.AddRange(shuffled);
+            var index = clockwise
+                ? (start + offset) % BroomCompass.Length
+                : (start - offset + BroomCompass.Length) % BroomCompass.Length;
+            _broomDirectionBucket.Enqueue(BroomCompass[index]);
         }
-
-        foreach (var direction in ordered)
-            _broomDirectionBucket.Enqueue(direction);
     }
-
-    private static bool TryBuildCompatibleOrder(
-        List<RouteDirection> remaining,
-        List<RouteDirection> result,
-        RouteDirection? previous)
-    {
-        if (remaining.Count == 0) return true;
-        for (var index = 0; index < remaining.Count; index++)
-        {
-            var candidate = remaining[index];
-            if (previous is { } prior &&
-                !AreDirectionallyCompatible(prior, candidate))
-                continue;
-
-            remaining.RemoveAt(index);
-            result.Add(candidate);
-            if (TryBuildCompatibleOrder(remaining, result, candidate))
-                return true;
-            result.RemoveAt(result.Count - 1);
-            remaining.Insert(index, candidate);
-        }
-        return false;
-    }
-
-    private static bool AreDirectionallyCompatible(
-        RouteDirection previous,
-        RouteDirection next)
-    {
-        var previousVector = DirectionVector(previous);
-        var nextVector = DirectionVector(next);
-        var horizontalCompatible =
-            previousVector.X == 0 ||
-            nextVector.X == 0 ||
-            previousVector.X != nextVector.X;
-        var verticalCompatible =
-            previousVector.Y == 0 ||
-            nextVector.Y == 0 ||
-            previousVector.Y != nextVector.Y;
-        return horizontalCompatible && verticalCompatible;
-    }
-
-    private static (int X, int Y) DirectionVector(RouteDirection direction) =>
-        direction switch
-        {
-            RouteDirection.Left => (-1, 0),
-            RouteDirection.Right => (1, 0),
-            RouteDirection.Up => (0, -1),
-            RouteDirection.Down => (0, 1),
-            RouteDirection.UpLeft => (-1, -1),
-            RouteDirection.UpRight => (1, -1),
-            RouteDirection.DownLeft => (-1, 1),
-            _ => (1, 1)
-        };
 
     private RoutePoint RandomPoint(RouteBounds bounds, double insetRatio)
     {
