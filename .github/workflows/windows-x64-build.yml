@@ -23,16 +23,41 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify bundle and atomically update PR branch
+      - name: Import content without changing workflow paths
         shell: bash
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${EXPECTED_STAGING}"
           test "$(find .github/pupu-import -type f -name 'part-*' | wc -l)" = "77"
-          cat .github/pupu-import/part-* > "${RUNNER_TEMP}/pupu-39e0350.bundle"
-          echo "3b2792490033abcb5a0839798205ea5088bcffefc87a9b45edb29b5ee7ed32bb  ${RUNNER_TEMP}/pupu-39e0350.bundle" | sha256sum -c -
-          git bundle verify "${RUNNER_TEMP}/pupu-39e0350.bundle"
-          git fetch "${RUNNER_TEMP}/pupu-39e0350.bundle" HEAD:refs/remotes/pupu/import
+          bundle="${RUNNER_TEMP}/pupu-39e0350.bundle"
+          cat .github/pupu-import/part-* > "${bundle}"
+          echo "3b2792490033abcb5a0839798205ea5088bcffefc87a9b45edb29b5ee7ed32bb  ${bundle}" | sha256sum -c -
+          git bundle verify "${bundle}"
+          git fetch "${bundle}" HEAD:refs/remotes/pupu/import
           imported="$(git rev-parse refs/remotes/pupu/import)"
           test "${imported}" = "39e035047ed5ef88950edb3c0fc705a3a9c7035d"
-          git push origin "${imported}:refs/heads/agent/restore-control-panel"             --force-with-lease="refs/heads/agent/restore-control-panel:${EXPECTED_STAGING}"
+
+          bridge_index="${RUNNER_TEMP}/pupu-bridge.index"
+          GIT_INDEX_FILE="${bridge_index}" git read-tree "${imported}^{tree}"
+          while IFS= read -r -d '' entry; do
+            metadata="${entry%%$'\t'*}"
+            path="${entry#*$'\t'}"
+            read -r mode type object <<< "${metadata}"
+            test "${type}" = "blob"
+            GIT_INDEX_FILE="${bridge_index}" git update-index --add --cacheinfo "${mode}" "${object}" "${path}"
+          done < <(git ls-tree -r -z "${EXPECTED_STAGING}" -- .github/workflows .github/pupu-import)
+          bridge_tree="$(GIT_INDEX_FILE="${bridge_index}" git write-tree)"
+          if git diff --name-only "${EXPECTED_STAGING}^{tree}" "${bridge_tree}" |
+             grep -E '^\.github/(workflows|pupu-import)/'; then
+            echo "Bridge unexpectedly changes protected workflow/import paths." >&2
+            exit 1
+          fi
+
+          export GIT_AUTHOR_NAME="Pupu Asset Import"
+          export GIT_AUTHOR_EMAIL="actions@users.noreply.github.com"
+          export GIT_COMMITTER_NAME="${GIT_AUTHOR_NAME}"
+          export GIT_COMMITTER_EMAIL="${GIT_AUTHOR_EMAIL}"
+          bridge="$(printf '%s\n' 'Import verified full-resolution asset repair' |
+            git commit-tree "${bridge_tree}" -p "${EXPECTED_STAGING}")"
+          git push origin "${bridge}:refs/heads/agent/restore-control-panel"             --force-with-lease="refs/heads/agent/restore-control-panel:${EXPECTED_STAGING}"
+          echo "BRIDGE_COMMIT=${bridge}"
