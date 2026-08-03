@@ -82,6 +82,16 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(ClampToDesktop, DispatcherPriority.Loaded);
             return;
         }
+        if (e.PropertyName == nameof(MainViewModel.IsChatComposerVisible) &&
+            _viewModel.IsChatComposerVisible)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                ChatInputBox.Focus();
+                Keyboard.Focus(ChatInputBox);
+            }, DispatcherPriority.Input);
+            return;
+        }
         if (e.PropertyName == nameof(MainViewModel.MouseInteractionMode))
             UpdateAnchorPlacementWindow();
     }

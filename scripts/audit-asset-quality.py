@@ -20,11 +20,11 @@ MAX_MOVEMENT_CENTROID_STEP = 10.0
 MAX_EDGE_GREEN_RATE = 0.003
 # V10/V13 seasonal and magic props intentionally contain saturated green
 # clothing/light effects. They remain on the legacy detector; only the
-# V12/V15/V17/V18 chroma-derived silhouette set uses the strict despill gate.
+# V12/V15/V17/V18/V19 chroma-derived silhouette set uses the strict despill gate.
 MAX_LEGACY_GREEN_RATE = 0.04
 MAX_LOOP_CLOSURE_RATIO = 2.0
 MAX_LOOP_CLOSURE_DISTANCE = 0.20
-STRICT_EDGE_VERSIONS = ("-v12.png", "-v15.png", "-v17.png", "-v18.png")
+STRICT_EDGE_VERSIONS = ("-v12.png", "-v15.png", "-v17.png", "-v18.png", "-v19.png")
 MOVEMENT_ROWS: dict[str, set[int] | None] = {
     "directions": None,
     "walkModes": None,
@@ -334,22 +334,26 @@ def main() -> int:
                 )
         if "chase-gait-8dir" in source_file:
             frame_count = image.shape[1] // frame_width
-            if frame_count != 32:
+            if frame_count != 64:
                 failures.append(
-                    f"{source_file} must contain 8 directions x 4 gait phases"
+                    f"{source_file} must contain 8 directions x 8 gait phases"
                 )
             else:
                 for direction in range(8):
                     lower_body_hashes: set[str] = set()
-                    for phase in range(4):
-                        index = direction * 4 + phase
+                    for phase in range(8):
+                        index = direction * 8 + phase
                         frame = image[
                             :,
                             index * frame_width : (index + 1) * frame_width,
                         ]
                         lower = frame[int(frame_height * 0.52) :, :, :]
                         lower_body_hashes.add(hashlib.sha256(lower.tobytes()).hexdigest())
-                    if len(lower_body_hashes) < 3:
+                    # The source provides two photographed foot swaps. V19
+                    # must expose at least four distinct lower-body rasters
+                    # across eight clean display phases; all eight complete
+                    # frames are also covered by the adjacent-frame gate.
+                    if len(lower_body_hashes) < 4:
                         failures.append(
                             f"{source_file} direction {direction} has frozen feet"
                         )
@@ -390,10 +394,10 @@ def main() -> int:
         f"{minimum_short}x{minimum_long}px; minimum focus {minimum_focus:.1f}; "
         f"movement size drift <= {maximum_size_ratio:.3f}x; "
         f"centroid step <= {maximum_centroid_step:.2f}px; "
-        f"V12/V15/V17/V18 green edge <= {maximum_strict_edge_green_rate:.2%}; "
+        f"V12/V15/V17/V18/V19 green edge <= {maximum_strict_edge_green_rate:.2%}; "
         f"(legacy reference maximum {maximum_edge_green_rate:.2%}); "
         f"loop closure <= {maximum_loop_closure_ratio:.2f}x median; "
-        "pursuit gait 8 directions x 4 source phases."
+        "pursuit gait 8 directions x 8 display phases."
     )
     if warnings:
         print("\n".join(warnings))

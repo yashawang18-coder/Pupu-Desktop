@@ -9,7 +9,7 @@
     <AssemblyName>Pupu</AssemblyName>
     <RootNamespace>Pupu.Desktop</RootNamespace>
     <ApplicationIcon>Assets\pupu.ico</ApplicationIcon>
-    <Version>1.11.1</Version>
+    <Version>1.11.2</Version>
     <Authors>Pupu &amp; 主人</Authors>
   </PropertyGroup>
 
@@ -26,11 +26,11 @@
 
   <ItemGroup>
     <Content Include="Assets\pupu-assets.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
-    <Content Include="Assets\pupu-core-youthful-v18.png;Assets\pupu-life-youthful-v18.png;Assets\pupu-directions-youthful-v12.png;Assets\pupu-touch-youthful-v15.png;Assets\pupu-routines-youthful-v18.png;Assets\pupu-walk-modes-youthful-v12.png;Assets\pupu-activity-youthful-v18.png;Assets\pupu-life-equipment-youthful-v18.png;Assets\pupu-motion-youthful-v18.png;Assets\pupu-gaze-coin-youthful-v17.png;Assets\pupu-litter-youthful-v18.png;Assets\pupu-specials-youthful-v13.png;Assets\pupu-seasonal-youthful-v10.png"
+    <Content Include="Assets\pupu-core-youthful-v19.png;Assets\pupu-life-youthful-v19.png;Assets\pupu-directions-youthful-v19.png;Assets\pupu-touch-youthful-v19.png;Assets\pupu-routines-youthful-v19.png;Assets\pupu-walk-modes-youthful-v19.png;Assets\pupu-activity-youthful-v19.png;Assets\pupu-life-equipment-youthful-v19.png;Assets\pupu-motion-youthful-v19.png;Assets\pupu-gaze-coin-youthful-v19.png;Assets\pupu-litter-youthful-v19.png;Assets\pupu-specials-youthful-v19.png;Assets\pupu-seasonal-youthful-v19.png"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest"
              ExcludeFromSingleFile="true" />
-    <Content Include="Assets\Actions\pupu-cage-rest-youthful-v15.png;Assets\Actions\pupu-laser-chase-gait-8dir-youthful-v18.png;Assets\Actions\pupu-snack-chase-gait-8dir-youthful-v18.png;Assets\Actions\pupu-freeze-dried-target-v15.png;Assets\Actions\pupu-gaze-fullbody-youthful-v15.png;Assets\Actions\pupu-laser-dot-target-v15.png;Assets\Actions\pupu-walk-harness-16dir-youthful-v13.png"
+    <Content Include="Assets\Actions\pupu-cage-rest-youthful-v19.png;Assets\Actions\pupu-laser-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-snack-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-freeze-dried-target-v15.png;Assets\Actions\pupu-gaze-fullbody-youthful-v19.png;Assets\Actions\pupu-laser-dot-target-v15.png;Assets\Actions\pupu-walk-harness-16dir-youthful-v19.png"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest"
              ExcludeFromSingleFile="true" />

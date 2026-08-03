@@ -62,6 +62,8 @@ var tests = new (string Name, Func<Task> Run)[]
     ("owner-triggered magic interrupts ordinary behavior but respects hard states", TestOwnerForcedMagicArbitration),
     ("coin drag click and double click remain distinct", TestCoinPointerGestures),
     ("asset manifest keeps schema 1 and normalizes schema 2 action groups", TestAssetActionGroupCompatibility),
+    ("V19 runtime pack has no inherited cat atlases and uses eight-phase pursuit", TestV19RuntimeAssetContract),
+    ("ask-walk is an autonomous behavior instead of a preview-only alias", TestAskWalkBehavior),
     ("default persona round-trips without changing Pupu identity", TestDefaultPersonaCompatibility),
     ("rule PetAgent works without API and only returns candidates", TestRulePetAgent),
     ("behavior proposal executor always arbitrates before execution", TestBehaviorProposalExecutor),
@@ -926,6 +928,46 @@ static Task TestCoinPointerGestures()
     Assert(CoinPointerGestureClassifier.Classify(dragged: false, clickCount: 2) ==
            CoinPointerAction.Flip,
         "double coin click did not flip");
+    return Task.CompletedTask;
+}
+
+static Task TestAskWalkBehavior()
+{
+    var definition = BehaviorCatalog.Find("social.ask_walk");
+    Assert(definition is not null, "social.ask_walk is missing from the behavior catalog");
+    Assert(definition!.IsOwnerInitiative, "ask-walk must remain a bounded owner initiative");
+    Assert(!definition.RequiresMovement, "showing the leash must not move the desktop window");
+    Assert(definition.Cooldown >= TimeSpan.FromMinutes(20),
+        "ask-walk can repeat too frequently");
+    return Task.CompletedTask;
+}
+
+static Task TestV19RuntimeAssetContract()
+{
+    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+    var path = Path.Combine(root, "Pupu.Desktop", "Assets", "pupu-assets.json");
+    using var document = JsonDocument.Parse(File.ReadAllText(path));
+    var manifest = document.RootElement;
+    Assert(manifest.GetProperty("version").GetString()!.Contains("v19", StringComparison.OrdinalIgnoreCase),
+        "runtime manifest is not V19");
+    foreach (var atlas in manifest.GetProperty("atlases").EnumerateObject())
+    {
+        var file = atlas.Value.GetProperty("file").GetString() ?? string.Empty;
+        Assert(file.Contains("v19", StringComparison.OrdinalIgnoreCase),
+            $"cat atlas {atlas.Name} still references an inherited file: {file}");
+    }
+    foreach (var id in new[] { "laser-chase-8", "snack-chase-8" })
+    {
+        var group = manifest.GetProperty("actionGroups").GetProperty(id);
+        Assert(group.GetProperty("frameCount").GetInt32() == 64,
+            $"{id} is not eight directions times eight phases");
+        foreach (var direction in group.GetProperty("directions").EnumerateObject())
+            Assert(direction.Value.GetProperty("frames").GetArrayLength() == 8,
+                $"{id}/{direction.Name} does not expose eight phases");
+    }
+    var askWalk = manifest.GetProperty("actionGroups").GetProperty("ask-walk");
+    Assert(askWalk.GetProperty("behaviorId").GetString() == "social.ask_walk",
+        "ask-walk still aliases another behavior");
     return Task.CompletedTask;
 }
 

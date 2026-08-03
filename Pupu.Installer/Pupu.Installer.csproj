@@ -9,7 +9,7 @@
     <AssemblyName>Pupu.Installer</AssemblyName>
     <RootNamespace>Pupu.Installer</RootNamespace>
     <ApplicationIcon>..\Pupu.Desktop\Assets\pupu.ico</ApplicationIcon>
-    <Version>1.11.1</Version>
+    <Version>1.11.2</Version>
     <Authors>Pupu &amp; 主人</Authors>
   </PropertyGroup>
 

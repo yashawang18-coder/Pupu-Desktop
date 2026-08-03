@@ -6,21 +6,32 @@
 
 | 图集 ID | 文件 | 尺寸 | 行 | 内容 |
 | --- | --- | ---: | ---: | --- |
-| `core` | `pupu-core-youthful-v18.png` | 2048×1536 | 0–5 | V18 趴卧呼吸、露肚翻滚、追尾转圈、逗猫棒、眨眼哈欠、伸展卧下 |
-| `life` | `pupu-life-youthful-v18.png` | 2048×2048 | 0–7 | 投喂、检查猫砂、摸摸与过度 rua、孔雀蓝梳毛、求关注、偷偷捣乱、V18 陪伴睡姿与叼绳求遛 |
-| `directions` | `pupu-directions-youthful-v12.png` | 2048×1024 | 0–3 | 左、右、背向、正向移动 |
-| `touch` | `pupu-touch-youthful-v13.png` | 2048×1536 | 0–5 | 轻触、呼噜、好奇、需要空间、转身离开、信任亲近 |
-| `routines` | `pupu-routines-youthful-v18.png` | 2048×2048 | 0–7 | V18 侧躺慢呼吸、低趴观察、甜脚吃脚、猫粮慢吃、冻干追食、罐头扑食、完整背影、侧背转换 |
-| `walkModes` | `pupu-walk-modes-youthful-v12.png` | 2048×2048 | 0–7 | 孔雀蓝背带与无背带的左、右、背向、正向连续步态 |
-| `activity` | `pupu-activity-youthful-v18.png` | 2048×2048 | 0–7 | V18 激光扑抓、三种睡姿、趴睡转换、板鸭趴、兼容占位 |
-| `lifeEquipment` | `pupu-life-equipment-youthful-v18.png` | 2048×768 | 0–2 | V18 日常舔毛、蓝色长方形小窝睡眠、孔雀蓝牵引绳 |
-| `motion` | `pupu-motion-youthful-v18.png` | 2048×2560 | 0–9 | V18 背带／无背带左前右前步态、其余斜向步态、扫帚八方向、侧躺微动 |
-| `gazeCoin` | `pupu-gaze-coin-youthful-v17.png` | 2048×768 | 0–2 | 两相贴地视线摆尾、V17 正视亮银边五态银币 |
-| `litter` | `pupu-litter-youthful-v18.png` | 2048×1024 | 0–3 | V18 检查进入、低头如厕、概率抬头、爪爪开花埋屎并离开 |
-| `specials` | `pupu-specials-youthful-v13.png` | 2048×1280 | 0–4 | 旧视线兼容行与四种等比例紫色星星斗篷魔法 |
-| `seasonal` | `pupu-seasonal-youthful-v10.png` | 2048×1024 | 0–3 | 圣诞、万圣节、春节和主人生日限定 |
+| `core` | `pupu-core-youthful-v19.png` | 2048×1536 | 0–5 | V19 趴卧呼吸、露肚翻滚、追尾转圈、逗猫棒、眨眼哈欠、伸展卧下 |
+| `life` | `pupu-life-youthful-v19.png` | 2048×2048 | 0–7 | V19 投喂、猫砂、摸摸、梳毛、求关注、捣乱、陪伴睡姿与叼绳求遛 |
+| `directions` | `pupu-directions-youthful-v19.png` | 2048×1024 | 0–3 | V19 左、右、背向、正向八相移动 |
+| `touch` | `pupu-touch-youthful-v19.png` | 2048×1536 | 0–5 | V19 轻触、呼噜、好奇、需要空间、转身离开、信任亲近 |
+| `routines` | `pupu-routines-youthful-v19.png` | 2048×2048 | 0–7 | V19 侧躺、低趴、舔脚、进食、背影与转身 |
+| `walkModes` | `pupu-walk-modes-youthful-v19.png` | 2048×2048 | 0–7 | V19 孔雀蓝背带与无背带四方向八相步态 |
+| `activity` | `pupu-activity-youthful-v19.png` | 2048×2048 | 0–7 | V19 激光扑抓、三种睡姿、趴睡转换与板鸭趴 |
+| `lifeEquipment` | `pupu-life-equipment-youthful-v19.png` | 2048×768 | 0–2 | V19 日常舔毛、蓝色长方形小窝、孔雀蓝牵引绳 |
+| `motion` | `pupu-motion-youthful-v19.png` | 2048×2560 | 0–9 | V19 背带／无背带斜向步态、扫帚飞行、侧躺微动 |
+| `gazeCoin` | `pupu-gaze-coin-youthful-v19.png` | 2048×768 | 0–2 | V19 贴地视线与亮彩／做旧锈迹双面银币 |
+| `litter` | `pupu-litter-youthful-v19.png` | 2048×1024 | 0–3 | V19 检查、如厕、抬头、埋砂与离开 |
+| `specials` | `pupu-specials-youthful-v19.png` | 2048×1280 | 0–4 | V19 同身份四种魔法与兼容姿态 |
+| `seasonal` | `pupu-seasonal-youthful-v19.png` | 2048×1024 | 0–3 | V19 同身份圣诞、万圣节、春节和生日限定 |
 
-合计 13 张图集、77 行、616 格；V18 运行清单共引用 20 个 PNG，独立素材合计 110 帧。
+合计 13 张图集、77 行、616 格；V19 运行清单共引用 20 个 PNG。冻干与激光追逐各为 64 帧，所有猫咪运行文件均为 V19。
+
+## V19 全量运行映射与连续播放
+
+- 运行图集不再以旧 PNG 为底做逐行覆盖；13 张猫咪图集和 5 张猫咪动作条带均由 V18 身份源或 V19 魔法／节日源重建。
+- 每个 4 姿态动作扩展为 8 个干净相位：4 个关键姿态加 4 个轻微呼吸／重心相位，不使用重复格，也不交叉淡化出两只重影猫。
+- `laser-chase-8` 和 `snack-chase-8` 为八方向 × 八相位。方向切换保持归一化相位，窗口只在可见脚步推进时移动。
+- 清单中的 `intro / loop / exit` 由播放器执行；姿态不兼容时先播当前 exit，再播下一组 intro，最后进入 loop。
+- `rest.bed` 使用 V19 蓝色长方形小窝；`social.ask_walk` 使用 V19 叼绳图并进入真实自主目录，不再仅在预览中出现。
+- V19 魔法与节日四行使用与日常动作相同的银灰黑白长毛矮脚身份，不改变脸型、腿长、躯干或尾巴比例。
+- V19 银币先亮彩高光，随后暖棕褪色并带轻微锈迹；不是灰度滤镜。单击恢复、双击翻面、拖拽移动。
+- 自定义素材清单版本必须与内置版一致才会被加载；升级准备可编辑目录时会覆盖刷新当前版 PNG，历史本地包不会继续抢占运行路径。
 
 ## V18 形象统一与交互修复
 

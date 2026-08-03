@@ -11,16 +11,6 @@ namespace Pupu.Desktop.Services;
 public sealed class AssetPackService : IAssetPackService
 {
     private const string ManifestName = "pupu-assets.json";
-    private static readonly HashSet<string> SupersededBundledVersions =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            "0.8.0-hd",
-            "0.9.0-soft-hd",
-            "1.3.0-continuous-gait-round-face",
-            "1.4.0-profile-magic-seasonal-gaze",
-            "1.5.0-short-leg-motion-memory",
-            "1.10.0-v15-clean-edge-gait-contract"
-        };
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -52,7 +42,7 @@ public sealed class AssetPackService : IAssetPackService
     public string CompatibilityStatus =>
         Manifest.ActionGroups.Count == 0
             ? "schema 1 旧图集模式 · 已生成只读兼容动作组"
-            : $"schema {Manifest.SchemaVersion} · 旧图集 + {Manifest.ActionGroups.Count} 个新动作组兼容";
+            : $"schema {Manifest.SchemaVersion} · {Manifest.ActionGroups.Count} 个清单驱动动作组 · intro/loop/exit 可执行";
     public IReadOnlyList<AssetActionGroupStatus> ActionGroupStatuses => _actionGroupStatuses;
 
     public static AssetPackService Load()
@@ -60,26 +50,29 @@ public sealed class AssetPackService : IAssetPackService
         var customManifest = Path.Combine(StoragePaths.AssetDirectory, ManifestName);
         var packagedDirectory = Path.Combine(AppContext.BaseDirectory, "Assets");
         var packagedManifest = Path.Combine(packagedDirectory, ManifestName);
+        var packaged = LoadFrom(packagedManifest, false);
         if (File.Exists(customManifest))
         {
             try
             {
                 var custom = LoadFrom(customManifest, true);
-                if (!SupersededBundledVersions.Contains(custom.Manifest.Version)) return custom;
-                var packaged = LoadFrom(packagedManifest, false);
+                if (string.Equals(
+                        custom.Manifest.Version,
+                        packaged.Manifest.Version,
+                        StringComparison.OrdinalIgnoreCase))
+                    return custom;
                 packaged.FallbackWarning =
-                    $"检测到旧内置素材副本 {custom.Manifest.Version}，已使用新版 {packaged.Manifest.Version}";
+                    $"检测到历史本地素材包 {custom.Manifest.Version}，已使用新版 {packaged.Manifest.Version}；打开可编辑素材目录会刷新为当前版";
                 return packaged;
             }
             catch (Exception ex)
             {
-                var fallback = LoadFrom(packagedManifest, false);
-                fallback.FallbackWarning = $"自定义素材无效，已回退内置素材：{ex.Message}";
-                return fallback;
+                packaged.FallbackWarning = $"自定义素材无效，已回退内置素材：{ex.Message}";
+                return packaged;
             }
         }
 
-        return LoadFrom(packagedManifest, false);
+        return packaged;
     }
 
     private static AssetPackService LoadFrom(string manifestPath, bool customPack)
@@ -122,15 +115,17 @@ public sealed class AssetPackService : IAssetPackService
         if (refreshPack) File.Copy(packagedManifestPath, editableManifestPath, true);
         else CopyUnlessPresent(packagedManifestPath, editableManifestPath);
         foreach (var atlas in packaged.Atlases.Values)
-            CopyUnlessPresent(
+            CopyPackagedAsset(
                 ResolveInside(packagedDirectory, atlas.File),
-                ResolveInside(StoragePaths.AssetDirectory, atlas.File));
+                ResolveInside(StoragePaths.AssetDirectory, atlas.File),
+                refreshPack);
         foreach (var actionGroup in packaged.ActionGroups.Values)
         {
             if (string.IsNullOrWhiteSpace(actionGroup.Source.File)) continue;
-            CopyUnlessPresent(
+            CopyPackagedAsset(
                 ResolveInside(packagedDirectory, actionGroup.Source.File),
-                ResolveInside(StoragePaths.AssetDirectory, actionGroup.Source.File));
+                ResolveInside(StoragePaths.AssetDirectory, actionGroup.Source.File),
+                refreshPack);
         }
 
         return $"已准备可编辑素材目录：{StoragePaths.AssetDirectory}。替换 PNG 或修改清单后重启 pupu 生效。";
@@ -233,7 +228,10 @@ public sealed class AssetPackService : IAssetPackService
                 AtlasId = group.Source.Atlas,
                 Row = group.Source.Row,
                 File = group.Source.File,
-                SourceType = group.Source.Type
+                SourceType = group.Source.Type,
+                IntroFrames = group.Intro.Frames.ToList(),
+                LoopFrames = group.Loop.Frames.ToList(),
+                ExitFrames = group.Exit.Frames.ToList()
             });
         }
     }
@@ -265,8 +263,8 @@ public sealed class AssetPackService : IAssetPackService
                     ? "无效来源且没有 fallback；运行时使用原硬编码序列"
                     : $"无效来源；使用 {group.Fallback}";
             }
-            sourceLabel = $"旧图集 {source.Atlas}:{source.Row}";
-            return "通过：旧图集行、帧数和节奏可读取";
+            sourceLabel = $"正式图集 {source.Atlas}:{source.Row}";
+            return "通过：正式图集行、帧数、分段和节奏可读取";
         }
 
         if (string.IsNullOrWhiteSpace(source.File))
@@ -341,7 +339,14 @@ public sealed class AssetPackService : IAssetPackService
             AtlasRowSource = group.Source.Type == AssetActionSourceKinds.AtlasRow,
             SourceLabel = group.Source.Type == AssetActionSourceKinds.AtlasRow
                 ? $"{group.Source.Atlas}:{group.Source.Row}"
-                : group.Source.File
+                : group.Source.File,
+            GroupId = group.GroupId,
+            BehaviorId = group.BehaviorId,
+            LoopMode = group.LoopMode,
+            IntroFrames = group.Intro.Frames.ToArray(),
+            LoopFrames = group.Loop.Frames.ToArray(),
+            ExitFrames = group.Exit.Frames.ToArray(),
+            CompatiblePostures = group.CompatiblePostures.ToArray()
         };
     }
 
@@ -457,5 +462,16 @@ public sealed class AssetPackService : IAssetPackService
     {
         Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
         if (!File.Exists(destination)) File.Copy(source, destination);
+    }
+
+    private static void CopyPackagedAsset(string source, string destination, bool overwrite)
+    {
+        if (!overwrite)
+        {
+            CopyUnlessPresent(source, destination);
+            return;
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        File.Copy(source, destination, true);
     }
 }

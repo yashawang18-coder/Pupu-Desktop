@@ -66,7 +66,7 @@
                MouseLeftButtonUp="PetImage_MouseLeftButtonUp"
                MouseMove="PetImage_MouseMove"
                MouseWheel="PetImage_MouseWheel"
-               ToolTip="左键会区分轻触、轻抚、按住、抱起意图、快速移动窗口、连续触摸和释放；双击仍是两次触摸。右键发起主人互动并打开面板，滚轮缩放">
+               ToolTip="普通形态：左键轻触或拖拽移动窗口。银币形态：单击恢复亮彩、双击翻面、按住拖拽移动。右键打开面板，滚轮缩放。">
             <Image.Style>
                 <Style TargetType="Image">
                     <Setter Property="Visibility" Value="Visible" />
@@ -133,12 +133,37 @@
         </Image>
         </Grid>
 
-        <Border Height="16"
-                MinWidth="120"
-                Background="Transparent"
+        <Border Width="{Binding PetDisplaySize, Mode=OneWay}"
+                MinWidth="190"
+                MinHeight="46"
+                Margin="0,4,0,2"
+                Padding="12,7"
+                CornerRadius="14"
+                Background="#EFFFFFFB"
+                BorderBrush="#D8BBAE"
+                BorderThickness="1"
                 Cursor="IBeam"
-                ToolTip="点击朴朴下方的空白处开始说话"
-                MouseLeftButtonUp="ChatBlankArea_MouseLeftButtonUp" />
+                ToolTip="点击整条对话感应区，打开输入栏"
+                MouseLeftButtonUp="ChatBlankArea_MouseLeftButtonUp">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="💬" FontSize="18" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                    <TextBlock Text="和朴朴说话"
+                               FontFamily="Microsoft YaHei UI"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="#5B4038" />
+                    <TextBlock Text="点击这里打开对话栏"
+                               FontFamily="Microsoft YaHei UI"
+                               FontSize="10"
+                               Foreground="#8D7167" />
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <Grid Width="{Binding PetDisplaySize, Mode=OneWay}"
               MinWidth="180"
@@ -161,7 +186,8 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0"
+            <TextBox x:Name="ChatInputBox"
+                     Grid.Column="0"
                      Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      MinHeight="30"
                      Padding="9,5"

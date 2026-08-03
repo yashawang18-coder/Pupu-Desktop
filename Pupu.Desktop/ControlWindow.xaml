@@ -456,6 +456,31 @@
                                                    Style="{StaticResource Hint}" Margin="0,7,0,0" />
                                     </StackPanel>
                                 </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="对话联调" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="这里与桌面宠物共用同一条对话、Persona、记忆与模型回退链路；无需关闭设置页即可连续测试。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                        <Border Margin="0,9,0,8" Padding="8" CornerRadius="8"
+                                                Background="#FFF9F5" BorderBrush="#E8D6CC" BorderThickness="1">
+                                            <ListBox ItemsSource="{Binding ChatMessages, Mode=OneWay}"
+                                                     MinHeight="120" MaxHeight="220" />
+                                        </Border>
+                                        <TextBox Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 KeyDown="ChatInput_KeyDown"
+                                                 AcceptsReturn="True"
+                                                 MinHeight="62"
+                                                 Padding="8"
+                                                 TextWrapping="Wrap"
+                                                 ToolTip="输入测试消息；Shift+Enter 换行，Enter 发送" />
+                                        <WrapPanel Margin="0,8,0,0">
+                                            <Button Content="发送测试消息"
+                                                    Command="{Binding SendChatCommand}" />
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding ModelApiStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,7,0,0" />
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -500,7 +525,7 @@
                                         <StackPanel>
                                             <TextBlock Text="银币组合更新"
                                                        Style="{StaticResource SectionTitle}" />
-                                            <TextBlock Text="V16 圆眼正脸四种正面状态与猫爪背面；下列实图、状态键、图集坐标和时长均直接读取当前正式清单。"
+                                            <TextBlock Text="V19 正脸银币：先呈现高饱和亮银与高光，再自然褪色做旧并出现轻微暖棕锈迹；不是简单置灰。单击恢复亮彩，双击翻面，按住拖拽移动。下列实图与坐标直接读取正式清单。"
                                                        Style="{StaticResource Hint}" />
                                             <ItemsControl ItemsSource="{Binding CoinUpdateStates, Mode=OneWay}"
                                                           ItemTemplate="{StaticResource CoinStateCard}"
@@ -557,8 +582,55 @@
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <TextBlock Text="从输入到表现的完整链路" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="桌面输入／面板命令／定时器 → 结构化事件或行为提案 → BehaviorArbitrator 统一判断硬状态、优先级、保护期、可打断性与冷却 → Agent 内核输出表现意图 → WPF 表现适配器解析图集并同步窗口坐标 → 生命周期按 Started／Progressed／Completed／Interrupted／Failed 写入记忆。模型只增强对话文本，不能绕过仲裁器直接播放动作。"
-                                                   TextWrapping="Wrap" />
+                                        <WrapPanel Margin="0,8,0,4">
+                                            <Border Background="#FFF3EC" BorderBrush="#E7CFC2" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="① 输入事件&#x0a;桌面／面板／定时器" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#F4F7FF" BorderBrush="#CCD7EC" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="② 行为提案&#x0a;结构化上下文" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#F1FAF5" BorderBrush="#C8E0D1" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="③ 统一仲裁&#x0a;资格／优先级／租约" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#FFF8E9" BorderBrush="#E8D9AF" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="④ 表现意图&#x0a;行为 ID／回复草稿" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#F8F1FA" BorderBrush="#DDCBE2" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="⑤ WPF 适配&#x0a;动画／坐标／气泡" TextAlignment="Center" /></Border>
+                                        </WrapPanel>
+                                        <TextBlock Text="生命周期统一写入 Started／Progressed／Completed／Interrupted／Failed。模型只增强对话文本与 Persona 语气，不能绕过 BehaviorArbitrator 直接播放动作或改写状态。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="模块边界与责任" Style="{StaticResource SectionTitle}" />
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="145" />
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="2*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="模块" FontWeight="Bold" /><TextBlock Grid.Column="1" Text="负责" FontWeight="Bold" /><TextBlock Grid.Column="2" Text="不得越界" FontWeight="Bold" />
+                                            <TextBlock Grid.Row="1" Text="Pupu.Behavior" Margin="0,7,8,0" /><TextBlock Grid.Row="1" Grid.Column="1" Text="评分、仲裁、保护期、冷却" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="1" Grid.Column="2" Text="不依赖 WPF、Windows、LLM" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="2" Text="Pupu.Application" Margin="0,7,8,0" /><TextBlock Grid.Row="2" Grid.Column="1" Text="用例、提案、平台端口、生命周期" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="2" Grid.Column="2" Text="不直接操作窗口或凭据" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="3" Text="AssetPackService" Margin="0,7,8,0" /><TextBlock Grid.Row="3" Grid.Column="1" Text="V19 清单校验、完整解码、动作组解析" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="3" Grid.Column="2" Text="不决定行为是否可执行" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="4" Text="MainViewModel" Margin="0,7,8,0" /><TextBlock Grid.Row="4" Grid.Column="1" Text="表现编排、intro/loop/exit、状态绑定" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="4" Grid.Column="2" Text="不绕过仲裁器伪造业务状态" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="5" Text="Windows 平台" Margin="0,7,8,0" /><TextBlock Grid.Row="5" Grid.Column="1" Text="透明窗、输入、坐标、文件与凭据" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="5" Grid.Column="2" Text="不泄漏到跨平台核心" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="实时诊断快照" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="素材包" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding AssetPackStatus, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="当前意图" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding CurrentIntent, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="最近仲裁" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding LastArbitrationResult, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="模型／回退" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding ModelApiStatus, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="{Binding LlmFallbackReason, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource Card}">
@@ -580,6 +652,8 @@
                                         <TextBlock Text="素材契约" Style="{StaticResource SectionTitle}" />
                                         <TextBlock Text="{Binding AssetGenerationRequirements, Mode=OneWay}"
                                                    TextWrapping="Wrap" />
+                                        <TextBlock Text="动作切换：当前组有 exit 且下一组姿态不兼容时，先播退出段；下一组有 intro 时先播入场段，再进入 loop。移动序列保持相位，不在方向变化时回到第 0 帧。单次动作停在末帧，不再无限跳回首帧。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,7,0,0" />
                                     </StackPanel>
                                 </Border>
                                 <ItemsControl ItemsSource="{Binding CodeImplementationCards, Mode=OneWay}" />

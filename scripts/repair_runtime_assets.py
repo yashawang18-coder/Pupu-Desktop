@@ -9,7 +9,7 @@ pixel.  The green-screen source sheets under AssetSources are not modified.
 
 from __future__ import annotations
 
-import io
+import gc
 import json
 from pathlib import Path
 
@@ -20,14 +20,14 @@ from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "Pupu.Desktop" / "Assets"
-STRICT_VERSIONS = ("-v12.png", "-v15.png", "-v17.png", "-v18.png")
+STRICT_VERSIONS = ("-v12.png", "-v15.png", "-v17.png", "-v18.png", "-v19.png")
 
 
 def is_repair_target(path: Path) -> bool:
     return any(version in path.name for version in STRICT_VERSIONS)
 
 
-def repair_edge_spill(image: Image.Image) -> tuple[Image.Image, int]:
+def _repair_edge_spill_cell(image: Image.Image) -> tuple[Image.Image, int]:
     rgba = np.asarray(image.convert("RGBA")).copy()
     alpha = rgba[..., 3]
     visible = alpha > 8
@@ -52,6 +52,25 @@ def repair_edge_spill(image: Image.Image) -> tuple[Image.Image, int]:
     rgba[..., :3][dirty] = np.clip(replacement, 0, 255).astype(np.uint8)
     rgba[alpha == 0, :3] = 0
     return Image.fromarray(rgba, "RGBA"), count
+
+
+def repair_edge_spill(image: Image.Image) -> tuple[Image.Image, int]:
+    """Repair one sprite at a time so wide strips never allocate huge EDT maps."""
+    source = image.convert("RGBA")
+    if source.width <= 256 and source.height <= 256:
+        return _repair_edge_spill_cell(source)
+    if source.width % 256 or source.height % 256:
+        return _repair_edge_spill_cell(source)
+    output = Image.new("RGBA", source.size, (0, 0, 0, 0))
+    changed = 0
+    for y in range(0, source.height, 256):
+        for x in range(0, source.width, 256):
+            repaired, count = _repair_edge_spill_cell(
+                source.crop((x, y, x + 256, y + 256))
+            )
+            output.paste(repaired, (x, y))
+            changed += count
+    return output, changed
 
 
 def referenced_runtime_files() -> list[Path]:
@@ -80,9 +99,11 @@ def repair_runtime_assets() -> tuple[int, int]:
             repaired, pixel_count = repair_edge_spill(source)
         if pixel_count == 0:
             continue
-        buffer = io.BytesIO()
-        repaired.save(buffer, format="PNG")
-        path.write_bytes(buffer.getvalue())
+        temporary = path.with_name(f"{path.name}.repairing")
+        repaired.save(temporary, format="PNG")
+        temporary.replace(path)
+        repaired.close()
+        gc.collect()
         changed_files += 1
         changed_pixels += pixel_count
         print(f"Despill {path.relative_to(ROOT)}: {pixel_count} boundary pixels")

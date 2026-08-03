@@ -150,6 +150,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         public bool VerticalStrip { get; init; }
         public bool AtlasRowSource { get; init; }
         public string ResolvedSource { get; init; } = string.Empty;
+        public string ActionGroupId { get; init; } = string.Empty;
+        public string BehaviorId { get; init; } = string.Empty;
+        public string LoopMode { get; init; } = AssetLoopModes.Loop;
+        public int[] IntroFrames { get; init; } = Array.Empty<int>();
+        public int[] LoopFrames { get; init; } = Array.Empty<int>();
+        public int[] ExitFrames { get; init; } = Array.Empty<int>();
+        public string[] CompatiblePostures { get; init; } = Array.Empty<string>();
+        public bool IsSegmentPlayback { get; init; }
         public int DurationAt(int position) =>
             FrameDurations[Math.Min(position, FrameDurations.Length - 1)];
     }
@@ -415,13 +423,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private static readonly AnimationSequence LaserAnchorChaseSequence = Sequence(
         "laser-chase-8", SpriteAtlas.Directions, 0,
-        new[] { 165, 165, 165, 165 },
-        0, 1, 2, 3);
+        Enumerable.Repeat(150, 8).ToArray(),
+        0, 1, 2, 3, 4, 5, 6, 7);
 
     private static readonly AnimationSequence SnackAnchorChaseSequence = Sequence(
         "snack-chase-8", SpriteAtlas.Directions, 0,
-        new[] { 165, 165, 165, 165 },
-        0, 1, 2, 3);
+        Enumerable.Repeat(150, 8).ToArray(),
+        0, 1, 2, 3, 4, 5, 6, 7);
 
     private static readonly AnimationSequence LaserPounceSequence = Sequence(
         "laser-pounce", SpriteAtlas.Activity, 0,
@@ -610,6 +618,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private CancellationTokenSource? _bubbleCancellation;
     private CancellationTokenSource? _touchReactionCancellation;
     private AnimationSequence _currentSequence = SideLieIdleSequence;
+    private AnimationSequence? _pendingSequence;
     private int _framePosition;
     private bool _synchronizedMovement;
     private bool _activeAnchorIsFood;
@@ -985,7 +994,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         : "模型未启用：当前使用本地规则 PetAgent。";
     public string AssetCompatibilityStatus => _assetPack.CompatibilityStatus;
     public string AssetGenerationRequirements =>
-        "V18 素材契约：每格 256×256 RGBA，四边至少 20px 透明安全区；同一动作行共享身体尺度、重心和脚底线，完整保留耳朵、四肢与大尾巴。循环动作使用语义帧率与往返序列，八方向追逐每个方向至少四个独立步态相位。正式文件只由 pupu-assets.json 引用，旧底图退出运行目录但保留在 Git 历史中；替换时必须同时校验行为 ID、动作回退、预览分类和运行引用。";
+        "V19 素材契约：每格 256×256 RGBA，四边至少 20px 透明安全区；同一动作行共享身体尺度、重心和脚底线，完整保留耳朵、四肢与大尾巴。每组至少 8 个可显示相位，禁止相邻重复帧和双重曝光式补间；八方向追逐为每方向 8 相位。动作清单的 intro／loop／exit 会被播放器实际执行，并按兼容姿态决定是否先播退出段。正式运行文件只由 pupu-assets.json 引用；历史本地包版本不一致时不会覆盖内置 V19。";
     public string TravelDestinationInput
     {
         get => _travelDestinationInput;
@@ -4183,7 +4192,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             await _modelApi.SaveAsync(_modelApiSettings, null);
             OnPropertyChanged(nameof(ModelApiEnabled));
             OnPropertyChanged(nameof(HasStoredModelApiKey));
-            ModelApiStatus = "连接测试成功，已启用模型回复；现在可直接在桌面或主人页和朴朴说话。";
+            ModelApiStatus = "连接测试成功，已启用模型回复；现在可直接在桌面对话条、主人页或大模型联调栏和朴朴说话。";
             _ = ShowBubbleAsync(null, 3600, PetSpeechIntent.Conversation);
         }
         catch (Exception ex)
@@ -4947,6 +4956,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             ["social.ask_play"] = new(
                 AttentionSequence,
                 "短暂提示想玩，未响应就自然结束"),
+            ["social.ask_walk"] = new(
+                AskWalkSequence,
+                "叼起孔雀蓝牵引绳主动邀请主人散步",
+                "要不要一起出去走走？"),
             ["vigilance.observe"] = new(ProneIdleSequence, "敏感地观察环境变化"),
             ["vigilance.guard"] = new(AnnoyedTouchSequence, "压力升高时压耳警戒"),
             ["avoid.quiet_place"] = new(RearIdleSequence, "压力较高时寻找安静位置"),
@@ -4959,7 +4972,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             ["independent.patrol"] = new(RunLeftSequence, "独自在桌面短距离巡视")
         };
         return new DictionaryBehaviorPresentationResolver<DesktopBehaviorPresentation>(
-            "sprite-atlas-v17",
+            "sprite-atlas-v19",
             map,
             new DesktopBehaviorPresentation(ProneIdleSequence, "安静陪伴"));
     }
@@ -5371,7 +5384,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         "seasonal-owner-birthday" => "seasonal.owner_birthday",
         "laser-chase-8" => "anchor.toy.approach",
         "snack-chase-8" => "anchor.food.approach",
-        "ask-walk" => "social.respond_call",
+        "ask-walk" => "social.ask_walk",
         var value when value.StartsWith("harness-", StringComparison.Ordinal) => "walk.harnessed",
         var value when value.StartsWith("free-", StringComparison.Ordinal) => "walk.free",
         var value when value.StartsWith("run-", StringComparison.Ordinal) => "explore.short_walk",
@@ -5434,12 +5447,107 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         var resolved = ResolveAnimationSequence(sequence);
         if (!restart && _currentSequence.Name == resolved.Name) return;
-        _currentSequence = resolved;
+        _pendingSequence = null;
+        if (ShouldPlayExitSegment(_currentSequence, resolved))
+        {
+            _pendingSequence = resolved;
+            StartSequenceCore(SegmentSequence(
+                _currentSequence,
+                _currentSequence.ExitFrames,
+                loop: false,
+                "exit"));
+            return;
+        }
+        StartResolvedSequence(resolved);
+    }
+
+    private void StartResolvedSequence(AnimationSequence sequence)
+    {
+        if (!sequence.IsSegmentPlayback &&
+            sequence.IntroFrames.Length > 0 &&
+            sequence.LoopFrames.Length > 0)
+        {
+            _pendingSequence = SegmentSequence(
+                sequence,
+                sequence.LoopFrames,
+                loop: sequence.Loop,
+                "loop");
+            StartSequenceCore(SegmentSequence(
+                sequence,
+                sequence.IntroFrames,
+                loop: false,
+                "intro"));
+            return;
+        }
+        StartSequenceCore(sequence);
+    }
+
+    private void StartSequenceCore(AnimationSequence sequence)
+    {
+        _currentSequence = sequence;
         _framePosition = 0;
         if (!_synchronizedMovement)
             _animationTimer.Start();
         RenderNextFrame();
     }
+
+    private static AnimationSequence SegmentSequence(
+        AnimationSequence source,
+        int[] frames,
+        bool loop,
+        string segment)
+    {
+        var durations = frames
+            .Select(frame => DurationForSourceFrame(source, frame))
+            .ToArray();
+        return source with
+        {
+            Name = $"{source.Name}#{segment}",
+            Frames = frames,
+            FrameDurations = durations,
+            Loop = loop,
+            IntroFrames = Array.Empty<int>(),
+            LoopFrames = Array.Empty<int>(),
+            IsSegmentPlayback = true
+        };
+    }
+
+    private static int DurationForSourceFrame(AnimationSequence sequence, int frame)
+    {
+        for (var index = 0; index < sequence.Frames.Length; index++)
+        {
+            if (sequence.Frames[index] == frame)
+                return sequence.DurationAt(index);
+        }
+        return sequence.FrameDurations.Length == 0 ? 600 : sequence.FrameDurations[^1];
+    }
+
+    private static bool ShouldPlayExitSegment(
+        AnimationSequence current,
+        AnimationSequence next)
+    {
+        if (current.ExitFrames.Length == 0 ||
+            (current.IsSegmentPlayback && current.Name.EndsWith("#exit", StringComparison.Ordinal)) ||
+            string.Equals(current.ActionGroupId, next.ActionGroupId, StringComparison.OrdinalIgnoreCase) ||
+            IsMovementAnimation(current.Name) ||
+            IsMovementAnimation(next.Name) ||
+            current.Name.StartsWith("coin-", StringComparison.Ordinal) ||
+            next.Name.StartsWith("coin-", StringComparison.Ordinal))
+            return false;
+        if (current.CompatiblePostures.Length == 0 || next.CompatiblePostures.Length == 0)
+            return true;
+        return !current.CompatiblePostures.Intersect(
+            next.CompatiblePostures,
+            StringComparer.OrdinalIgnoreCase).Any();
+    }
+
+    private static bool IsMovementAnimation(string name) =>
+        name.StartsWith("run-", StringComparison.Ordinal) ||
+        name.StartsWith("harness-", StringComparison.Ordinal) ||
+        name.StartsWith("free-", StringComparison.Ordinal) ||
+        name.StartsWith("laser-chase-", StringComparison.Ordinal) ||
+        name.StartsWith("snack-chase-", StringComparison.Ordinal) ||
+        name.StartsWith("magic-accio-broom-flight-", StringComparison.Ordinal);
 
     private AnimationSequence ResolveAnimationSequence(AnimationSequence fallback)
     {
@@ -5456,7 +5564,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             FrameHeight = resolved.FrameHeight,
             VerticalStrip = resolved.Vertical,
             AtlasRowSource = resolved.AtlasRowSource,
-            ResolvedSource = resolved.SourceLabel
+            ResolvedSource = resolved.SourceLabel,
+            ActionGroupId = resolved.GroupId,
+            BehaviorId = resolved.BehaviorId,
+            LoopMode = resolved.LoopMode,
+            IntroFrames = resolved.IntroFrames,
+            LoopFrames = resolved.LoopFrames,
+            ExitFrames = resolved.ExitFrames,
+            CompatiblePostures = resolved.CompatiblePostures
         };
     }
 
@@ -5496,7 +5611,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         AddGallery("过度rua", "生活互动", "只表现猫本体：移开视线、贴地甩尾、退开并安静表达边界", OverPetSequence);
         AddGallery("梳理毛发", "生活互动", "梳后背、大尾巴和舔爪整理", GroomSequence);
         AddGallery("玩逗猫棒", "玩耍服务", "观察、伏低、挥爪和扑跳", WandLoopSequence);
-        AddGallery("追逐激光点", "移动互动", "八方向低伏追逐；每个方向四个脚步相位，换帧与位移同步", LaserAnchorChaseSequence);
+        AddGallery("追逐激光点", "移动互动", "八方向低伏追逐；每个方向八个连续脚步相位，换帧与位移同步", LaserAnchorChaseSequence);
         AddGallery("追逐冻干", "移动互动", "八方向急切小跑；脚步不动时窗口也不会漂移", SnackAnchorChaseSequence);
         AddGallery("笼中安静躺卧", "限制状态", "正面、侧面与背面三组笼中躺卧；释放前不切换普通动作", CageRestSequence);
         AddGallery("主动求关注", "自主行为", "趴卧、歪头、伸爪吸引主人", AttentionSequence);
@@ -5692,12 +5807,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             return sequence;
 
         // A direction-major strip is eight separate gait loops, not one
-        // continuous 32-frame movie.  The gallery previews one right-facing
-        // gait and closes it as A-B-C-D-C-B to avoid a pose snap.
+        // continuous 64-frame movie. The gallery previews the complete
+        // right-facing eight-phase loop.
         return sequence with
         {
-            Frames = new[] { 16, 17, 18, 19, 18, 17 },
-            FrameDurations = Enumerable.Repeat(165, 6).ToArray(),
+            Frames = Enumerable.Range(32, 8).ToArray(),
+            FrameDurations = Enumerable.Repeat(150, 8).ToArray(),
             Loop = true
         };
     }
@@ -5725,7 +5840,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      ("记忆与档案", "宠物档案、主人称呼、天生性格、关系、纠正、长期记忆、相册描述和短期会话共同构成连续相处背景；主人可在 Markdown 页面维护核心设定。"),
                      ("相册经历记忆库", "相册只链接主人选择的本地文件夹，不复制、移动或改写原图。逐图描述、Markdown／JSON 发帖和可选旅行返回故事进入独立经历索引；规则模式和模型模式共用同一检索结果，发送图片仍需显式授权。"),
                      ("无 API 与 LLM 共存", "本地规则 PetAgent 是默认可运行后端；LLM 只增强回复文本。两者读取同一 Persona 和同一批脱敏记忆摘要，行为候选与记忆候选仍由本地代码验证，不能由模型直接执行或写入。"),
-                     ("素材包动作组化", "旧 SpriteAtlas + row 图集继续有效；schema 2 可按行为 ID 定义动作组、独立动作文件、帧节奏、intro／loop／exit、方向、姿态、鼠标视线、食物／玩具能力与 fallback。动作组在素材包页逐帧只读预览。"),
+                     ("素材包动作组化", "V19 运行包由清单唯一引用，不再把旧行静默拼入新版图集；schema 2 按行为 ID 定义动作组、独立动作文件、帧节奏、intro／loop／exit、方向、姿态、鼠标视线、食物／玩具能力与 fallback。动作组在素材包页逐帧只读预览。"),
                      ("隐私与离线", "档案、行为、相册索引、描述、对话和 API 设置默认保存在本机。主人离线不会形成照料欠账、责怪、关系惩罚或报复性行为。")
                  })
             ProductDesignCards.Add(new InformationCardItem { Title = title, Body = body });
@@ -5737,9 +5852,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      ("行为核心", "Pupu.Behavior 将资格过滤、效用评分、选择策略和动作调度分层。状态、关系、天生性格和具体 LearnedPreference 各自独立，互动不会偷偷回写天生性格。"),
                      ("行为仲裁与提案执行", "BehaviorArbitrator 继续负责优先级、保护期、可打断性、冷却和状态禁用；BehaviorProposalQueue／Executor 为口令、锚点和相册经历建议提供统一路径。暂时不能打断的提案可延迟，过期后取消；接受和拒绝原因都进入调试。"),
                      ("主人强制与普通互动", "主人从魔法菜单明确发起时使用 OwnerForced 优先级和 ForceInterrupt，只允许笼中、旅行中或已石化等硬状态阻止；自主魔法仍受每日一次、冷却和资格评分限制。普通照料与玩耍不使用强制优先级，继续尊重疲劳、压力和动作保护期。"),
-                     ("冻干／激光投放链路", "点击按钮只进入一次性选点模式，不创建行为租约；主人选中桌面坐标后才生成一个 OwnerAnchor 提案。仲裁通过后显示冻干或激光实体、按目标向量选择八方向四相步态、同步移动窗口，到达后分别衔接进食或低伏扑光点。取消、拒绝、超时和路径不可达都会退出选点模式并给出反馈。"),
+                     ("冻干／激光投放链路", "点击按钮只进入一次性选点模式，不创建行为租约；主人选中桌面坐标后才生成一个 OwnerAnchor 提案。仲裁通过后显示冻干或激光实体、按目标向量选择八方向八相步态、同步移动窗口，到达后分别衔接进食或低伏扑光点。取消、拒绝、超时和路径不可达都会退出选点模式并给出反馈。"),
                      ("PetAgent／Persona", "RulePetAgent 是不依赖 API 的薄层，接收聊天、口令、面板、锚点、经历、旅游和自主定时器等结构化事件，输出回复草稿、行为提案、记忆候选和调试信息。Persona 不只是提示词，也保存默认性格、行为偏好和记忆偏好；默认朴朴配置保持原效果。"),
-                     ("素材运行时", "AssetPackService 同时支持 schema 1 的 SpriteAtlas + row 和 schema 2 动作组。播放时优先解析动作组，来源缺失或无效则回到动作组 fallback 或原硬编码序列；单文件 PNG 与条带动作文件已预留解析和预览能力。"),
+                     ("素材运行时", "AssetPackService 以 V19 schema 2 动作组为正式路径：启动时完整解码图集，解析行为 ID、帧时长、兼容姿态和 intro／loop／exit。自定义包只有与内置版本完全一致才可覆盖；打开素材目录升级时会覆盖刷新本版文件，避免历史 PNG 残留继续生效。"),
                      ("动作预览分类", "动作页按行为来源划分为自发行为、互动行为、魔法特辑和节日特辑四个页签。卡片保留更细的动作类别、行为 ID、动画来源、帧数、循环方式和预览；节日卡只展示日期门禁说明，不允许通过预览绕过日期规则。"),
                      ("模型协议", "ModelProtocolAdapter 负责 Chat Completions / Responses 的请求与响应翻译；ModelApiService 负责 HTTPS、凭据、重试和安全错误。OpenAI、Qwen、DeepSeek 与 Custom 共用同一会话管线。"),
                      ("系统提示词", "固定角色安全边界由 PetSpeechComposer 生成；宠物档案、状态、关系、自然语言规则和 pupu-memory.md 的宠物系统提示词作为 system 背景注入。模型回复仍要通过宠物语言边界。"),
@@ -5867,25 +5982,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             PetDirection.DownLeft => 7,
             _ => 4
         };
-        var isFourPhaseAnchor = mode == DesktopMoveMode.AnchorApproach;
-        var firstDirectionFrame = direction8 * 4;
-        var frames = isFourPhaseAnchor
-            ? new[]
-            {
-                firstDirectionFrame,
-                firstDirectionFrame + 1,
-                firstDirectionFrame + 2,
-                firstDirectionFrame + 3,
-                firstDirectionFrame + 2,
-                firstDirectionFrame + 1
-            }
+        var isEightPhaseAnchor = mode == DesktopMoveMode.AnchorApproach;
+        var firstDirectionFrame = direction8 * 8;
+        var frames = isEightPhaseAnchor
+            ? Enumerable.Range(firstDirectionFrame, 8).ToArray()
             : new[] { direction16 };
         var sequence = new AnimationSequence(
-            $"{groupId}-{(isFourPhaseAnchor ? direction8 : direction16):00}",
+            $"{groupId}-{(isEightPhaseAnchor ? direction8 : direction16):00}",
             SpriteAtlas.Directions,
             0,
             frames,
-            Enumerable.Repeat(isFourPhaseAnchor ? 165 : 180, frames.Length).ToArray())
+            Enumerable.Repeat(isEightPhaseAnchor ? 150 : 180, frames.Length).ToArray())
         {
             Loop = true,
             ExternalSheet = resolved.Sheet,
@@ -5902,6 +6009,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         sequence = ResolveAnimationSequence(sequence);
         if (_currentSequence.Name == sequence.Name) return;
+        _pendingSequence = null;
         var preservePhase =
             _currentSequence.Name.StartsWith("run-", StringComparison.Ordinal) ||
             _currentSequence.Name.StartsWith("harness-", StringComparison.Ordinal) ||
@@ -5982,7 +6090,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         if (!_currentSequence.Loop && position == _currentSequence.Frames.Length - 1)
         {
             _framePosition = position;
-            _animationTimer.Stop();
+            if (_pendingSequence is not null)
+            {
+                var pending = _pendingSequence;
+                _pendingSequence = null;
+                StartResolvedSequence(pending);
+            }
+            else
+            {
+                _animationTimer.Stop();
+            }
         }
         else
         {

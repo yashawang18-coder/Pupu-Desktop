@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $root "Pupu.Desktop\Pupu.Desktop.csproj"
 $installerProject = Join-Path $root "Pupu.Installer\Pupu.Installer.csproj"
-$version = "1.11.1"
+$version = "1.11.2"
 $artifactRoot = Join-Path $root "artifacts"
 $output = Join-Path $artifactRoot "Pupu-$Runtime-$version"
 $architecture = $Runtime.Replace("win-", "")
@@ -62,6 +62,7 @@ Copy-Item (Join-Path $root "REMEDIATION-1.10.0.md") $output -Force
 Copy-Item (Join-Path $root "COIN-UPDATE-1.10.1.md") $output -Force
 Copy-Item (Join-Path $root "COIN-UPDATE-1.11.0.md") $output -Force
 Copy-Item (Join-Path $root "ARCHITECTURE-1.11.0.md") $output -Force
+Copy-Item (Join-Path $root "V19-IMPLEMENTATION-1.11.2.md") $output -Force
 
 $assetManifest = Join-Path $output "Assets\pupu-assets.json"
 if (-not (Test-Path $assetManifest)) {
