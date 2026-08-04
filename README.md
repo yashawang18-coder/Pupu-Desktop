@@ -277,12 +277,15 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\build-windows.ps1
 ```
 
-脚本会先检查容易导致 WPF 启动崩溃的只读绑定，再生成无需预装 .NET 的自包含 64 位包：
+脚本会检查统一版本、素材清单、WPF 绑定、架构和自动测试，再生成无需预装 .NET 的自包含 64 位包。版本只在 `Directory.Build.props` 的 `PupuVersion` 中维护：
 
 ```text
-dist\Pupu-win-x64-1.11.3\Pupu.exe
-dist\Pupu-Windows-x64-1.11.3.zip
+artifacts\Pupu-win-x64-1.11.3\Pupu.exe
+artifacts\Pupu-Windows-x64-1.11.3.zip
+artifacts\Pupu-Setup-x64-1.11.3.exe
 ```
+
+`pupu-assets.json` 是运行 PNG 的唯一清单。工程使用通配规则复制素材，但构建前和发布后都会比对清单；缺文件、未登记文件和发布遗漏会在同一轮直接失败。GitHub 完整 CI 将快速编译测试、逐帧素材审计、发布打包作为三个并行结果报告；`Windows quick preflight` 也可在 Actions 中单独手动运行。
 
 要安装到当前用户目录并创建开始菜单快捷方式：
 

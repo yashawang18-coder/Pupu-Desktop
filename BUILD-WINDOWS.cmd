@@ -9,6 +9,7 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-echo 构建完成：dist\Pupu-win-x64-1.11.1\Pupu.exe
-echo 一键安装程序：dist\Pupu-Setup-x64-1.11.1.exe
+for /f "usebackq delims=" %%V in (`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\get-pupu-version.ps1"`) do set "PUPU_VERSION=%%V"
+echo 构建完成：artifacts\Pupu-win-x64-%PUPU_VERSION%\Pupu.exe
+echo 一键安装程序：artifacts\Pupu-Setup-x64-%PUPU_VERSION%.exe
 pause

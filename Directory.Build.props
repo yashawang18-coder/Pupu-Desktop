@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <!-- Single source of truth for application, installer, scripts, and CI artifacts. -->
+    <PupuVersion>1.11.3</PupuVersion>
+    <Version>$(PupuVersion)</Version>
+    <AssemblyVersion>$(PupuVersion).0</AssemblyVersion>
+    <FileVersion>$(PupuVersion).0</FileVersion>
+    <InformationalVersion>$(PupuVersion)</InformationalVersion>
+    <Authors>Pupu &amp; 主人</Authors>
+    <Company>Pupu &amp; 主人</Company>
+    <Product>Pupu</Product>
+  </PropertyGroup>
+</Project>

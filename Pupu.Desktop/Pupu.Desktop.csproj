@@ -9,8 +9,6 @@
     <AssemblyName>Pupu</AssemblyName>
     <RootNamespace>Pupu.Desktop</RootNamespace>
     <ApplicationIcon>Assets\pupu.ico</ApplicationIcon>
-    <Version>1.11.3</Version>
-    <Authors>Pupu &amp; 主人</Authors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,15 +24,20 @@
 
   <ItemGroup>
     <Content Include="Assets\pupu-assets.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
-    <Content Include="Assets\pupu-core-youthful-v19.png;Assets\pupu-life-youthful-v19.png;Assets\pupu-directions-youthful-v19.png;Assets\pupu-touch-youthful-v19.png;Assets\pupu-routines-youthful-v19.png;Assets\pupu-walk-modes-youthful-v19.png;Assets\pupu-activity-youthful-v19.png;Assets\pupu-life-equipment-youthful-v19.png;Assets\pupu-motion-youthful-v19.png;Assets\pupu-gaze-coin-youthful-v19.png;Assets\pupu-litter-youthful-v19.png;Assets\pupu-specials-youthful-v19.png;Assets\pupu-seasonal-youthful-v19.png"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest"
-             ExcludeFromSingleFile="true" />
-    <Content Include="Assets\Actions\pupu-broom-flight-8dir-youthful-v19.png;Assets\Actions\pupu-cage-rest-youthful-v19.png;Assets\Actions\pupu-laser-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-snack-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-freeze-dried-target-v15.png;Assets\Actions\pupu-gaze-fullbody-youthful-v19.png;Assets\Actions\pupu-laser-dot-target-v15.png;Assets\Actions\pupu-walk-harness-16dir-youthful-v19.png"
+    <!-- The manifest is authoritative. verify-asset-manifest.ps1 rejects any
+         unregistered or missing runtime PNG before build and after publish. -->
+    <Content Include="Assets\**\*.png"
+             Exclude="Assets\pupu-icon.png"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest"
              ExcludeFromSingleFile="true" />
     <Resource Include="Assets\pupu-icon.png" />
     <Resource Include="Assets\pupu.ico" />
   </ItemGroup>
+
+  <Target Name="VerifyAssetManifestContract"
+          BeforeTargets="PrepareForBuild"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(OS)' == 'Windows_NT'">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\scripts\verify-asset-manifest.ps1&quot;" />
+  </Target>
 </Project>

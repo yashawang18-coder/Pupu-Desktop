@@ -1,13 +1,15 @@
 param(
     [ValidateSet("win-x64", "win-arm64")]
-    [string]$Runtime = "win-x64"
+    [string]$Runtime = "win-x64",
+    [ValidateSet("Full", "Package")]
+    [string]$Mode = "Full"
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $project = Join-Path $root "Pupu.Desktop\Pupu.Desktop.csproj"
 $installerProject = Join-Path $root "Pupu.Installer\Pupu.Installer.csproj"
-$version = "1.11.3"
+$version = (& (Join-Path $PSScriptRoot "get-pupu-version.ps1")).Trim()
 $artifactRoot = Join-Path $root "artifacts"
 $output = Join-Path $artifactRoot "Pupu-$Runtime-$version"
 $architecture = $Runtime.Replace("win-", "")
@@ -29,20 +31,26 @@ function Assert-NativeSuccess([string]$Step) {
 
 Remove-Item $output -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item $installerWork -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item $zip -Force -ErrorAction SilentlyContinue
+Remove-Item $setup -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 New-Item -ItemType Directory -Force -Path $installerWork | Out-Null
 
+& (Join-Path $PSScriptRoot "verify-release-contract.ps1")
+& (Join-Path $PSScriptRoot "verify-asset-manifest.ps1")
 dotnet --info
 Assert-NativeSuccess "dotnet --info"
 dotnet restore (Join-Path $root "Pupu.sln") --runtime $Runtime
 Assert-NativeSuccess "dotnet restore"
 dotnet build (Join-Path $root "Pupu.sln") --configuration Release --no-restore
 Assert-NativeSuccess "dotnet build"
-& (Join-Path $PSScriptRoot "verify-architecture.ps1")
-& (Join-Path $PSScriptRoot "verify-bindings.ps1")
-& (Join-Path $PSScriptRoot "verify-assets.ps1")
-dotnet run --project (Join-Path $root "Pupu.Tests\Pupu.Tests.csproj") --configuration Release --no-build
-Assert-NativeSuccess "dotnet test runner"
+if ($Mode -eq "Full") {
+    & (Join-Path $PSScriptRoot "verify-architecture.ps1")
+    & (Join-Path $PSScriptRoot "verify-bindings.ps1")
+    & (Join-Path $PSScriptRoot "verify-assets.ps1")
+    dotnet run --project (Join-Path $root "Pupu.Tests\Pupu.Tests.csproj") --configuration Release --no-build
+    Assert-NativeSuccess "dotnet test runner"
+}
 dotnet publish $project `
     --configuration Release `
     --runtime $Runtime `
@@ -54,6 +62,7 @@ dotnet publish $project `
     -p:DebugType=None `
     -p:DebugSymbols=false
 Assert-NativeSuccess "dotnet publish Pupu.Desktop"
+& (Join-Path $PSScriptRoot "verify-asset-manifest.ps1") -PublishedRoot $output
 
 Copy-Item (Join-Path $root "README.md") $output -Force
 Copy-Item (Join-Path $root "CHANGELOG.md") $output -Force
@@ -62,7 +71,7 @@ Copy-Item (Join-Path $root "REMEDIATION-1.10.0.md") $output -Force
 Copy-Item (Join-Path $root "COIN-UPDATE-1.10.1.md") $output -Force
 Copy-Item (Join-Path $root "COIN-UPDATE-1.11.0.md") $output -Force
 Copy-Item (Join-Path $root "ARCHITECTURE-1.11.0.md") $output -Force
-Copy-Item (Join-Path $root "V19-IMPLEMENTATION-1.11.3.md") $output -Force
+Copy-Item (Join-Path $root "V19-IMPLEMENTATION-$version.md") $output -Force
 
 $assetManifest = Join-Path $output "Assets\pupu-assets.json"
 if (-not (Test-Path $assetManifest)) {
@@ -87,7 +96,8 @@ foreach ($group in $publishedManifest.actionGroups.PSObject.Properties.Value) {
 $manifestFiles = Get-ChildItem $output -Recurse -File |
     Sort-Object FullName |
     ForEach-Object {
-        $relative = [System.IO.Path]::GetRelativePath($output, $_.FullName).Replace("\", "/")
+        $basePath = [System.IO.Path]::GetFullPath($output).TrimEnd([char[]]"\/")
+        $relative = [System.IO.Path]::GetFullPath($_.FullName).Substring($basePath.Length + 1).Replace("\", "/")
         [ordered]@{
             path = $relative
             sha256 = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
@@ -102,7 +112,6 @@ $installManifest |
     ConvertTo-Json -Depth 5 |
     Set-Content (Join-Path $output "install-manifest.json") -Encoding utf8
 
-if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path (Join-Path $output "*") -DestinationPath $zip -CompressionLevel Optimal
 
 Compress-Archive `

@@ -162,7 +162,11 @@ bash scripts/verify-bindings.sh
 bash scripts/verify-architecture.sh
 ```
 
-Windows CI 还必须完成：Release 编译、测试运行器、WPF XAML 编译、自包含发布、安装器载荷校验和产物上传。1.11.3 安装器名称为 `Pupu-Setup-x64-1.11.3.exe`。
+Windows CI 还必须完成：Release 编译、测试运行器、WPF XAML 编译、自包含发布、安装器载荷校验和产物上传。产品版本只由 `Directory.Build.props` 的 `PupuVersion` 提供，构建脚本、安装器程序集和 CI 产物名不得再次硬编码；当前安装器名称为 `Pupu-Setup-x64-1.11.3.exe`。
+
+完整 CI 由三个互不依赖的分支并行运行：快速编译与测试、素材清单与逐帧审计、Windows 发布与安装器试构建。最后的汇总门禁报告三个分支的独立结果，因此一项失败不会遮住其他层的问题。`windows-quick-preflight.yml` 还支持手动运行，用于正式打包前快速检查 Release 编译、架构、WPF 绑定、素材清单和确定性测试。
+
+`pupu-assets.json` 是正式运行 PNG 的唯一文件名来源。`Pupu.Desktop.csproj` 只保留通配复制规则；`verify-asset-manifest.ps1` 在源码阶段要求“Assets 运行 PNG = 清单引用”，并在 publish 后再次要求“发布 PNG = 清单引用”。新增动作素材不再需要同步维护第二份逐文件工程清单。
 
 发布门禁重点：
 
