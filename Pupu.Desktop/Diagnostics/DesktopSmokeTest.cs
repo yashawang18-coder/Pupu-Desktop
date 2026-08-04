@@ -69,6 +69,7 @@ internal sealed class DeterministicModelApiHandler : HttpMessageHandler
     private int _requestCount;
 
     public const string Reply = "听见啦，朴朴把尾巴放在你旁边。";
+    public const string ProfileAdjustedReply = "听见啦，我把尾巴放在你旁边。";
     public int RequestCount => Volatile.Read(ref _requestCount);
     public string LastRequestBody
     {
@@ -164,11 +165,14 @@ internal static class DesktopSmokeTestRunner
         await WaitUntilAsync(
             () => !viewModel.IsChatBusy &&
                   viewModel.ChatMessages.Any(message =>
-                      message.Role == "pupu" && message.Text == DeterministicModelApiHandler.Reply),
+                      message.Role == "pupu" &&
+                      message.Text == DeterministicModelApiHandler.ProfileAdjustedReply),
             "mock model reply",
             cancellationToken);
         if (!viewModel.IsBubbleVisible ||
-            !viewModel.BubbleText.Contains(DeterministicModelApiHandler.Reply, StringComparison.Ordinal))
+            !viewModel.BubbleText.Contains(
+                DeterministicModelApiHandler.ProfileAdjustedReply,
+                StringComparison.Ordinal))
             throw new InvalidOperationException("The model reply did not reach the desktop bubble.");
         if (handler.RequestCount != 1 ||
             !JsonContainsString(handler.LastRequestBody, OwnerMessage) ||
@@ -224,7 +228,7 @@ internal static class DesktopSmokeTestRunner
             Status = "passed",
             Steps = steps,
             ModelRequestCount = handler.RequestCount,
-            Reply = DeterministicModelApiHandler.Reply
+            Reply = DeterministicModelApiHandler.ProfileAdjustedReply
         };
     }
 
