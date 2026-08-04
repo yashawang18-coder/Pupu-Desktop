@@ -43,11 +43,13 @@ public sealed class PetProfile
     public string EnglishName { get; set; } = "Pupu";
     public string Breed { get; set; } = "银灰黑白长毛曼基康";
     public string Sex { get; set; } = "公猫";
+    public string SelfReference { get; set; } = "我";
     public DateTime? Birthday { get; set; }
     public string OwnerNickname { get; set; } = string.Empty;
     public string RelationshipToOwner { get; set; } = "弟弟";
     public DateTime? OwnerBirthday { get; set; }
     public string SystemPrompt { get; set; } = DefaultSystemPrompt;
+    public string AvatarFileName { get; set; } = string.Empty;
     public string Description { get; set; } =
         "银灰黑白长毛曼基康幼猫，幼态圆脸、黄绿色眼睛、粉黑拼接鼻头且中央有一点黑色，三头身但躯干较长，矮脚，尾巴特别大。";
     public PersonaDefinition Persona { get; set; } = PersonaDefinition.CreateDefaultPupu();
@@ -84,11 +86,13 @@ public sealed class PetProfile
         EnglishName = EnglishName,
         Breed = Breed,
         Sex = Sex,
+        SelfReference = SelfReference,
         Birthday = Birthday,
         OwnerNickname = OwnerNickname,
         RelationshipToOwner = RelationshipToOwner,
         OwnerBirthday = OwnerBirthday,
         SystemPrompt = SystemPrompt,
+        AvatarFileName = AvatarFileName,
         Description = Description,
         Persona = ClonePersona(Persona),
         Baseline = Baseline.Clone(),
@@ -108,9 +112,11 @@ public sealed class PetProfile
         Name = EnglishName;
         Breed = NormalizeText(Breed, "银灰黑白长毛曼基康", 48);
         Sex = NormalizeText(Sex, "公猫", 16);
+        SelfReference = NormalizeText(SelfReference, "我", 16);
         OwnerNickname = NormalizeText(OwnerNickname, string.Empty, 24);
         RelationshipToOwner = NormalizeText(RelationshipToOwner, "弟弟", 24);
         SystemPrompt = NormalizeMultiline(SystemPrompt, 6000);
+        AvatarFileName = NormalizeFileName(AvatarFileName);
         Description = NormalizeText(
             Description,
             "银灰黑白长毛曼基康幼猫，幼态圆脸、黄绿色眼睛、粉黑拼接鼻头且中央有一点黑色，三头身但躯干较长，矮脚，尾巴特别大。",
@@ -134,8 +140,15 @@ public sealed class PetProfile
                 ? petBirthday.ToString("yyyy年M月d日")
                 : "尚未填写";
             return $"中文名{ChineseName}，英文名{EnglishName}，品种{Breed}，性别{Sex}，生日{birthday}；" +
+                   $"宠物自称为“{SelfReference}”，对话中的第一人称必须使用这个自称；" +
                    $"和主人的关系是{RelationshipToOwner}，平时称呼主人为{OwnerAddress}。{Description}";
         }
+    }
+
+    private static string NormalizeFileName(string? value)
+    {
+        var fileName = Path.GetFileName((value ?? string.Empty).Replace('\\', '/'));
+        return fileName.Length <= 96 ? fileName : string.Empty;
     }
 
     private static string NormalizeText(string? value, string fallback, int maximumLength)

@@ -129,17 +129,62 @@
                 </ContextMenu>
             </Image.ContextMenu>
         </Image>
-        </Grid>
-
-        <!-- A quiet blank hit area: double-clicking it toggles chat without
-             competing with the pet's click, drag, touch or context menu. -->
-        <Border Width="{Binding PetDisplaySize, Mode=OneWay}"
-                MinWidth="190"
-                Height="26"
-                Margin="0,2,0,2"
+        <!-- The double-click target sits inside the sprite's lower transparent
+             safety padding, immediately beside the visible paws. -->
+        <Border Height="22"
+                VerticalAlignment="Bottom"
+                Margin="5,0"
                 Background="#01FFFFFF"
                 Cursor="Arrow"
-                MouseLeftButtonDown="ChatBlankArea_MouseLeftButtonDown" />
+                Panel.ZIndex="2"
+                MouseLeftButtonDown="ChatBlankArea_MouseLeftButtonDown"
+                ToolTip="双击打开桌面对话栏" />
+
+        <!-- A WPF overlay guarantees an immediately visible cage transition,
+             while the registered cage sprite continues its breathing loop. -->
+        <Border IsHitTestVisible="False"
+                Margin="12,15,12,8"
+                BorderBrush="#90705B45"
+                BorderThickness="4"
+                CornerRadius="18"
+                Panel.ZIndex="3"
+                RenderTransformOrigin="0.5,0.5">
+            <Border.RenderTransform>
+                <TranslateTransform Y="-20" />
+            </Border.RenderTransform>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Setter Property="Opacity" Value="0" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsCaged, Mode=OneWay}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0" To="1" Duration="0:0:0.32" />
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                         From="-20" To="0" Duration="0:0:0.32" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                    <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="1" Width="4" Background="#90705B45" />
+                <Border Grid.Column="2" Width="4" Background="#90705B45" />
+                <Border Grid.Column="3" Width="4" Background="#90705B45" />
+                <Border Grid.Column="4" Width="4" Background="#90705B45" />
+            </Grid>
+        </Border>
+        </Grid>
 
         <Grid Width="{Binding PetDisplaySize, Mode=OneWay}"
               MinWidth="180"

@@ -221,7 +221,9 @@ public sealed class ModelApiService : IModelApiService
             var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                var reply = _protocol.ExtractReply(responseText);
+                var reply = _speech.ApplyProfileSelfReference(
+                    _protocol.ExtractReply(responseText),
+                    identity);
                 if (!enforcePetBoundary)
                     return string.IsNullOrWhiteSpace(reply)
                         ? throw new InvalidOperationException("模型服务已连接，但没有返回文字。")

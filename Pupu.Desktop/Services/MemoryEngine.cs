@@ -563,15 +563,19 @@ public sealed class MemoryEngine : IAgentDecisionStatePort, IAgentMemoryPort
         Profile.EnglishName = profile.EnglishName;
         Profile.Breed = profile.Breed;
         Profile.Sex = profile.Sex;
+        Profile.SelfReference = profile.SelfReference;
         Profile.Birthday = profile.Birthday;
         Profile.OwnerNickname = profile.OwnerNickname;
         Profile.RelationshipToOwner = profile.RelationshipToOwner;
         Profile.OwnerBirthday = profile.OwnerBirthday;
+        Profile.SystemPrompt = profile.SystemPrompt;
+        Profile.AvatarFileName = profile.AvatarFileName;
         Profile.Description = profile.Description;
         UpsertConfirmedProfileFact("pet.chinese_name", Profile.ChineseName);
         UpsertConfirmedProfileFact("pet.english_name", Profile.EnglishName);
         UpsertConfirmedProfileFact("pet.breed", Profile.Breed);
         UpsertConfirmedProfileFact("pet.sex", Profile.Sex);
+        UpsertConfirmedProfileFact("pet.self_reference", Profile.SelfReference);
         UpsertConfirmedProfileFact(
             "pet.birthday",
             Profile.Birthday?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "未填写");
@@ -684,8 +688,11 @@ public sealed class MemoryEngine : IAgentDecisionStatePort, IAgentMemoryPort
     {
         var sections = ParseNotebookSections(text);
         if (PetSystemPromptMarkdown.TryExtract(text, out var systemPrompt))
-            Profile.SystemPrompt = systemPrompt;
-        if (sections.TryGetValue("主人手动记忆", out var memories))
+            Profile.SystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
+                ? PetProfile.DefaultSystemPrompt
+                : systemPrompt;
+        if (sections.TryGetValue("主人自由编辑的长期记忆", out var memories) ||
+            sections.TryGetValue("主人手动记忆", out memories))
             Profile.ManualMemories = memories.Distinct().TakeLast(80).ToList();
         if (sections.TryGetValue("重要回忆", out var highlights))
             Summary.Highlights = highlights.Distinct().Take(20).ToList();
@@ -710,6 +717,8 @@ public sealed class MemoryEngine : IAgentDecisionStatePort, IAgentMemoryPort
             if (values.TryGetValue("英文名", out var englishName)) Profile.EnglishName = englishName;
             if (values.TryGetValue("品种", out var breed)) Profile.Breed = breed;
             if (values.TryGetValue("性别", out var sex)) Profile.Sex = sex;
+            if (values.TryGetValue("宠物自称", out var selfReference))
+                Profile.SelfReference = selfReference;
             if (values.TryGetValue("对主人昵称", out var ownerNickname))
                 Profile.OwnerNickname = ownerNickname is "无" or "未填写" ? string.Empty : ownerNickname;
             if (values.TryGetValue("和主人关系", out var relationship))
@@ -787,13 +796,15 @@ public sealed class MemoryEngine : IAgentDecisionStatePort, IAgentMemoryPort
         builder.AppendLine($"- 英文名: {Profile.EnglishName}");
         builder.AppendLine($"- 品种: {Profile.Breed}");
         builder.AppendLine($"- 性别: {Profile.Sex}");
+        builder.AppendLine($"- 宠物自称: {Profile.SelfReference}");
         builder.AppendLine($"- 宠物生日: {Profile.Birthday?.ToString("yyyy-MM-dd") ?? "未填写"}");
         builder.AppendLine($"- 对主人昵称: {(string.IsNullOrWhiteSpace(Profile.OwnerNickname) ? "无" : Profile.OwnerNickname)}");
         builder.AppendLine($"- 和主人关系: {Profile.RelationshipToOwner}");
         builder.AppendLine($"- 主人生日: {Profile.OwnerBirthday?.ToString("yyyy-MM-dd") ?? "未填写"}");
         builder.AppendLine();
         PetSystemPromptMarkdown.AppendSection(builder, Profile.SystemPrompt);
-        builder.AppendLine("## 主人手动记忆");
+        builder.AppendLine("## 主人自由编辑的长期记忆");
+        builder.AppendLine("> 在这里逐行填写希望宠物长期记住的事情；保存后会立即进入下一次对话背景。");
         foreach (var item in Profile.ManualMemories) builder.AppendLine($"- {item}");
         builder.AppendLine();
         builder.AppendLine("## 重要回忆");
@@ -850,8 +861,10 @@ public sealed class MemoryEngine : IAgentDecisionStatePort, IAgentMemoryPort
                 result.TryAdd(current, new List<string>());
                 continue;
             }
-            if (current is null || !line.StartsWith("- ", StringComparison.Ordinal)) continue;
-            var value = line[2..].Trim();
+            if (current is null || line.Length == 0 || line.StartsWith('>')) continue;
+            var value = line.StartsWith("- ", StringComparison.Ordinal)
+                ? line[2..].Trim()
+                : line;
             if (value.Length > 0) result[current].Add(value);
         }
         return result;

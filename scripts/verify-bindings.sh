@@ -11,6 +11,7 @@ read_only=(
   NaturalRuleStatus NaturalPolicySummary NaturalRules HiddenActionRules
   RegularActionGalleryGroups MagicActionGallery SeasonalActionGallery AssetPackStatus
   PersonalityMemoryMatchSummary EditableMemoryStatus
+  PetProfileSaveStatus
   CodexIterationStatus
   RuntimeStateSummary RelationshipStateSummary LearnedPreferenceItems
   BehaviorScoreItems PetProfilePortrait AutomaticPersonalitySummary
@@ -34,8 +35,8 @@ for name in "${read_only[@]}"; do
   fi
 done
 
-for header in 主人 功能设置 素材库 开发者 状态与互动 档案 相册 性格与回复 长期记忆 动作规则 大模型 动作预览 技术与存储 诊断 技术说明 "Codex 迭代"; do
-  rg -q "TabItem Header=\"$header\"" "$ROOT/Pupu.Desktop/ControlWindow.xaml" || {
+for header in 主人 功能设置 素材库 开发者 状态与互动 档案 相册 性格设定 长期记忆 动作规则 "大模型与对话联调" 动作预览 技术与存储 诊断 技术说明 "Codex 迭代"; do
+  rg -q "TabItem[^>]*Header=\"$header\"" "$ROOT/Pupu.Desktop/ControlWindow.xaml" || {
     echo "Control panel section $header is missing." >&2
     exit 4
   }

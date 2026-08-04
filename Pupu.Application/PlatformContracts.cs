@@ -19,6 +19,7 @@ public interface IDesktopPresentationHost
     IUiTimer CreateTimer(TimeSpan interval);
     object? CropImage(object? source, int x, int y, int width, int height);
     object? LoadImage(string? path, int decodePixelWidth);
+    string? SelectImageFile(string title);
     void ShowActionPreview(
         string title,
         IReadOnlyList<object> frames,

@@ -42,7 +42,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("blue bed rest favors sleepy safe states and stays settled", TestBedRestCandidate),
     ("self grooming remains a low-frequency quiet daily behavior", TestSelfGroomCadence),
     ("holiday outfits are enabled only on exact calendar dates", TestHolidayDateGates),
-    ("profile names and owner address flow into pet speech", TestProfileSpeechIdentity),
+    ("profile names owner address and self-reference flow into pet speech", TestProfileSpeechIdentity),
     ("walk and autonomous routes are continuous nonzero and bounded", TestContinuousDesktopRoutes),
     ("broom route uses smooth paced eight-direction coverage", TestBroomRouteCoverage),
     ("model provider defaults normalize DeepSeek base endpoint", TestModelProviderDefaults),
@@ -1960,12 +1960,28 @@ static Task TestProfileSpeechIdentity()
         state,
         "主人回来啦。朴朴在这里。",
         "团团",
-        "哥哥");
-    Assert(line.Contains("团团") && line.Contains("哥哥"),
+        "哥哥",
+        "本喵");
+    Assert(line.Contains("本喵") && line.Contains("哥哥") && !line.Contains("团团"),
         $"profile identity was not applied to authored speech: {line}");
-    var generated = composer.Compose(PetSpeechIntent.Startup, state, null, "团团", "哥哥");
-    Assert(generated.Contains("团团") && generated.Contains("哥哥"),
+    var generated = composer.Compose(PetSpeechIntent.Startup, state, null, "团团", "哥哥", "本喵");
+    Assert(generated.Contains("本喵") && generated.Contains("哥哥"),
         $"profile identity was not applied to generated speech: {generated}");
+    var firstPerson = composer.Compose(
+        PetSpeechIntent.Rest,
+        state,
+        "我先睡一会儿，我们晚点再玩。",
+        "团团",
+        "哥哥",
+        "本喵");
+    Assert(firstPerson.Contains("本喵先睡", StringComparison.Ordinal) &&
+           firstPerson.Contains("我们晚点", StringComparison.Ordinal),
+        $"custom self-reference was not applied to local daily speech: {firstPerson}");
+    var profile = new PetProfile { SelfReference = "本喵", AvatarFileName = "..\\unsafe.png" };
+    profile.Normalize();
+    Assert(profile.SelfIdentity.Contains("宠物自称为“本喵”", StringComparison.Ordinal) &&
+           profile.AvatarFileName == "unsafe.png",
+        "profile normalization lost the self-reference or did not constrain the avatar file name");
     return Task.CompletedTask;
 }
 

@@ -194,6 +194,25 @@ internal static class DesktopSmokeTestRunner
             cancellationToken);
         steps.Add("owner-forced-magic-released");
 
+        if (!viewModel.CageCommand.CanExecute(null))
+            throw new InvalidOperationException("Owner cage command was disabled.");
+        viewModel.CageCommand.Execute(null);
+        await WaitUntilAsync(
+            () => viewModel.IsCaged &&
+                  viewModel.CurrentBehaviorLabel.Contains("关笼子", StringComparison.Ordinal),
+            "cage animation state",
+            cancellationToken);
+        steps.Add("cage-animation-active");
+
+        if (!viewModel.ReleaseCageCommand.CanExecute(null))
+            throw new InvalidOperationException("Cage release command was disabled.");
+        viewModel.ReleaseCageCommand.Execute(null);
+        await WaitUntilAsync(
+            () => !viewModel.IsCaged,
+            "cage release",
+            cancellationToken);
+        steps.Add("cage-animation-released");
+
         var errors = readApplicationErrors().ToList();
         if (errors.Count > 0)
             throw new InvalidOperationException(

@@ -11,6 +11,7 @@ public static class StoragePaths
     public static readonly string MemoryDirectory = Path.Combine(RootDirectory, "memory");
     public static readonly string LogDirectory = Path.Combine(RootDirectory, "logs");
     public static readonly string AssetDirectory = Path.Combine(RootDirectory, "assets");
+    public static readonly string ProfileMediaDirectory = Path.Combine(RootDirectory, "profile-media");
     public static readonly string ProfileFile = Path.Combine(MemoryDirectory, "profile.json");
     public static readonly string StateFile = Path.Combine(MemoryDirectory, "state.json");
     public static readonly string EventsFile = Path.Combine(MemoryDirectory, "events.md");
@@ -28,6 +29,11 @@ public static class StoragePaths
     public static readonly string PersonalityBehaviorV2File = Path.Combine(MemoryDirectory, "personality-behavior-v2.json");
     public static readonly string BehaviorDecisionLog = Path.Combine(LogDirectory, "behavior-decisions.jsonl");
     public static readonly string ErrorLog = Path.Combine(LogDirectory, "pupu-error.log");
+
+    public static string ProfileAvatarFile(string? fileName) =>
+        string.IsNullOrWhiteSpace(fileName)
+            ? string.Empty
+            : Path.Combine(ProfileMediaDirectory, Path.GetFileName(fileName));
 
     private static string ResolveRootDirectory()
     {

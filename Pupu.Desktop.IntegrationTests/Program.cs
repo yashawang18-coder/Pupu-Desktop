@@ -15,6 +15,9 @@ internal static class Program
 {
     private const string OwnerMessage = "朴朴，今天陪我说句话。";
     private const string ModelReply = "听见啦，朴朴把尾巴轻轻放在你旁边。";
+    private const string ExpectedModelReply = "听见啦，本喵把尾巴轻轻放在你旁边。";
+    private const string OwnerPrompt = "说话要安静克制，先回应事实，不要连续卖萌。";
+    private const string OwnerMemory = "主人不开心时，希望我先安静陪在旁边。";
 
     [STAThread]
     public static async Task<int> Main()
@@ -55,6 +58,21 @@ internal static class Program
                 new SeededRandomSource(20260805));
 
             await WaitUntilAsync(() => viewModel.IsReady, "view model initialization");
+            viewModel.PetSelfReference = "本喵";
+            viewModel.OwnerPersonalityPrompt = OwnerPrompt;
+            viewModel.SavePetProfileCommand.Execute(null);
+            await WaitUntilAsync(
+                () => viewModel.PetProfileSaveStatus.Contains("已保存并立即生效", StringComparison.Ordinal),
+                "profile and owner prompt persistence");
+
+            viewModel.EditableMemoryText = viewModel.EditableMemoryText.Replace(
+                $"## 主人自由编辑的长期记忆{Environment.NewLine}",
+                $"## 主人自由编辑的长期记忆{Environment.NewLine}- {OwnerMemory}{Environment.NewLine}",
+                StringComparison.Ordinal);
+            viewModel.SaveEditableMemoryCommand.Execute(null);
+            await WaitUntilAsync(
+                () => viewModel.EditableMemoryStatus.Contains("已保存并应用到下一次对话", StringComparison.Ordinal),
+                "owner memory persistence");
             viewModel.ChatInput = OwnerMessage;
             Assert(viewModel.SendChatCommand.CanExecute(null),
                 "SendChatCommand was disabled for a ready non-empty chat input.");
@@ -67,7 +85,7 @@ internal static class Program
             await WaitUntilAsync(
                 () => !viewModel.IsChatBusy &&
                       viewModel.ChatMessages.Any(message =>
-                          message.Role == "pupu" && message.Text == ModelReply),
+                          message.Role == "pupu" && message.Text == ExpectedModelReply),
                 "model reply propagation");
 
             Assert(handler.RequestCount == 1,
@@ -78,8 +96,14 @@ internal static class Program
                 "The owner message did not reach the serialized model request.");
             Assert(JsonContainsString(handler.RequestBody, "你只扮演下面档案中的桌面宠物"),
                 "The pet identity system prompt did not reach the model request.");
+            Assert(JsonContainsString(handler.RequestBody, "宠物自称为“本喵”"),
+                "The saved pet self-reference did not reach the model request.");
+            Assert(JsonContainsString(handler.RequestBody, OwnerPrompt),
+                "The saved owner personality prompt did not reach the model request.");
+            Assert(JsonContainsString(handler.RequestBody, OwnerMemory),
+                "The saved editable long-term memory did not reach the model request.");
             Assert(viewModel.IsBubbleVisible &&
-                   viewModel.BubbleText.Contains(ModelReply, StringComparison.Ordinal),
+                   viewModel.BubbleText.Contains(ExpectedModelReply, StringComparison.Ordinal),
                 "The accepted model reply did not reach the desktop bubble state.");
             Assert(viewModel.ModelApiStatus.Contains("角色边界检查", StringComparison.Ordinal),
                 "The model success status was not exposed to the panel.");
@@ -88,7 +112,7 @@ internal static class Program
             await WaitUntilAsync(() => File.Exists(conversationPath), "conversation persistence");
             var conversation = await File.ReadAllTextAsync(conversationPath);
             Assert(JsonContainsString(conversation, OwnerMessage) &&
-                   JsonContainsString(conversation, ModelReply),
+                   JsonContainsString(conversation, ExpectedModelReply),
                 "The completed exchange was not persisted to the isolated conversation store.");
 
             Console.WriteLine("[PASS] chat input -> command -> mock API -> reply -> bubble -> conversation store");
@@ -193,6 +217,7 @@ internal static class Program
         public IUiTimer CreateTimer(TimeSpan interval) => new TestUiTimer(interval);
         public object CropImage(object? source, int x, int y, int width, int height) => new();
         public object LoadImage(string? path, int decodePixelWidth) => new();
+        public string? SelectImageFile(string title) => null;
         public void ShowActionPreview(
             string title,
             IReadOnlyList<object> frames,

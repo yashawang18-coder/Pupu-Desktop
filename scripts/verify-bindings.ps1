@@ -24,6 +24,7 @@ $readOnlyBindings = @(
     "ConfinementStatus",
     "PersonalityMemoryMatchSummary",
     "EditableMemoryStatus",
+    "PetProfileSaveStatus",
     "NaturalPolicySummary",
     "NaturalRuleStatus",
     "NaturalRules",
@@ -57,11 +58,14 @@ foreach ($header in $requiredTopLevelHeaders) {
     }
 }
 
-$requiredFunctionalHeaders = @("性格与回复", "长期记忆", "动作规则", "大模型")
+$requiredFunctionalHeaders = @("性格设定", "动作规则", "长期记忆")
 foreach ($header in $requiredFunctionalHeaders) {
-    if ($controlXaml -notmatch "<TabItem\s+Header=`"$header`"") {
+    if ($controlXaml -notmatch "<TabItem[^>]*Header=`"$header`"") {
         throw "功能设置缺少区域：$header"
     }
+}
+if ($controlXaml -notmatch "<TabItem[^>]*Header=`"大模型与对话联调`"") {
+    throw "主人页缺少大模型与对话联调区域。"
 }
 
 if ($controlXaml -match "<TabItem\s+Header=`"(桌面设置|素材包|性格|记忆|行为)`"") {

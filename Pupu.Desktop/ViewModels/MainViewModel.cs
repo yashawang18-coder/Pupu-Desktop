@@ -697,6 +697,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private string _naturalRuleStatus = "可以直接描述你希望pupu如何表现，规则与记忆只保存在本机。";
     private string _editableMemoryText = string.Empty;
     private string _editableMemoryStatus = "Markdown 长期记忆正在加载…";
+    private string _petProfileSaveStatus = "修改档案后点击保存；保存结果会在这里显示。";
     private string _codexIterationRequest = string.Empty;
     private string _codexProjectPath = string.Empty;
     private string _codexIterationStatus = "写下新动作或设定后，可生成一份带当前性格与记忆上下文的 Codex 任务。";
@@ -807,6 +808,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         UndoCorrectionCommand = AsyncCommand(UndoCorrectionAsync, () => IsReady);
         SavePersonalityCommand = AsyncCommand(SavePersonalityAsync, () => IsReady);
         SavePetProfileCommand = AsyncCommand(SavePetProfileAsync, () => IsReady);
+        UploadPetAvatarCommand = AsyncCommand(UploadPetAvatarAsync, () => IsReady);
         ResetLearningCommand = AsyncCommand(ResetLearningAsync, () => IsReady);
         ZoomInCommand = AsyncCommand(() => ChangeScaleAsync(0.1), () => IsReady);
         ZoomOutCommand = AsyncCommand(() => ChangeScaleAsync(-0.1), () => IsReady);
@@ -874,6 +876,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand UndoCorrectionCommand { get; }
     public ICommand SavePersonalityCommand { get; }
     public ICommand SavePetProfileCommand { get; }
+    public ICommand UploadPetAvatarCommand { get; }
     public ICommand ResetLearningCommand { get; }
     public ICommand ZoomInCommand { get; }
     public ICommand ZoomOutCommand { get; }
@@ -1006,7 +1009,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public string CurrentPersonaSummary =>
         $"{_persona.DisplayName} · {_persona.Id} · {_persona.Identity} · {_persona.SpeakingStyle}";
     public string CurrentPromptPreview =>
-        $"{_persona.PromptSummary()} 只注入相关长期记忆摘要与最多三条相册经历摘要；不包含本地绝对路径。";
+        IsReady
+            ? $"档案自称：{_memory.Profile.SelfReference}{Environment.NewLine}" +
+              $"主人性格提示词：{_memory.Profile.SystemPrompt}{Environment.NewLine}" +
+              $"长期记忆：{string.Join("；", _memory.Profile.ManualMemories.TakeLast(5))}{Environment.NewLine}" +
+              "只注入相关长期记忆摘要与最多三条相册经历摘要；不包含本地绝对路径。"
+            : "提示词正在加载…";
     public int CurrentPromptTokenEstimate =>
         Math.Max(1, (int)Math.Ceiling(CurrentPromptPreview.Length / 3.2));
     public string LlmFallbackReason => _modelApiSettings.Enabled
@@ -1444,6 +1452,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    public string PetSelfReference
+    {
+        get => _editableProfile.SelfReference;
+        set
+        {
+            _editableProfile.SelfReference = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(PetProfileSummary));
+        }
+    }
+
     public string PetBreed
     {
         get => _editableProfile.Breed;
@@ -1459,7 +1478,27 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public DateTime? PetBirthday
     {
         get => _editableProfile.Birthday;
-        set { _editableProfile.Birthday = value; OnPropertyChanged(); OnPropertyChanged(nameof(PetProfileSummary)); }
+        set
+        {
+            _editableProfile.Birthday = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(PetBirthdayYear));
+            OnPropertyChanged(nameof(PetProfileSummary));
+        }
+    }
+
+    public IReadOnlyList<int> BirthdayYearOptions { get; } =
+        Enumerable.Range(1900, 201).Reverse().ToArray();
+
+    public int? PetBirthdayYear
+    {
+        get => PetBirthday?.Year;
+        set
+        {
+            if (value is null) return;
+            PetBirthday = WithYear(PetBirthday ?? new DateTime(value.Value, 7, 14), value.Value);
+            OnPropertyChanged();
+        }
     }
 
     public string OwnerNickname
@@ -1477,7 +1516,30 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public DateTime? OwnerBirthday
     {
         get => _editableProfile.OwnerBirthday;
-        set { _editableProfile.OwnerBirthday = value; OnPropertyChanged(); OnPropertyChanged(nameof(PetProfileSummary)); }
+        set
+        {
+            _editableProfile.OwnerBirthday = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(OwnerBirthdayYear));
+            OnPropertyChanged(nameof(PetProfileSummary));
+        }
+    }
+
+    public int? OwnerBirthdayYear
+    {
+        get => OwnerBirthday?.Year;
+        set
+        {
+            if (value is null) return;
+            OwnerBirthday = WithYear(OwnerBirthday ?? new DateTime(value.Value, 7, 14), value.Value);
+            OnPropertyChanged();
+        }
+    }
+
+    public string PetProfileSaveStatus
+    {
+        get => _petProfileSaveStatus;
+        private set => SetField(ref _petProfileSaveStatus, value);
     }
 
     public string PetProfileSummary
@@ -1490,9 +1552,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 ? "主人"
                 : _editableProfile.OwnerNickname;
             return $"{_editableProfile.ChineseName} / {_editableProfile.EnglishName} · {_editableProfile.Breed} · " +
-                   $"{_editableProfile.Sex} · 生日 {petBirthday} · 是主人的{_editableProfile.RelationshipToOwner} · " +
+                   $"{_editableProfile.Sex} · 自称 {_editableProfile.SelfReference} · 生日 {petBirthday} · 是主人的{_editableProfile.RelationshipToOwner} · " +
                    $"称呼主人为 {address} · 主人生日 {ownerBirthday}";
         }
+    }
+
+    private static DateTime WithYear(DateTime date, int year)
+    {
+        var day = Math.Min(date.Day, DateTime.DaysInMonth(year, date.Month));
+        return new DateTime(year, date.Month, day);
     }
 
     public string PetProfileTitle
@@ -4138,11 +4206,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         await _memory.SaveEditableNotebookAsync(EditableMemoryText);
         _editableTraits = _memory.Profile.Baseline.Clone();
+        _editableProfile = _memory.Profile.Clone();
         RefreshEditableTraits();
+        RefreshEditableProfile();
         RefreshNaturalRules();
         RefreshAll();
         await RefreshEditableNotebookAsync();
-        EditableMemoryStatus = $"已保存并应用：{StoragePaths.EditableMemoryFile}";
+        OnPropertyChanged(nameof(CurrentPromptPreview));
+        OnPropertyChanged(nameof(CurrentPromptTokenEstimate));
+        EditableMemoryStatus = $"已保存并应用到下一次对话：{_memory.Profile.ManualMemories.Count} 条长期记忆，" +
+                               $"性格提示词 {_memory.Profile.SystemPrompt.Length} 字。{StoragePaths.EditableMemoryFile}";
         _ = ShowBubbleAsync(null, 4200, PetSpeechIntent.Remembered);
     }
 
@@ -4151,7 +4224,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         EditableMemoryText = await _memory.GetEditableNotebookAsync();
         await _memory.SaveEditableNotebookAsync(EditableMemoryText);
         _editableTraits = _memory.Profile.Baseline.Clone();
+        _editableProfile = _memory.Profile.Clone();
         RefreshEditableTraits();
+        RefreshEditableProfile();
         RefreshNaturalRules();
         RefreshAll();
         EditableMemoryStatus = $"已从磁盘重新载入：{StoragePaths.EditableMemoryFile}";
@@ -4161,6 +4236,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         EditableMemoryText = await _memory.GetEditableNotebookAsync();
         OnPropertyChanged(nameof(PersonalityMemoryMatchSummary));
+        OnPropertyChanged(nameof(CurrentPromptPreview));
+        OnPropertyChanged(nameof(CurrentPromptTokenEstimate));
     }
 
     private static void OpenEditableMemoryFile()
@@ -4482,11 +4559,35 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         RefreshEditableProfile();
         await RefreshEditableNotebookAsync();
         RefreshAll();
+        PetProfileSaveStatus = $"已保存并立即生效 · {DateTime.Now:HH:mm:ss} · " +
+                               $"自称“{_memory.Profile.SelfReference}” · 性格提示词 {_memory.Profile.SystemPrompt.Length} 字";
         _ = ShowBubbleAsync(
             $"档案记好啦。{_memory.Profile.ChineseName}还是主人的{_memory.Profile.RelationshipToOwner}。",
             4600,
             PetSpeechIntent.Remembered);
         _ = TryRunCalendarSpecialAsync();
+    }
+
+    private async Task UploadPetAvatarAsync()
+    {
+        var source = _presentationHost.SelectImageFile("选择宠物档案头像");
+        if (string.IsNullOrWhiteSpace(source)) return;
+        var extension = Path.GetExtension(source).ToLowerInvariant();
+        if (extension is not (".png" or ".jpg" or ".jpeg" or ".bmp"))
+            throw new InvalidOperationException("头像只支持 PNG、JPG、JPEG 或 BMP 图片。");
+
+        Directory.CreateDirectory(StoragePaths.ProfileMediaDirectory);
+        var fileName = $"pet-avatar{extension}";
+        var destination = StoragePaths.ProfileAvatarFile(fileName);
+        if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+            File.Copy(source, destination, overwrite: true);
+        _editableProfile.AvatarFileName = fileName;
+        await _memory.SaveProfileAsync(_editableProfile);
+        _editableProfile = _memory.Profile.Clone();
+        _petProfilePortrait = null;
+        OnPropertyChanged(nameof(PetProfilePortrait));
+        PetProfileSaveStatus = $"头像已保存并立即生效 · {DateTime.Now:HH:mm:ss}";
+        await RefreshEditableNotebookAsync();
     }
 
     private async Task ResetLearningAsync()
@@ -6262,10 +6363,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(PetEnglishName));
         OnPropertyChanged(nameof(PetBreed));
         OnPropertyChanged(nameof(PetSex));
+        OnPropertyChanged(nameof(PetSelfReference));
         OnPropertyChanged(nameof(PetBirthday));
+        OnPropertyChanged(nameof(PetBirthdayYear));
         OnPropertyChanged(nameof(OwnerNickname));
         OnPropertyChanged(nameof(RelationshipToOwner));
         OnPropertyChanged(nameof(OwnerBirthday));
+        OnPropertyChanged(nameof(OwnerBirthdayYear));
         OnPropertyChanged(nameof(OwnerPersonalityPrompt));
         OnPropertyChanged(nameof(PetProfileSummary));
         OnPropertyChanged(nameof(PetProfileTitle));
@@ -6277,7 +6381,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             _memory.Personality,
             authoredDraft,
             _memory.Profile.ChineseName,
-            _memory.Profile.OwnerAddress);
+            _memory.Profile.OwnerAddress,
+            _memory.Profile.SelfReference);
 
     private void RefreshAll()
     {
@@ -6327,6 +6432,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      SaveEditableMemoryCommand, ReloadEditableMemoryCommand, CreateCodexIterationCommand,
                      LikeBehaviorCommand, DislikeBehaviorCommand, UndoCorrectionCommand,
                      SavePersonalityCommand, SavePetProfileCommand, ResetLearningCommand,
+                     UploadPetAvatarCommand,
                      ZoomInCommand, ZoomOutCommand, ResetZoomCommand
                  }.OfType<AsyncRelayCommand>())
             command.RaiseCanExecuteChanged();
