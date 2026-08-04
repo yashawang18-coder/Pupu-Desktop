@@ -30,7 +30,7 @@
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest"
              ExcludeFromSingleFile="true" />
-    <Content Include="Assets\Actions\pupu-cage-rest-youthful-v19.png;Assets\Actions\pupu-laser-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-snack-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-freeze-dried-target-v15.png;Assets\Actions\pupu-gaze-fullbody-youthful-v19.png;Assets\Actions\pupu-laser-dot-target-v15.png;Assets\Actions\pupu-walk-harness-16dir-youthful-v19.png"
+    <Content Include="Assets\Actions\pupu-broom-flight-8dir-youthful-v19.png;Assets\Actions\pupu-cage-rest-youthful-v19.png;Assets\Actions\pupu-laser-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-snack-chase-gait-8dir-youthful-v19.png;Assets\Actions\pupu-freeze-dried-target-v15.png;Assets\Actions\pupu-gaze-fullbody-youthful-v19.png;Assets\Actions\pupu-laser-dot-target-v15.png;Assets\Actions\pupu-walk-harness-16dir-youthful-v19.png"
              CopyToOutputDirectory="PreserveNewest"
              CopyToPublishDirectory="PreserveNewest"
              ExcludeFromSingleFile="true" />
