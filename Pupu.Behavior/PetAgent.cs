@@ -216,14 +216,14 @@ public sealed class RulePetAgent : IPetAgent
     private string ComposeLocalChatReply(string text)
     {
         var message = (text ?? string.Empty).Trim();
-        if (message.Contains("你好", StringComparison.OrdinalIgnoreCase) ||
-            message.Contains("早上好", StringComparison.OrdinalIgnoreCase) ||
-            message.Contains("晚上好", StringComparison.OrdinalIgnoreCase))
-            return $"看见你啦。{_persona.DisplayName}可不是特地等你的……尾巴只是刚好翘起来。";
         if (message.Contains("可爱", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("喜欢你", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("爱你", StringComparison.OrdinalIgnoreCase))
             return "眼光不错。准你再夸一句，不许得意。";
+        if (message.Contains("你好", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("早上好", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("晚上好", StringComparison.OrdinalIgnoreCase))
+            return $"看见你啦。{_persona.DisplayName}可不是特地等你的……尾巴只是刚好翘起来。";
         if (message.Contains("玩", StringComparison.OrdinalIgnoreCase))
             return "要玩就快一点！朴朴的爪子已经准备好了，才没有在期待。";
         if (message.Contains("吃", StringComparison.OrdinalIgnoreCase) ||
