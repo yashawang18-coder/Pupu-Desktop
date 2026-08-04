@@ -63,6 +63,8 @@ dotnet publish $project `
     -p:DebugSymbols=false
 Assert-NativeSuccess "dotnet publish Pupu.Desktop"
 & (Join-Path $PSScriptRoot "verify-asset-manifest.ps1") -PublishedRoot $output
+$publishedExecutable = Join-Path $output "Pupu.exe"
+& (Join-Path $PSScriptRoot "run-windows-smoke.ps1") -Executable $publishedExecutable
 
 Copy-Item (Join-Path $root "README.md") $output -Force
 Copy-Item (Join-Path $root "CHANGELOG.md") $output -Force

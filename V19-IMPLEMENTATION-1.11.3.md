@@ -164,7 +164,9 @@ bash scripts/verify-architecture.sh
 
 Windows CI 还必须完成：Release 编译、测试运行器、WPF XAML 编译、自包含发布、安装器载荷校验和产物上传。产品版本只由 `Directory.Build.props` 的 `PupuVersion` 提供，构建脚本、安装器程序集和 CI 产物名不得再次硬编码；当前安装器名称为 `Pupu-Setup-x64-1.11.3.exe`。
 
-完整 CI 由三个互不依赖的分支并行运行：快速编译与测试、素材清单与逐帧审计、Windows 发布与安装器试构建。最后的汇总门禁报告三个分支的独立结果，因此一项失败不会遮住其他层的问题。`windows-quick-preflight.yml` 还支持手动运行，用于正式打包前快速检查 Release 编译、架构、WPF 绑定、素材清单和确定性测试。
+完整 CI 由三个互不依赖的分支并行运行：快速编译与测试、素材清单与逐帧审计、Windows 发布与安装器试构建。最后的汇总门禁报告三个分支的独立结果，因此一项失败不会遮住其他层的问题。`windows-quick-preflight.yml` 还支持手动运行，用于正式打包前快速检查 Release 编译、架构、WPF 绑定、素材清单、确定性测试，以及从 `ChatInput`／`SendChatCommand` 到模拟模型 API、回复解析、ViewModel 气泡和会话文件的端到端链路。
+
+打包分支在压缩 ZIP 和嵌入安装器前直接启动发布目录中的 `Pupu.exe --smoke-test`。该模式只在显式命令行参数下启用，自动创建隔离数据根目录，打开主窗口和控制面板，保存虚拟模型设置，完成一次对话，触发并解除 `Petrificus Totalus`，检查未处理异常后以明确退出码结束。模拟传输不访问公网、不读取 Windows 中已有的真实模型密钥，临时数据由构建脚本在进程退出后删除。
 
 `pupu-assets.json` 是正式运行 PNG 的唯一文件名来源。`Pupu.Desktop.csproj` 只保留通配复制规则；`verify-asset-manifest.ps1` 在源码阶段要求“Assets 运行 PNG = 清单引用”，并在 publish 后再次要求“发布 PNG = 清单引用”。新增动作素材不再需要同步维护第二份逐文件工程清单。
 

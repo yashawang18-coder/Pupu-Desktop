@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pupu.Application", "Pupu.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pupu.Platform.Windows", "Pupu.Platform.Windows\Pupu.Platform.Windows.csproj", "{AF39EC2B-1118-4336-9322-AE313509B736}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pupu.Desktop.IntegrationTests", "Pupu.Desktop.IntegrationTests\Pupu.Desktop.IntegrationTests.csproj", "{3C2D9A77-F813-4D8E-99F4-764BA557D033}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,5 +46,9 @@ Global
 		{AF39EC2B-1118-4336-9322-AE313509B736}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF39EC2B-1118-4336-9322-AE313509B736}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF39EC2B-1118-4336-9322-AE313509B736}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C2D9A77-F813-4D8E-99F4-764BA557D033}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C2D9A77-F813-4D8E-99F4-764BA557D033}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C2D9A77-F813-4D8E-99F4-764BA557D033}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C2D9A77-F813-4D8E-99F4-764BA557D033}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

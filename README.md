@@ -277,7 +277,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\build-windows.ps1
 ```
 
-脚本会检查统一版本、素材清单、WPF 绑定、架构和自动测试，再生成无需预装 .NET 的自包含 64 位包。版本只在 `Directory.Build.props` 的 `PupuVersion` 中维护：
+脚本会检查统一版本、素材清单、WPF 绑定、架构和自动测试，再生成无需预装 .NET 的自包含 64 位包。快速预检还会用本地模拟 API 贯通输入框、发送命令、请求解析、气泡与会话落盘；发布后会直接运行一次隔离的 `Pupu.exe --smoke-test`，打开控制面板并触发对话和主人强制魔法。版本只在 `Directory.Build.props` 的 `PupuVersion` 中维护：
 
 ```text
 artifacts\Pupu-win-x64-1.11.3\Pupu.exe
@@ -285,7 +285,7 @@ artifacts\Pupu-Windows-x64-1.11.3.zip
 artifacts\Pupu-Setup-x64-1.11.3.exe
 ```
 
-`pupu-assets.json` 是运行 PNG 的唯一清单。工程使用通配规则复制素材，但构建前和发布后都会比对清单；缺文件、未登记文件和发布遗漏会在同一轮直接失败。GitHub 完整 CI 将快速编译测试、逐帧素材审计、发布打包作为三个并行结果报告；`Windows quick preflight` 也可在 Actions 中单独手动运行。
+`pupu-assets.json` 是运行 PNG 的唯一清单。工程使用通配规则复制素材，但构建前和发布后都会比对清单；缺文件、未登记文件和发布遗漏会在同一轮直接失败。GitHub 完整 CI 将快速编译测试、逐帧素材审计、发布打包作为三个并行结果报告；`Windows quick preflight` 也可在 Actions 中单独手动运行。所有自动化对话使用进程内模拟响应和临时数据根目录，不读取真实 API 密钥，也不修改用户的 `%LOCALAPPDATA%\PupuDesktop`。
 
 要安装到当前用户目录并创建开始菜单快捷方式：
 

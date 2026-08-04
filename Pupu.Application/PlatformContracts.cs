@@ -72,6 +72,14 @@ public interface IModelApiService : IDisposable
         CancellationToken cancellationToken = default);
 }
 
+public interface IModelCredentialStore
+{
+    bool Exists(string target);
+    string? Read(string target);
+    void Write(string target, string secret);
+    void Delete(string target);
+}
+
 public interface IAssetPackService
 {
     AssetPackManifest Manifest { get; }

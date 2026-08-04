@@ -4,9 +4,9 @@ namespace Pupu.Desktop.Services;
 
 public static class StoragePaths
 {
-    public static readonly string RootDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "PupuDesktop");
+    public const string DataRootEnvironmentVariable = "PUPU_DATA_ROOT";
+
+    public static readonly string RootDirectory = ResolveRootDirectory();
 
     public static readonly string MemoryDirectory = Path.Combine(RootDirectory, "memory");
     public static readonly string LogDirectory = Path.Combine(RootDirectory, "logs");
@@ -28,4 +28,14 @@ public static class StoragePaths
     public static readonly string PersonalityBehaviorV2File = Path.Combine(MemoryDirectory, "personality-behavior-v2.json");
     public static readonly string BehaviorDecisionLog = Path.Combine(LogDirectory, "behavior-decisions.jsonl");
     public static readonly string ErrorLog = Path.Combine(LogDirectory, "pupu-error.log");
+
+    private static string ResolveRootDirectory()
+    {
+        var overrideRoot = Environment.GetEnvironmentVariable(DataRootEnvironmentVariable);
+        return string.IsNullOrWhiteSpace(overrideRoot)
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PupuDesktop")
+            : Path.GetFullPath(overrideRoot.Trim());
+    }
 }

@@ -37,7 +37,7 @@ public partial class MainWindow : Window
         _viewModel = new MainViewModel(
             new WpfPresentationHost(),
             AssetPackService.Load(),
-            new ModelApiService(new PetSpeechComposer()),
+            App.CreateModelApiService(),
             new CodexIterationService(),
             new WindowsDesktopEnvironmentProbe());
         DataContext = _viewModel;
@@ -49,6 +49,10 @@ public partial class MainWindow : Window
         _cursorGazeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(90) };
         _cursorGazeTimer.Tick += (_, _) => RefreshCursorGaze();
     }
+
+    internal MainViewModel ViewModelForAutomation => _viewModel;
+    internal bool IsControlPanelOpenForAutomation =>
+        _controlWindow is { IsLoaded: true, IsVisible: true };
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
