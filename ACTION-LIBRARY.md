@@ -120,6 +120,8 @@
 
 ## 魔法、节日与参与规则
 
+主人明确发起的普通互动不再使用性格、关系、偏好和随机数叠加出的隐藏拒绝概率。档案中的“互动接受倾向”是唯一可编辑的软控制，默认 90%，用于调节极端疲劳和压力等真实状态的拒绝门槛；正常状态直接接受。饱腹、睡眠、关笼子、旅行、动作不可中断、冷却和统一仲裁禁用仍可给出明确原因并阻止执行。对话自定义角色提示词只负责语言风格，不直接操纵动作执行。
+
 `specials:1–4` 依次为 `Accio Broom`、`Apparate`、`Petrificus Totalus`、`Scourgify`。主人在右键菜单明确发起魔法时必须执行，不调用普通互动的心情拒绝；宠物每天最多一次的自发魔法仍经过 EligibilityFilter、UtilityScoring、SelectionPolicy 和 ActionScheduler。
 
 节日限定只在精确日期由 `DailySpecialRules` 触发：

@@ -1452,6 +1452,24 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    public double OwnerInteractionAcceptance
+    {
+        get => _editableProfile.OwnerInteractionAcceptance * 100;
+        set
+        {
+            var normalized = Math.Clamp(value / 100, 0, 1);
+            if (Math.Abs(_editableProfile.OwnerInteractionAcceptance - normalized) < 0.0001)
+                return;
+            _editableProfile.OwnerInteractionAcceptance = normalized;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(OwnerInteractionAcceptanceLabel));
+            RaiseCommands();
+        }
+    }
+
+    public string OwnerInteractionAcceptanceLabel =>
+        $"{_editableProfile.OwnerInteractionAcceptance:P0}";
+
     public string PetSelfReference
     {
         get => _editableProfile.SelfReference;
@@ -1868,12 +1886,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private static string RejectionBubble(BehaviorArbitrationResult result) =>
         result.ReasonCode switch
         {
-            "state_forbidden" => "现在不想换。挑个轻松点的，也许会赏脸。",
-            "current_not_interruptible" => "看见了。等本猫把爪子收好，再考虑理你。",
-            "minimum_duration" => "才刚躺稳就催？先让尾巴摆完这一拍。",
-            "lower_priority" => "嗯，先放那儿。本猫有空再审。",
-            "request_cooldown" => "刚理过你一次。别得寸进尺，等一小会儿。",
-            _ => "这次没兴趣。过会儿拿点诚意再来。"
+            "state_forbidden" => "当前状态不能执行这个互动，解除限制后就可以啦。",
+            "current_not_interruptible" => "当前动作还不能中断，结束后再试一次。",
+            "minimum_duration" => "这个动作刚开始，需要先完成最短阶段。",
+            "lower_priority" => "当前有更重要的动作正在处理，稍后再试。",
+            "request_cooldown" => "这个互动正在冷却，过一小会儿就能再次触发。",
+            _ => "当前有明确的执行冲突，恢复后再试一次。"
         };
 
     private void ResetArbitrationToIdle()
@@ -1897,7 +1915,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             _memory.Personality,
             kind,
             context,
-            _random.NextDouble());
+            _memory.Profile.OwnerInteractionAcceptance);
         if (decision.Accepted) return true;
 
         var owner = _memory.Profile.OwnerAddress;
@@ -1910,8 +1928,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             "not_playful" => "看见啦，不过现在不想追。晚一点再来。",
             "not_touching_now" => "今天的毛先自己管。梳子晚点再拿来。",
             "no_need" => "这里现在很干净。让我先检查完再说。",
-            "chose_other" => "这次不参加。猫已经有别的安排了。",
-            _ => "现在不想做这个。等朴朴自己点头。"
+            _ => "现在有明确原因不能开始，等状态恢复后再试一次。"
         };
         SetBehavior(
             $"interaction.refused.{kind.ToString().ToLowerInvariant()}",
@@ -2992,7 +3009,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                         _memory.State.Cleanliness,
                         _memory.State.LitterLevel,
                         "command=self_play"),
-                    _random.NextDouble());
+                    _memory.Profile.OwnerInteractionAcceptance);
                 if (!participation.Accepted)
                 {
                     ResetArbitrationToIdle();
@@ -4405,6 +4422,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                         _modelApiSettings,
                         _memory.Personality,
                         _memory.Profile.SelfIdentity,
+                        _memory.Profile.SystemPrompt,
                         memoryContext,
                         input,
                         history,
@@ -4560,7 +4578,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         await RefreshEditableNotebookAsync();
         RefreshAll();
         PetProfileSaveStatus = $"已保存并立即生效 · {DateTime.Now:HH:mm:ss} · " +
-                               $"自称“{_memory.Profile.SelfReference}” · 性格提示词 {_memory.Profile.SystemPrompt.Length} 字";
+                               $"自称“{_memory.Profile.SelfReference}” · 性格提示词 {_memory.Profile.SystemPrompt.Length} 字 · " +
+                               $"互动接受倾向 {_memory.Profile.OwnerInteractionAcceptance:P0}";
         _ = ShowBubbleAsync(
             $"档案记好啦。{_memory.Profile.ChineseName}还是主人的{_memory.Profile.RelationshipToOwner}。",
             4600,
@@ -6330,7 +6349,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         HiddenActionRules.Add("淘气：清醒、低压力、有精力时可自然选择拨弄物品、藏起、绕行和扑击；不再要求长期忽略，深夜/会议/勿扰/全屏压制高干扰动作。");
         HiddenActionRules.Add($"长互动：投喂、梳毛、逗猫棒和散步按进度提交效果；Started/Progressed/Completed/Interrupted/Failed 全部写 events.md。“停下”始终有效，当前散步约 {policy.WalkDurationMinutes} 分钟。");
         HiddenActionRules.Add("自发如厕：每个本地日期随机安排 2–3 个时段，只有 toilet_due 才进入统一自主评分；离线错过不补播，如厕后固定衔接抓砂埋屎，抬头仅是概率变化。主人手动铲屎入口已停用。");
-        HiddenActionRules.Add("主人互动参与：吃饭、遛猫、梳毛、玩具、姿势和魔法先读取饱腹、精力、压力、疲劳、关系、性格与具体偏好；拒绝使用宠物台词说明，不扣信任。");
+        HiddenActionRules.Add($"主人互动参与：当前独立接受倾向为 {_memory.Profile.OwnerInteractionAcceptance:P0}。正常状态下明确互动直接接受，不再叠加性格、关系、偏好或随机拒绝；只在饱腹、极度疲劳/压力、关笼子、旅行、动作不可中断、冷却等可解释原因下阻止执行。");
         HiddenActionRules.Add("宠物魔法：四项魔法和普通自主行为进入同一过滤、评分、偏好与选择管线；daily_magic_available 是硬门槛，每个本地日期最多一次自发施法。");
         HiddenActionRules.Add("节日装扮：圣诞帽仅 12 月 25 日、万圣节斗篷帽仅 10 月 31 日、春节红围巾仅农历正月初一；主人生日按档案月日匹配并计算年龄。");
         HiddenActionRules.Add("统一行为仲裁：主人强制 > 主动锚点 > 明确口令/面板 > 触摸 > 持续魔法 > 自主移动 > 普通鼠标注意力 > 装饰 idle；每次请求检查保护期、冷却、可打断性和禁用状态。");
@@ -6371,6 +6390,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(OwnerBirthday));
         OnPropertyChanged(nameof(OwnerBirthdayYear));
         OnPropertyChanged(nameof(OwnerPersonalityPrompt));
+        OnPropertyChanged(nameof(OwnerInteractionAcceptance));
+        OnPropertyChanged(nameof(OwnerInteractionAcceptanceLabel));
         OnPropertyChanged(nameof(PetProfileSummary));
         OnPropertyChanged(nameof(PetProfileTitle));
     }

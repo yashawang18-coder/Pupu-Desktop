@@ -141,6 +141,7 @@ public sealed class ModelApiService : IModelApiService
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         CancellationToken cancellationToken = default)
@@ -148,6 +149,7 @@ public sealed class ModelApiService : IModelApiService
             settings,
             state,
             identity,
+            ownerRolePrompt,
             memoryContext,
             ownerMessage,
             history: null,
@@ -160,6 +162,7 @@ public sealed class ModelApiService : IModelApiService
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         IReadOnlyList<ChatMessage>? history,
@@ -169,6 +172,7 @@ public sealed class ModelApiService : IModelApiService
             settings,
             state,
             identity,
+            ownerRolePrompt,
             memoryContext,
             ownerMessage,
             history,
@@ -181,6 +185,7 @@ public sealed class ModelApiService : IModelApiService
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         IReadOnlyList<ChatMessage>? history,
@@ -203,7 +208,11 @@ public sealed class ModelApiService : IModelApiService
         // a remote request. Callers may keep full-fidelity local data, but the
         // model receives only a bounded, path-free context.
         var safeMemoryContext = _contextPrivacy.Prepare(memoryContext);
-        var prompt = _speech.BuildSystemPrompt(state, identity, safeMemoryContext);
+        var prompt = _speech.BuildSystemPrompt(
+            state,
+            identity,
+            ownerRolePrompt,
+            safeMemoryContext);
         var requestJson = _protocol.BuildRequestJson(
             settings,
             prompt,
@@ -259,6 +268,7 @@ public sealed class ModelApiService : IModelApiService
             settings,
             state,
             identity,
+            PetProfile.DefaultSystemPrompt,
             string.Empty,
             "只用一句很短的话向主人打招呼。",
             history: null,

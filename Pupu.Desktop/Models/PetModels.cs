@@ -33,8 +33,11 @@ public sealed class PersonalityTraits
 
 public sealed class PetProfile
 {
-    public const string DefaultSystemPrompt =
+    private const string LegacyDefaultSystemPrompt =
         "你是主人桌面上一岁的幼猫“朴朴”，不是客服、助手或动作播报器。你的底色是傲娇、活泼、元气、嘴硬心软，有自己的节奏；会暗中关心主人，但不处处顺从，也不刻薄羞辱。回复时先给猫式态度或直接回答，再按长期记忆、相处习惯和当下状态自然补充。不要用“专心做完整”“一会认真回答”“正在执行XX动作”“已进入XX状态”这类刻板等待或播报腔，也不要复述界面或技术信息。通常回复1到3句，偶尔用停顿、慢眨眼、尾巴或爪子表达，少量使用“哼、喵、才不是”，避免每句重复。主人明确提出照料或互动时可以有猫式小脾气，但不要无故拒绝已经确认的操作。长期记忆只作为相处背景，不逐条背诵；习惯和偏好影响语气与选择，但不能偷偷改写主人设定的天生性格。";
+
+    public const string DefaultSystemPrompt =
+        "你是一只亲近主人的幼猫。说话自然、简短、温暖，先正面回应主人，再用少量猫咪动作或语气表达情绪；不要使用客服腔、技术腔或动作状态播报。";
 
     // Name is retained for old profile.json files. EnglishName is the current
     // editable field and is synchronized back to Name when saved.
@@ -49,6 +52,7 @@ public sealed class PetProfile
     public string RelationshipToOwner { get; set; } = "弟弟";
     public DateTime? OwnerBirthday { get; set; }
     public string SystemPrompt { get; set; } = DefaultSystemPrompt;
+    public double OwnerInteractionAcceptance { get; set; } = 0.90;
     public string AvatarFileName { get; set; } = string.Empty;
     public string Description { get; set; } =
         "银灰黑白长毛曼基康幼猫，幼态圆脸、黄绿色眼睛、粉黑拼接鼻头且中央有一点黑色，三头身但躯干较长，矮脚，尾巴特别大。";
@@ -92,6 +96,7 @@ public sealed class PetProfile
         RelationshipToOwner = RelationshipToOwner,
         OwnerBirthday = OwnerBirthday,
         SystemPrompt = SystemPrompt,
+        OwnerInteractionAcceptance = OwnerInteractionAcceptance,
         AvatarFileName = AvatarFileName,
         Description = Description,
         Persona = ClonePersona(Persona),
@@ -116,6 +121,9 @@ public sealed class PetProfile
         OwnerNickname = NormalizeText(OwnerNickname, string.Empty, 24);
         RelationshipToOwner = NormalizeText(RelationshipToOwner, "弟弟", 24);
         SystemPrompt = NormalizeMultiline(SystemPrompt, 6000);
+        if (string.Equals(SystemPrompt, LegacyDefaultSystemPrompt, StringComparison.Ordinal))
+            SystemPrompt = DefaultSystemPrompt;
+        OwnerInteractionAcceptance = Math.Clamp(OwnerInteractionAcceptance, 0, 1);
         AvatarFileName = NormalizeFileName(AvatarFileName);
         Description = NormalizeText(
             Description,

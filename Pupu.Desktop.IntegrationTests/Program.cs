@@ -14,9 +14,10 @@ namespace Pupu.Desktop.IntegrationTests;
 internal static class Program
 {
     private const string OwnerMessage = "朴朴，今天陪我说句话。";
-    private const string ModelReply = "听见啦，朴朴把尾巴轻轻放在你旁边。";
-    private const string ExpectedModelReply = "听见啦，本喵把尾巴轻轻放在你旁边。";
-    private const string OwnerPrompt = "说话要安静克制，先回应事实，不要连续卖萌。";
+    private const string CalmReply = "收到。我会安静地陪着你。";
+    private const string EnergeticReply = "好呀！我们马上开心地聊起来！";
+    private const string CalmPrompt = "说话要安静克制，先回应事实，不要卖萌或使用感叹号。";
+    private const string EnergeticPrompt = "说话要热情活泼，明显表达开心，并使用感叹号。";
     private const string OwnerMemory = "主人不开心时，希望我先安静陪在旁边。";
 
     [STAThread]
@@ -30,7 +31,7 @@ internal static class Program
 
         try
         {
-            var handler = new MockModelApiHandler(ModelReply);
+            var handler = new MockModelApiHandler();
             var credentialStore = new TestCredentialStore();
             var modelApi = new ModelApiService(
                 new PetSpeechComposer(),
@@ -59,7 +60,7 @@ internal static class Program
 
             await WaitUntilAsync(() => viewModel.IsReady, "view model initialization");
             viewModel.PetSelfReference = "本喵";
-            viewModel.OwnerPersonalityPrompt = OwnerPrompt;
+            viewModel.OwnerPersonalityPrompt = CalmPrompt;
             viewModel.SavePetProfileCommand.Execute(null);
             await WaitUntilAsync(
                 () => viewModel.PetProfileSaveStatus.Contains("已保存并立即生效", StringComparison.Ordinal),
@@ -85,26 +86,45 @@ internal static class Program
             await WaitUntilAsync(
                 () => !viewModel.IsChatBusy &&
                       viewModel.ChatMessages.Any(message =>
-                          message.Role == "pupu" && message.Text == ExpectedModelReply),
-                "model reply propagation");
+                          message.Role == "pupu" && message.Text == CalmReply),
+                "calm role prompt reply propagation");
 
-            Assert(handler.RequestCount == 1,
-                "The model transport did not receive exactly one request.");
+            viewModel.OwnerPersonalityPrompt = EnergeticPrompt;
+            var previousProfileStatus = viewModel.PetProfileSaveStatus;
+            viewModel.SavePetProfileCommand.Execute(null);
+            await WaitUntilAsync(
+                () => !string.Equals(
+                          viewModel.PetProfileSaveStatus,
+                          previousProfileStatus,
+                          StringComparison.Ordinal) &&
+                      viewModel.PetProfileSaveStatus.Contains("已保存并立即生效", StringComparison.Ordinal),
+                "updated owner prompt persistence");
+            viewModel.ChatInput = OwnerMessage;
+            viewModel.SendChatCommand.Execute(null);
+            await WaitUntilAsync(
+                () => !viewModel.IsChatBusy &&
+                      viewModel.ChatMessages.Any(message =>
+                          message.Role == "pupu" && message.Text == EnergeticReply),
+                "energetic role prompt reply propagation");
+
+            Assert(handler.RequestCount == 2,
+                "The model transport did not receive both same-question requests.");
             Assert(handler.Authorization == "Bearer pupu-integration-key",
                 "The request did not use the isolated credential store.");
-            Assert(JsonContainsString(handler.RequestBody, OwnerMessage),
+            Assert(handler.RequestBodies.All(body => JsonContainsString(body, OwnerMessage)),
                 "The owner message did not reach the serialized model request.");
-            Assert(JsonContainsString(handler.RequestBody, "你只扮演下面档案中的桌面宠物"),
+            Assert(handler.RequestBodies.All(body => JsonContainsString(body, "你只扮演档案中的桌面宠物")),
                 "The pet identity system prompt did not reach the model request.");
-            Assert(JsonContainsString(handler.RequestBody, "宠物自称为“本喵”"),
+            Assert(handler.RequestBodies.All(body => JsonContainsString(body, "宠物自称为“本喵”")),
                 "The saved pet self-reference did not reach the model request.");
-            Assert(JsonContainsString(handler.RequestBody, OwnerPrompt),
-                "The saved owner personality prompt did not reach the model request.");
-            Assert(JsonContainsString(handler.RequestBody, OwnerMemory),
+            Assert(JsonContainsString(handler.RequestBodies[0], CalmPrompt) &&
+                   JsonContainsString(handler.RequestBodies[1], EnergeticPrompt),
+                "Changing the saved owner role prompt did not change the next model request.");
+            Assert(handler.RequestBodies.All(body => JsonContainsString(body, OwnerMemory)),
                 "The saved editable long-term memory did not reach the model request.");
             Assert(viewModel.IsBubbleVisible &&
-                   viewModel.BubbleText.Contains(ExpectedModelReply, StringComparison.Ordinal),
-                "The accepted model reply did not reach the desktop bubble state.");
+                   viewModel.BubbleText.Contains(EnergeticReply, StringComparison.Ordinal),
+                "The changed-prompt model reply did not reach the desktop bubble state.");
             Assert(viewModel.ModelApiStatus.Contains("角色边界检查", StringComparison.Ordinal),
                 "The model success status was not exposed to the panel.");
 
@@ -112,10 +132,11 @@ internal static class Program
             await WaitUntilAsync(() => File.Exists(conversationPath), "conversation persistence");
             var conversation = await File.ReadAllTextAsync(conversationPath);
             Assert(JsonContainsString(conversation, OwnerMessage) &&
-                   JsonContainsString(conversation, ExpectedModelReply),
-                "The completed exchange was not persisted to the isolated conversation store.");
+                   JsonContainsString(conversation, CalmReply) &&
+                   JsonContainsString(conversation, EnergeticReply),
+                "Both prompt-differentiated exchanges were not persisted to the isolated conversation store.");
 
-            Console.WriteLine("[PASS] chat input -> command -> mock API -> reply -> bubble -> conversation store");
+            Console.WriteLine("[PASS] same question -> changed owner role prompt -> visibly different reply and bubble");
             return 0;
         }
         catch (Exception ex)
@@ -166,10 +187,10 @@ internal static class Program
         if (!condition) throw new InvalidOperationException(message);
     }
 
-    private sealed class MockModelApiHandler(string reply) : HttpMessageHandler
+    private sealed class MockModelApiHandler : HttpMessageHandler
     {
         public int RequestCount { get; private set; }
-        public string RequestBody { get; private set; } = string.Empty;
+        public List<string> RequestBodies { get; } = new();
         public string Authorization { get; private set; } = string.Empty;
 
         protected override async Task<HttpResponseMessage> SendAsync(
@@ -177,10 +198,14 @@ internal static class Program
             CancellationToken cancellationToken)
         {
             RequestCount++;
-            RequestBody = request.Content is null
+            var requestBody = request.Content is null
                 ? string.Empty
                 : await request.Content.ReadAsStringAsync(cancellationToken);
+            RequestBodies.Add(requestBody);
             Authorization = request.Headers.Authorization?.ToString() ?? string.Empty;
+            var reply = JsonContainsString(requestBody, EnergeticPrompt)
+                ? EnergeticReply
+                : CalmReply;
             var json = JsonSerializer.Serialize(new
             {
                 choices = new[] { new { message = new { content = reply } } }

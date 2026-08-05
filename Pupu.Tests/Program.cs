@@ -35,7 +35,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("continuous petting load expires after a quiet gap", TestPettingLoadQuietGap),
     ("pet speech blocks technical language and follows temperament", TestPetSpeechBoundary),
     ("retired window edge behaviors are no longer autonomous candidates", TestWindowEdgeEligibility),
-    ("owner interactions use state-dependent participation probabilities", TestInteractionParticipation),
+    ("owner interactions use explicit acceptance tendency and real blockers", TestInteractionParticipation),
     ("autonomous magic is limited to one trigger per local day", TestDailyMagicLimit),
     ("daily toilet plan is random idempotent and skips offline slots", TestDailyToiletPlan),
     ("autonomous toilet requires a due schedule signal", TestToiletEligibility),
@@ -1728,11 +1728,16 @@ static Task TestPetSpeechBoundary()
     var systemPrompt = composer.BuildSystemPrompt(
         affectionate,
         "圆脸银灰白长毛幼猫",
+        "说话冷静克制，先直接回答，不要傲娇或故意拒绝。",
         "喜欢靠近主人");
-    Assert(systemPrompt.Contains("不处处答应主人") &&
-           systemPrompt.Contains("绝对禁止提及或泄露") &&
-           systemPrompt.Contains("像有主见、爱答不理又会暗中关心人的猫"),
-        "model system prompt omitted autonomy or technical-language boundary");
+    Assert(systemPrompt.Contains("说话冷静克制，先直接回答，不要傲娇或故意拒绝。") &&
+           systemPrompt.Contains("必要边界") &&
+           systemPrompt.Contains("最高角色优先级") &&
+           !systemPrompt.Contains("不处处答应主人") &&
+           !systemPrompt.Contains("爱答不理") &&
+           systemPrompt.IndexOf("说话冷静克制", StringComparison.Ordinal) >
+           systemPrompt.IndexOf("喜欢靠近主人", StringComparison.Ordinal),
+        "owner role prompt was not highest priority or forced refusal persona remained");
     return Task.CompletedTask;
 }
 
@@ -1756,36 +1761,51 @@ static Task TestInteractionParticipation()
     var tired = CloneForDistribution(active);
     tired.Runtime.PlayDesire = 0.18;
     tired.Runtime.Curiosity = 0.20;
-    tired.Runtime.Fatigue = 0.92;
-    tired.Runtime.Stress = 0.66;
+    tired.Runtime.Fatigue = 0.98;
+    tired.Runtime.Stress = 0.96;
 
     var activeDecision = evaluator.Evaluate(
         active,
         OwnerInteractionKind.WandPlay,
         new OwnerInteractionContext(48, 92, 88, 10, "general"),
-        0.50);
+        0.90);
     var tiredDecision = evaluator.Evaluate(
         tired,
         OwnerInteractionKind.WandPlay,
         new OwnerInteractionContext(48, 18, 88, 10, "general"),
-        0.50);
-    Assert(activeDecision.Probability > tiredDecision.Probability + 0.35,
-        $"state did not materially change participation: {activeDecision.Probability:0.00} vs {tiredDecision.Probability:0.00}");
+        0.90);
     Assert(activeDecision.Accepted && !tiredDecision.Accepted,
-        "the same deterministic roll did not produce accept/refuse from state");
+        "normal interaction was rejected or genuine exhausted state was ignored");
+    Assert(Math.Abs(activeDecision.Probability - 0.90) < 0.001,
+        "visible owner acceptance setting was not the reported participation tendency");
+
+    var pressured = CloneForDistribution(active);
+    pressured.Runtime.Stress = 0.80;
+    var lowAcceptance = evaluator.Evaluate(
+        pressured,
+        OwnerInteractionKind.Grooming,
+        new OwnerInteractionContext(48, 80, 88, 10, "general"),
+        0.50);
+    var highAcceptance = evaluator.Evaluate(
+        pressured,
+        OwnerInteractionKind.Grooming,
+        new OwnerInteractionContext(48, 80, 88, 10, "general"),
+        0.95);
+    Assert(!lowAcceptance.Accepted && highAcceptance.Accepted,
+        "changing the explicit acceptance setting did not change the same interaction result");
 
     var hungry = evaluator.Evaluate(
         active,
         OwnerInteractionKind.Feeding,
         new OwnerInteractionContext(12, 80, 88, 10, "general"),
-        0.50);
+        0.90);
     var full = evaluator.Evaluate(
         active,
         OwnerInteractionKind.Feeding,
         new OwnerInteractionContext(96, 80, 88, 10, "general"),
-        0.50);
-    Assert(hungry.Probability > full.Probability + 0.30,
-        "fullness did not reduce feeding participation");
+        0.90);
+    Assert(hungry.Accepted && !full.Accepted && full.ReasonCode == "full",
+        "feeding was not accepted normally or genuine fullness did not block it");
     return Task.CompletedTask;
 }
 

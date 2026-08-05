@@ -54,6 +54,7 @@ public interface IModelApiService : IDisposable
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         CancellationToken cancellationToken = default);
@@ -61,6 +62,7 @@ public interface IModelApiService : IDisposable
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         IReadOnlyList<ChatMessage>? history,

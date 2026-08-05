@@ -445,15 +445,9 @@ public sealed class MemoryEngine : IAgentDecisionStatePort, IAgentMemoryPort
 
         if (BehaviorPolicy.NaturalLanguageRules.Count > 0)
         {
-            builder.AppendLine("主人用自然语言设定的角色规则（优先遵守）：");
+            builder.AppendLine("主人用自然语言设定的动作规则（作为运行背景，不覆盖对话角色提示词）：");
             foreach (var rule in BehaviorPolicy.NaturalLanguageRules.TakeLast(12))
                 builder.AppendLine($"- {rule}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(Profile.SystemPrompt))
-        {
-            builder.AppendLine("主人在 pupu-memory.md 保存的宠物系统提示词（在固定角色与安全边界内优先遵守）：");
-            builder.AppendLine(Profile.SystemPrompt);
         }
 
         if (Profile.ManualMemories.Count > 0)
@@ -569,6 +563,7 @@ public sealed class MemoryEngine : IAgentDecisionStatePort, IAgentMemoryPort
         Profile.RelationshipToOwner = profile.RelationshipToOwner;
         Profile.OwnerBirthday = profile.OwnerBirthday;
         Profile.SystemPrompt = profile.SystemPrompt;
+        Profile.OwnerInteractionAcceptance = profile.OwnerInteractionAcceptance;
         Profile.AvatarFileName = profile.AvatarFileName;
         Profile.Description = profile.Description;
         UpsertConfirmedProfileFact("pet.chinese_name", Profile.ChineseName);

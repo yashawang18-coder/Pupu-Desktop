@@ -165,7 +165,7 @@
                                         <Grid Margin="0,9,0,0">
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="125"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                            <TextBlock Text="年龄与性格" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="一岁；傲娇、活泼、元气、嘴硬心软。短句及时回应，不使用客服式等待话术。" TextWrapping="Wrap"/>
+                                            <TextBlock Text="年龄与角色" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="一岁；具体对话性格由主人自定义角色提示词决定。短句及时回应，不使用客服式等待话术。" TextWrapping="Wrap"/>
                                             <TextBlock Grid.Row="1" Text="视觉锚点" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="1" Grid.Column="1" Text="256×256 统一身体坐标系；20px 安全区；同组共享缩放、重心与脚底线。" TextWrapping="Wrap" Margin="0,6,0,0"/>
                                             <TextBlock Grid.Row="2" Text="默认节奏" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="2" Grid.Column="1" Text="安静待机以侧躺、低趴、舔脚为主；不把长时间端坐当作默认姿态。" TextWrapping="Wrap" Margin="0,6,0,0"/>
                                             <TextBlock Grid.Row="3" Text="移动边界" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="3" Grid.Column="1" Text="原地动作不改窗口坐标；步行、追逐、逃跑和扫帚飞行才由实时路径驱动。" TextWrapping="Wrap" Margin="0,6,0,0"/>
@@ -375,7 +375,7 @@
                                     <StackPanel>
                                         <TextBlock Text="主人自定义宠物性格提示词"
                                                    Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="默认已填写傲娇猫式大模型提示词。可直接编辑；技术约束在开发者页说明，这里只写朴朴该怎样说话和相处。"
+                                        <TextBlock Text="这是对话角色的最高优先级设置，仅低于必要安全边界和档案身份事实。修改后，下一次模型回复必须明显体现新的语气与相处方式。"
                                                    Style="{StaticResource Hint}" />
                                         <TextBox Text="{Binding OwnerPersonalityPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  AcceptsReturn="True" TextWrapping="Wrap"
@@ -386,6 +386,25 @@
                                                 HorizontalAlignment="Left" />
                                         <TextBlock Text="{Binding PetProfileSaveStatus, Mode=OneWay}"
                                                    Style="{StaticResource Hint}" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock Text="互动接受倾向" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock DockPanel.Dock="Right"
+                                                       Text="{Binding OwnerInteractionAcceptanceLabel, Mode=OneWay}"
+                                                       Style="{StaticResource SectionTitle}" />
+                                        </DockPanel>
+                                        <TextBlock Text="单独控制主人明确发起的互动，不再由隐藏的性格、关系或随机概率决定。默认 90%；饱腹、睡眠、关笼子、旅行或当前动作不可中断等真实原因仍可阻止执行。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                        <Slider Minimum="0" Maximum="100" TickFrequency="5"
+                                                IsSnapToTickEnabled="True"
+                                                Value="{Binding OwnerInteractionAcceptance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Margin="0,8,0,4" />
+                                        <Button Content="保存互动接受倾向"
+                                                Command="{Binding SavePetProfileCommand}"
+                                                HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
