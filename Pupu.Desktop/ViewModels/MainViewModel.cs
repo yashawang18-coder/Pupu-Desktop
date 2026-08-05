@@ -175,7 +175,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         params int[] frames) => new(name, atlas, row, frames, durations);
 
     private static AnimationSequence OneShot(AnimationSequence sequence) =>
-        sequence with { Loop = false };
+        sequence with
+        {
+            Loop = false,
+            LoopMode = AssetLoopModes.Once
+        };
 
     private static readonly AnimationSequence IdleSequence = Sequence(
         "idle-breathe", SpriteAtlas.Core, 0,
@@ -634,6 +638,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private CancellationTokenSource? _touchReactionCancellation;
     private AnimationSequence _currentSequence = SideLieIdleSequence;
     private AnimationSequence? _pendingSequence;
+    private AnimationSequence? _settleAfterSequenceCompletion;
     private int _framePosition;
     private bool _synchronizedMovement;
     private bool _activeAnchorIsFood;
@@ -4400,7 +4405,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 if (conversationPresentationAccepted)
                 {
                     SetBehavior("conversation", "听主人说话并按照当前性格回应", "conversation");
-                    PlaySequence(ExpressionSequence);
+                    // The model request may take much longer than this one-shot
+                    // expression. Return to a live idle loop as soon as the
+                    // animation itself completes instead of freezing on its
+                    // final frame until the network request finishes.
+                    PlaySequence(
+                        ExpressionSequence,
+                        settleAfterCompletion: SideLieIdleSequence);
                 }
 
                 if (_modelApiSettings.Enabled)
@@ -5208,7 +5219,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             "autonomous",
             $"time={TimeBucket(_clock.Now)};location=desktop",
             $"{sequence.Atlas}:{sequence.Name}");
-        PlaySequence(sequence, restart: false);
+        PlaySequence(
+            sequence,
+            restart: false,
+            settleAfterCompletion: SideLieIdleSequence);
         ApplyAutonomousRuntimeEffect(behaviorId);
 
         if (definition.IsOwnerInitiative)
@@ -5608,10 +5622,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         CurrentBehaviorLabel = label;
     }
 
-    private void PlaySequence(AnimationSequence sequence, bool restart = true)
+    private void PlaySequence(
+        AnimationSequence sequence,
+        bool restart = true,
+        AnimationSequence? settleAfterCompletion = null)
     {
         var resolved = ResolveAnimationSequence(sequence);
-        if (!restart && _currentSequence.Name == resolved.Name) return;
+        if (!restart &&
+            _currentSequence.Name == resolved.Name &&
+            (resolved.Loop || resolved.LoopMode == AssetLoopModes.Hold))
+            return;
+        _settleAfterSequenceCompletion = settleAfterCompletion;
         _pendingSequence = null;
         if (ShouldPlayExitSegment(_currentSequence, resolved))
         {
@@ -6265,6 +6286,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 var pending = _pendingSequence;
                 _pendingSequence = null;
                 StartResolvedSequence(pending);
+            }
+            else if (_settleAfterSequenceCompletion is not null)
+            {
+                var settle = _settleAfterSequenceCompletion;
+                _settleAfterSequenceCompletion = null;
+                PlaySequence(settle, restart: false);
             }
             else
             {

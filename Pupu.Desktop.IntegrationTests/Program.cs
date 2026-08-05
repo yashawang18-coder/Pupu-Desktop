@@ -49,8 +49,9 @@ internal static class Program
                 },
                 "pupu-integration-key");
 
+            var presentationHost = new TestPresentationHost();
             using var viewModel = new MainViewModel(
-                new TestPresentationHost(),
+                presentationHost,
                 new TestAssetPackService(),
                 modelApi,
                 new TestCodexIterationService(),
@@ -77,12 +78,24 @@ internal static class Program
             viewModel.ChatInput = OwnerMessage;
             Assert(viewModel.SendChatCommand.CanExecute(null),
                 "SendChatCommand was disabled for a ready non-empty chat input.");
+            handler.PauseNextResponse();
             viewModel.SendChatCommand.Execute(null);
 
             await WaitUntilAsync(
                 () => viewModel.ChatMessages.Any(message =>
                     message.Role == "owner" && message.Text == OwnerMessage),
                 "owner message enqueue");
+            await WaitUntilAsync(
+                () => handler.RequestCount == 1,
+                "paused model request dispatch");
+            var animationTimer = presentationHost.AnimationTimer;
+            Assert(animationTimer.IsRunning,
+                "The conversation expression animation did not start.");
+            for (var index = 0; index < 7; index++)
+                animationTimer.Fire();
+            Assert(animationTimer.IsRunning,
+                "A completed one-shot expression froze on its final frame instead of returning to idle.");
+            handler.ReleasePausedResponse();
             await WaitUntilAsync(
                 () => !viewModel.IsChatBusy &&
                       viewModel.ChatMessages.Any(message =>
@@ -189,9 +202,16 @@ internal static class Program
 
     private sealed class MockModelApiHandler : HttpMessageHandler
     {
+        private TaskCompletionSource<bool>? _responseGate;
         public int RequestCount { get; private set; }
         public List<string> RequestBodies { get; } = new();
         public string Authorization { get; private set; } = string.Empty;
+
+        public void PauseNextResponse() =>
+            _responseGate = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public void ReleasePausedResponse() => _responseGate?.TrySetResult(true);
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -203,6 +223,13 @@ internal static class Program
                 : await request.Content.ReadAsStringAsync(cancellationToken);
             RequestBodies.Add(requestBody);
             Authorization = request.Headers.Authorization?.ToString() ?? string.Empty;
+            var responseGate = _responseGate;
+            if (responseGate is not null)
+            {
+                await responseGate.Task.WaitAsync(cancellationToken);
+                if (ReferenceEquals(_responseGate, responseGate))
+                    _responseGate = null;
+            }
             var reply = JsonContainsString(requestBody, EnergeticPrompt)
                 ? EnergeticReply
                 : CalmReply;
@@ -230,16 +257,27 @@ internal static class Program
     private sealed class TestUiTimer(TimeSpan interval) : IUiTimer
     {
         public TimeSpan Interval { get; set; } = interval;
+        public bool IsRunning { get; private set; }
         public event EventHandler? Tick;
-        public void Start() { }
-        public void Stop() { }
-        public void Dispose() { }
-        public void Fire() => Tick?.Invoke(this, EventArgs.Empty);
+        public void Start() => IsRunning = true;
+        public void Stop() => IsRunning = false;
+        public void Dispose() => IsRunning = false;
+        public void Fire()
+        {
+            if (IsRunning) Tick?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private sealed class TestPresentationHost : IDesktopPresentationHost
     {
-        public IUiTimer CreateTimer(TimeSpan interval) => new TestUiTimer(interval);
+        private readonly List<TestUiTimer> _timers = new();
+        public TestUiTimer AnimationTimer => _timers[0];
+        public IUiTimer CreateTimer(TimeSpan interval)
+        {
+            var timer = new TestUiTimer(interval);
+            _timers.Add(timer);
+            return timer;
+        }
         public object CropImage(object? source, int x, int y, int width, int height) => new();
         public object LoadImage(string? path, int decodePixelWidth) => new();
         public string? SelectImageFile(string title) => null;
