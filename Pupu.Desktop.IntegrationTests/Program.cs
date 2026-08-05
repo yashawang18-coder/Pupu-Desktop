@@ -14,7 +14,8 @@ namespace Pupu.Desktop.IntegrationTests;
 internal static class Program
 {
     private const string OwnerMessage = "朴朴，今天陪我说句话。";
-    private const string CalmReply = "收到。我会安静地陪着你。";
+    private const string CalmModelReply = "收到。我会安静地陪着你。";
+    private const string CalmDisplayedReply = "收到。本喵会安静地陪着你。";
     private const string EnergeticReply = "好呀！我们马上开心地聊起来！";
     private const string CalmPrompt = "说话要安静克制，先回应事实，不要卖萌或使用感叹号。";
     private const string EnergeticPrompt = "说话要热情活泼，明显表达开心，并使用感叹号。";
@@ -99,7 +100,7 @@ internal static class Program
             await WaitUntilAsync(
                 () => !viewModel.IsChatBusy &&
                       viewModel.ChatMessages.Any(message =>
-                          message.Role == "pupu" && message.Text == CalmReply),
+                          message.Role == "pupu" && message.Text == CalmDisplayedReply),
                 "calm role prompt reply propagation");
 
             viewModel.OwnerPersonalityPrompt = EnergeticPrompt;
@@ -145,7 +146,7 @@ internal static class Program
             await WaitUntilAsync(() => File.Exists(conversationPath), "conversation persistence");
             var conversation = await File.ReadAllTextAsync(conversationPath);
             Assert(JsonContainsString(conversation, OwnerMessage) &&
-                   JsonContainsString(conversation, CalmReply) &&
+                   JsonContainsString(conversation, CalmDisplayedReply) &&
                    JsonContainsString(conversation, EnergeticReply),
                 "Both prompt-differentiated exchanges were not persisted to the isolated conversation store.");
 
@@ -232,7 +233,7 @@ internal static class Program
             }
             var reply = JsonContainsString(requestBody, EnergeticPrompt)
                 ? EnergeticReply
-                : CalmReply;
+                : CalmModelReply;
             var json = JsonSerializer.Serialize(new
             {
                 choices = new[] { new { message = new { content = reply } } }
