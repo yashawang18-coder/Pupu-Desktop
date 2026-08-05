@@ -33,8 +33,11 @@ public sealed class PersonalityTraits
 
 public sealed class PetProfile
 {
+    private const string LegacyDefaultSystemPrompt =
+        "你是主人桌面上一岁的幼猫“朴朴”，不是客服、助手或动作播报器。你的底色是傲娇、活泼、元气、嘴硬心软，有自己的节奏；会暗中关心主人，但不处处顺从，也不刻薄羞辱。回复时先给猫式态度或直接回答，再按长期记忆、相处习惯和当下状态自然补充。不要用“专心做完整”“一会认真回答”“正在执行XX动作”“已进入XX状态”这类刻板等待或播报腔，也不要复述界面或技术信息。通常回复1到3句，偶尔用停顿、慢眨眼、尾巴或爪子表达，少量使用“哼、喵、才不是”，避免每句重复。主人明确提出照料或互动时可以有猫式小脾气，但不要无故拒绝已经确认的操作。长期记忆只作为相处背景，不逐条背诵；习惯和偏好影响语气与选择，但不能偷偷改写主人设定的天生性格。";
+
     public const string DefaultSystemPrompt =
-        "你是主人桌面上的猫“朴朴”，不是客服、助手或动作播报器。你的底色是傲娇、爱答不理、嘴硬心软，有自己的节奏；会暗中关心主人，但不处处顺从，也不刻薄羞辱。回复时先给猫式态度或直接回答，再按长期记忆、相处习惯和当下状态自然补充；只有确有必要时，最后一句才简短提到正在发生的动作。不要说“正在执行XX动作”“已进入XX状态”，不要复述界面或技术信息。通常回复1到3句，偶尔用停顿、慢眨眼、尾巴或爪子表达，少量使用“哼、喵、才不是”，避免每句重复。主人明确提出照料或互动时可以有猫式小脾气，但不要无故拒绝已经确认的操作。长期记忆只作为相处背景，不逐条背诵；习惯和偏好影响语气与选择，但不能偷偷改写主人设定的天生性格。";
+        "你是一只亲近主人的幼猫。说话自然、简短、温暖，先正面回应主人，再用少量猫咪动作或语气表达情绪；不要使用客服腔、技术腔或动作状态播报。";
 
     // Name is retained for old profile.json files. EnglishName is the current
     // editable field and is synchronized back to Name when saved.
@@ -43,11 +46,14 @@ public sealed class PetProfile
     public string EnglishName { get; set; } = "Pupu";
     public string Breed { get; set; } = "银灰黑白长毛曼基康";
     public string Sex { get; set; } = "公猫";
+    public string SelfReference { get; set; } = "我";
     public DateTime? Birthday { get; set; }
     public string OwnerNickname { get; set; } = string.Empty;
     public string RelationshipToOwner { get; set; } = "弟弟";
     public DateTime? OwnerBirthday { get; set; }
     public string SystemPrompt { get; set; } = DefaultSystemPrompt;
+    public double OwnerInteractionAcceptance { get; set; } = 0.90;
+    public string AvatarFileName { get; set; } = string.Empty;
     public string Description { get; set; } =
         "银灰黑白长毛曼基康幼猫，幼态圆脸、黄绿色眼睛、粉黑拼接鼻头且中央有一点黑色，三头身但躯干较长，矮脚，尾巴特别大。";
     public PersonaDefinition Persona { get; set; } = PersonaDefinition.CreateDefaultPupu();
@@ -84,11 +90,14 @@ public sealed class PetProfile
         EnglishName = EnglishName,
         Breed = Breed,
         Sex = Sex,
+        SelfReference = SelfReference,
         Birthday = Birthday,
         OwnerNickname = OwnerNickname,
         RelationshipToOwner = RelationshipToOwner,
         OwnerBirthday = OwnerBirthday,
         SystemPrompt = SystemPrompt,
+        OwnerInteractionAcceptance = OwnerInteractionAcceptance,
+        AvatarFileName = AvatarFileName,
         Description = Description,
         Persona = ClonePersona(Persona),
         Baseline = Baseline.Clone(),
@@ -108,9 +117,14 @@ public sealed class PetProfile
         Name = EnglishName;
         Breed = NormalizeText(Breed, "银灰黑白长毛曼基康", 48);
         Sex = NormalizeText(Sex, "公猫", 16);
+        SelfReference = NormalizeText(SelfReference, "我", 16);
         OwnerNickname = NormalizeText(OwnerNickname, string.Empty, 24);
         RelationshipToOwner = NormalizeText(RelationshipToOwner, "弟弟", 24);
         SystemPrompt = NormalizeMultiline(SystemPrompt, 6000);
+        if (string.Equals(SystemPrompt, LegacyDefaultSystemPrompt, StringComparison.Ordinal))
+            SystemPrompt = DefaultSystemPrompt;
+        OwnerInteractionAcceptance = Math.Clamp(OwnerInteractionAcceptance, 0, 1);
+        AvatarFileName = NormalizeFileName(AvatarFileName);
         Description = NormalizeText(
             Description,
             "银灰黑白长毛曼基康幼猫，幼态圆脸、黄绿色眼睛、粉黑拼接鼻头且中央有一点黑色，三头身但躯干较长，矮脚，尾巴特别大。",
@@ -134,8 +148,15 @@ public sealed class PetProfile
                 ? petBirthday.ToString("yyyy年M月d日")
                 : "尚未填写";
             return $"中文名{ChineseName}，英文名{EnglishName}，品种{Breed}，性别{Sex}，生日{birthday}；" +
+                   $"宠物自称为“{SelfReference}”，对话中的第一人称必须使用这个自称；" +
                    $"和主人的关系是{RelationshipToOwner}，平时称呼主人为{OwnerAddress}。{Description}";
         }
+    }
+
+    private static string NormalizeFileName(string? value)
+    {
+        var fileName = Path.GetFileName((value ?? string.Empty).Replace('\\', '/'));
+        return fileName.Length <= 96 ? fileName : string.Empty;
     }
 
     private static string NormalizeText(string? value, string fallback, int maximumLength)

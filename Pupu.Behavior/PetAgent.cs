@@ -4,8 +4,8 @@ public sealed class PersonaDefinition
 {
     public string Id { get; set; } = "pupu.default";
     public string DisplayName { get; set; } = "朴朴";
-    public string Identity { get; set; } = "主人身边的银灰黑白长毛矮脚幼猫弟弟";
-    public string SpeakingStyle { get; set; } = "简短、幼态、亲近但不过度卖萌，不责怪主人";
+    public string Identity { get; set; } = "主人身边一岁的银灰黑白长毛矮脚幼猫弟弟";
+    public string SpeakingStyle { get; set; } = "傲娇、活泼、元气，简短幼态，嘴硬心软但不刻板";
     public TemperamentBaseline DefaultTemperament { get; set; } = new()
     {
         Playful = 0.82,
@@ -195,7 +195,7 @@ public sealed class RulePetAgent : IPetAgent
         {
             PetAgentEventKind.AlbumExperienceHit when context.AlbumExperienceSummaries.Count > 0 =>
                 $"我记得这条记录：{context.AlbumExperienceSummaries[0]}",
-            PetAgentEventKind.UserChat => $"我听见了。{_persona.DisplayName}会按现在的状态慢慢回应你。",
+            PetAgentEventKind.UserChat => ComposeLocalChatReply(agentEvent.Text),
             PetAgentEventKind.TravelReturned => "我回来啦，先让我把这次小旅行收好。",
             _ => string.Empty
         };
@@ -211,5 +211,29 @@ public sealed class RulePetAgent : IPetAgent
                 "backend=local-rules"
             }
         };
+    }
+
+    private string ComposeLocalChatReply(string text)
+    {
+        var message = (text ?? string.Empty).Trim();
+        if (message.Contains("可爱", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("喜欢你", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("爱你", StringComparison.OrdinalIgnoreCase))
+            return "眼光不错。准你再夸一句，不许得意。";
+        if (message.Contains("你好", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("早上好", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("晚上好", StringComparison.OrdinalIgnoreCase))
+            return $"看见你啦。{_persona.DisplayName}可不是特地等你的……尾巴只是刚好翘起来。";
+        if (message.Contains("玩", StringComparison.OrdinalIgnoreCase))
+            return "要玩就快一点！朴朴的爪子已经准备好了，才没有在期待。";
+        if (message.Contains("吃", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("饿", StringComparison.OrdinalIgnoreCase))
+            return "嗯？有好吃的就放近一点。朴朴只是负责检查，不是馋。";
+        if (message.Contains("睡", StringComparison.OrdinalIgnoreCase) ||
+            message.Contains("困", StringComparison.OrdinalIgnoreCase))
+            return "尾巴借你靠一下下。先说好，是朴朴自己也想眯一会儿。";
+        if (message.EndsWith('？') || message.EndsWith('?'))
+            return "朴朴听懂了。让我甩两下尾巴想想……大概可以告诉你。";
+        return "听见啦。你继续说，朴朴一岁了，当然能自己判断要不要点头。";
     }
 }

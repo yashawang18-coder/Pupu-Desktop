@@ -11,6 +11,27 @@ if ($manifest.schemaVersion -lt 1 -or $manifest.schemaVersion -gt 2) {
 if ($manifest.cellSize -ne 256) { throw "素材单格必须为 256×256。" }
 
 Add-Type -AssemblyName PresentationCore
+
+function Read-VerifiedBitmap([string]$Path) {
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $decoder = [System.Windows.Media.Imaging.BitmapDecoder]::Create(
+            $stream,
+            [System.Windows.Media.Imaging.BitmapCreateOptions]::PreservePixelFormat,
+            [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad)
+        $frame = $decoder.Frames[0]
+        # Reading dimensions alone does not inflate IDAT data and previously
+        # allowed truncated PNGs into the installer. CopyPixels forces a full
+        # decode and CRC/data-stream validation before packaging.
+        $bitsPerPixel = [Math]::Max(32, $frame.Format.BitsPerPixel)
+        $stride = [int][Math]::Ceiling($frame.PixelWidth * $bitsPerPixel / 8.0)
+        $pixels = [byte[]]::new($stride * $frame.PixelHeight)
+        $frame.CopyPixels($pixels, $stride, 0)
+        return $frame
+    }
+    finally { $stream.Dispose() }
+}
+
 $requiredRows = @{
     core = 6
     life = 8
@@ -34,23 +55,23 @@ foreach ($id in $requiredRows.Keys) {
     }
     $path = Join-Path $assetDirectory $atlas.file
     if (-not (Test-Path $path)) { throw "找不到图集：$path" }
-    $stream = [System.IO.File]::OpenRead($path)
-    try {
-        $decoder = [System.Windows.Media.Imaging.BitmapDecoder]::Create(
-            $stream,
-            [System.Windows.Media.Imaging.BitmapCreateOptions]::PreservePixelFormat,
-            [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad)
-        $frame = $decoder.Frames[0]
-        $expectedWidth = $atlas.columns * $manifest.cellSize
-        $expectedHeight = $atlas.rows * $manifest.cellSize
-        if ($frame.PixelWidth -ne $expectedWidth -or $frame.PixelHeight -ne $expectedHeight) {
-            throw "图集 $id 是 $($frame.PixelWidth)×$($frame.PixelHeight)，期望 $expectedWidth×$expectedHeight。"
-        }
+    $frame = Read-VerifiedBitmap $path
+    $expectedWidth = $atlas.columns * $manifest.cellSize
+    $expectedHeight = $atlas.rows * $manifest.cellSize
+    if ($frame.PixelWidth -ne $expectedWidth -or $frame.PixelHeight -ne $expectedHeight) {
+        throw "图集 $id 是 $($frame.PixelWidth)×$($frame.PixelHeight)，期望 $expectedWidth×$expectedHeight。"
     }
-    finally { $stream.Dispose() }
 }
 
-$requiredCoinStates = @("normalColor", "normalFaded", "unhappyColor", "unhappyFaded", "back")
+$requiredCoinStates = @(
+    "normalColor",
+    "normalFaded",
+    "unhappyColor",
+    "unhappyFaded",
+    "back",
+    "normalEdge",
+    "backEdge"
+)
 if ($null -ne $manifest.coinStates) {
     foreach ($state in $requiredCoinStates) {
         $definition = $manifest.coinStates.$state
@@ -93,6 +114,7 @@ if ($manifest.schemaVersion -ge 2 -and $null -ne $manifest.actionGroups) {
             if (-not (Test-Path $actionPath)) {
                 throw "动作组 $id 找不到独立动作文件：$actionPath"
             }
+            $null = Read-VerifiedBitmap $actionPath
         }
     }
 }

@@ -14,8 +14,25 @@ public partial class ControlWindow : Window
     public ControlWindow()
     {
         InitializeComponent();
+        MoveTab(ModelTab, FeatureTabs, OwnerTabs, 2);
+        MoveTab(TechnicalDocumentationTab, DeveloperTabs, DeveloperTabs, 0);
+        MoveTabByHeader(FeatureTabs, "动作规则", 1);
         DataContextChanged += ControlWindow_DataContextChanged;
         Closed += (_, _) => ObserveViewModel(null);
+    }
+
+    private static void MoveTab(TabItem tab, TabControl source, TabControl destination, int index)
+    {
+        source.Items.Remove(tab);
+        destination.Items.Insert(Math.Clamp(index, 0, destination.Items.Count), tab);
+    }
+
+    private static void MoveTabByHeader(TabControl tabs, string header, int index)
+    {
+        var tab = tabs.Items.OfType<TabItem>()
+            .FirstOrDefault(item => string.Equals(item.Header?.ToString(), header, StringComparison.Ordinal));
+        if (tab is null) return;
+        MoveTab(tab, tabs, tabs, index);
     }
 
     private void ControlWindow_Closing(object? sender, CancelEventArgs e)

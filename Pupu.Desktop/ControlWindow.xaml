@@ -53,6 +53,21 @@
             <Setter Property="Foreground" Value="{StaticResource MutedInk}" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
+        <Style x:Key="TraitCard" TargetType="Border">
+            <Setter Property="Background" Value="#FFF9F4" />
+            <Setter Property="BorderBrush" Value="#F1DED1" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="Margin" Value="4" />
+        </Style>
+        <DataTemplate x:Key="ChatMessageTemplate">
+            <Border Margin="0,3" Padding="9,6" Background="#FFF9F5"
+                    BorderBrush="#E8D6CC" BorderThickness="1" CornerRadius="9">
+                <TextBlock Text="{Binding Display, Mode=OneWay}"
+                           TextWrapping="Wrap" FontFamily="Microsoft YaHei UI" />
+            </Border>
+        </DataTemplate>
         <DataTemplate x:Key="ActionCard">
             <Border Width="216" MinHeight="285" Margin="5" Padding="10"
                     Background="#FFFFFCF8" BorderBrush="#E8DBCE"
@@ -129,32 +144,49 @@
 
     <DockPanel Margin="12">
         <Grid DockPanel.Dock="Top" Margin="4,0,4,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="朴朴" FontSize="25" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding CurrentBehaviorLabel, Mode=OneWay}"
                            Foreground="{StaticResource MutedInk}" />
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Content="缩小" Command="{Binding ZoomOutCommand}" />
-                <Button Content="100%" Command="{Binding ResetZoomCommand}" />
-                <Button Content="放大" Command="{Binding ZoomInCommand}" Margin="0" />
-            </StackPanel>
         </Grid>
 
         <TabControl FontFamily="Microsoft YaHei UI">
             <TabItem Header="主人">
-                <TabControl Margin="8">
+                <TabControl x:Name="OwnerTabs" Margin="8">
                     <TabItem Header="状态与互动">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
+                                        <TextBlock Text="朴朴的产品与角色设计" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="朴朴不是通用助手的猫形皮肤，而是一只有持续身份、身体尺度、情绪节奏和行为边界的一岁桌面幼猫。正式形象固定为银灰黑白长毛拿破仑／曼基康：幼态宽圆脸、黄绿色圆眼、额头白色中轴、粉黑鼻头中央小黑斑、自然偏长躯干、明显短腿和完整大尾巴。魔法、节日、装备与笼子只能叠加道具，不能改变脸型、腿长、躯干和尾巴比例。"
+                                                   TextWrapping="Wrap" />
+                                        <Grid Margin="0,9,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="125"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                            <TextBlock Text="年龄与角色" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="一岁；具体对话性格由主人自定义角色提示词决定。短句及时回应，不使用客服式等待话术。" TextWrapping="Wrap"/>
+                                            <TextBlock Grid.Row="1" Text="视觉锚点" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="1" Grid.Column="1" Text="256×256 统一身体坐标系；20px 安全区；同组共享缩放、重心与脚底线。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                            <TextBlock Grid.Row="2" Text="默认节奏" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="2" Grid.Column="1" Text="安静待机以侧躺、低趴、舔脚为主；不把长时间端坐当作默认姿态。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                            <TextBlock Grid.Row="3" Text="移动边界" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="3" Grid.Column="1" Text="原地动作不改窗口坐标；步行、追逐、逃跑和扫帚飞行才由实时路径驱动。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                            <TextBlock Grid.Row="4" Text="关系原则" FontWeight="SemiBold" Margin="0,6,0,0"/><TextBlock Grid.Row="4" Grid.Column="1" Text="离线不惩罚、不生成照料欠账；互动只改变当下状态、关系与具体偏好，不暗改天生性格。" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="交互表面与手势优先级" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="宠物本体：单击进入触摸解释，短拖移动窗口，滚轮缩放；银币形态改为单击恢复亮银、双击经正面→侧缘→背面翻转、拖拽移动。宠物图像底部紧贴下身的透明安全区：双击展开桌面对话栏。主人页只在“大模型与对话联调”保留联调框，两处共享会话历史和模型回退链路。右键笼子入口是一个随状态变化的开关；停下始终保留为一级命令。"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
                                         <TextBlock Text="今天的朴朴" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="{Binding EffectivePersonality, Mode=OneWay}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding PetProfileTitle, Mode=OneWay}" FontSize="19" FontWeight="SemiBold" />
+                                        <TextBlock Text="一只有自己节奏、也会悄悄在意主人的小猫。" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="{Binding EffectivePersonality, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,4,0,0" />
                                         <TextBlock Text="{Binding RuntimeStateSummary, Mode=OneWay}"
                                                    Style="{StaticResource Hint}" Margin="0,5,0,0" />
                                         <TextBlock Text="{Binding RelationshipStateSummary, Mode=OneWay}"
@@ -165,14 +197,27 @@
                                             <TextBlock Text="{Binding Cleanliness, Mode=OneWay, StringFormat='清洁 {0:0}'}" />
                                             <TextBlock Text="{Binding Energy, Mode=OneWay, StringFormat='精力 {0:0}'}" />
                                         </UniformGrid>
+                                        <UniformGrid Columns="5" Margin="0,10,0,0">
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="活泼" FontWeight="SemiBold"/><ProgressBar Value="{Binding Playfulness}" Maximum="100" Height="7"/><TextBlock Text="{Binding Playfulness, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="黏人" FontWeight="SemiBold"/><ProgressBar Value="{Binding Clinginess}" Maximum="100" Height="7"/><TextBlock Text="{Binding Clinginess, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="敏感" FontWeight="SemiBold"/><ProgressBar Value="{Binding Sensitivity}" Maximum="100" Height="7"/><TextBlock Text="{Binding Sensitivity, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="独立" FontWeight="SemiBold"/><ProgressBar Value="{Binding Independence}" Maximum="100" Height="7"/><TextBlock Text="{Binding Independence, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                            <Border Style="{StaticResource TraitCard}"><StackPanel><TextBlock Text="淘气" FontWeight="SemiBold"/><ProgressBar Value="{Binding Mischief}" Maximum="100" Height="7"/><TextBlock Text="{Binding Mischief, StringFormat={}{0:0}}" Style="{StaticResource Hint}"/></StackPanel></Border>
+                                        </UniformGrid>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
                                         <TextBlock Text="常用互动" Style="{StaticResource SectionTitle}" />
                                         <WrapPanel>
-                                            <Button Content="投放冻干" Command="{Binding StartFoodAnchorCommand}" />
-                                            <Button Content="投放激光点" Command="{Binding StartToyAnchorCommand}" />
+                                            <Button Content="喂冻干" Command="{Binding FeedFreezeDriedCommand}" />
+                                            <Button Content="逗猫棒" Command="{Binding PlayWandCommand}" />
+                                            <Button Content="梳毛" Command="{Binding GroomCommand}" />
+                                            <Button Content="散散步" Command="{Binding FreeRoamCommand}" />
+                                            <Button Content="投掷冻干" Command="{Binding StartFoodAnchorCommand}"
+                                                    ToolTip="进入一次性选点模式，再点击桌面落点" />
+                                            <Button Content="投放激光点" Command="{Binding StartToyAnchorCommand}"
+                                                    ToolTip="进入一次性选点模式，再点击桌面落点" />
                                             <Button Content="停止" Command="{Binding StopCurrentActionCommand}" />
                                             <Button Content="关起来" Command="{Binding CageCommand}" />
                                             <Button Content="放出来" Command="{Binding ReleaseCageCommand}" />
@@ -183,21 +228,6 @@
                                                    Style="{StaticResource Hint}" />
                                     </StackPanel>
                                 </Border>
-                                <Border Style="{StaticResource Card}">
-                                    <StackPanel>
-                                        <TextBlock Text="和朴朴说话" Style="{StaticResource SectionTitle}" />
-                                        <ListBox ItemsSource="{Binding ChatMessages, Mode=OneWay}"
-                                                 MaxHeight="190" Margin="0,0,0,8" />
-                                        <DockPanel>
-                                            <Button DockPanel.Dock="Right" Content="发送"
-                                                    Command="{Binding SendChatCommand}" Margin="8,0,0,0" />
-                                            <TextBox Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                     KeyDown="ChatInput_KeyDown"
-                                                     AcceptsReturn="True" MinHeight="42"
-                                                     TextWrapping="Wrap" />
-                                        </DockPanel>
-                                    </StackPanel>
-                                </Border>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -205,16 +235,34 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
-                                    <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="160" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center">
+                                            <Border Width="132" Height="132" CornerRadius="66"
+                                                    Background="#FFF7F0" BorderBrush="#EBCFC0"
+                                                    BorderThickness="2">
+                                                <Image Source="{Binding PetProfilePortrait, Mode=OneWay}"
+                                                       Stretch="UniformToFill" Margin="5" />
+                                            </Border>
+                                            <Button Content="上传头像"
+                                                    Command="{Binding UploadPetAvatarCommand}"
+                                                    Margin="0,8,0,0" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    <StackPanel Grid.Column="1">
                                         <TextBlock Text="宠物与主人" Style="{StaticResource SectionTitle}" />
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="140" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="140" />
+                                                <ColumnDefinition Width="78" />
+                                                <ColumnDefinition Width="210" />
+                                                <ColumnDefinition Width="78" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
@@ -231,17 +279,39 @@
                                             <TextBlock Grid.Row="1" Grid.Column="2" Text="性别" VerticalAlignment="Center" />
                                             <TextBox Grid.Row="1" Grid.Column="3" Margin="6"
                                                      Text="{Binding PetSex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <TextBlock Grid.Row="2" Text="主人称呼" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Row="2" Text="宠物自称" VerticalAlignment="Center" />
                                             <TextBox Grid.Row="2" Grid.Column="1" Margin="6"
-                                                     Text="{Binding OwnerNickname, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <TextBlock Grid.Row="2" Grid.Column="2" Text="关系" VerticalAlignment="Center" />
+                                                     ToolTip="例如：我、本喵、朴朴；模型与本地日常对话都会遵循"
+                                                     Text="{Binding PetSelfReference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="2" Grid.Column="2" Text="主人称呼" VerticalAlignment="Center" />
                                             <TextBox Grid.Row="2" Grid.Column="3" Margin="6"
+                                                     Text="{Binding OwnerNickname, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="3" Text="关系" VerticalAlignment="Center" />
+                                            <TextBox Grid.Row="3" Grid.Column="1" Margin="6"
                                                      Text="{Binding RelationshipToOwner, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <TextBlock Grid.Row="4" Text="宠物生日" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="6">
+                                                <ComboBox Width="82" ItemsSource="{Binding BirthdayYearOptions, Mode=OneWay}"
+                                                          SelectedItem="{Binding PetBirthdayYear, Mode=TwoWay}" ToolTip="按年份快速跳转" />
+                                                <DatePicker Width="122" Margin="5,0,0,0"
+                                                            SelectedDate="{Binding PetBirthday, Mode=TwoWay}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Row="4" Grid.Column="2" Text="主人生日" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Row="4" Grid.Column="3" Orientation="Horizontal" Margin="6">
+                                                <ComboBox Width="82" ItemsSource="{Binding BirthdayYearOptions, Mode=OneWay}"
+                                                          SelectedItem="{Binding OwnerBirthdayYear, Mode=TwoWay}" ToolTip="按年份快速跳转" />
+                                                <DatePicker Width="122" Margin="5,0,0,0"
+                                                            SelectedDate="{Binding OwnerBirthday, Mode=TwoWay}" />
+                                            </StackPanel>
                                         </Grid>
+                                        <TextBlock Text="{Binding PetProfileSummary, Mode=OneWay}" Style="{StaticResource Hint}" Margin="6,6,0,0" />
                                         <Button Content="保存档案"
                                                 Command="{Binding SavePetProfileCommand}"
                                                 HorizontalAlignment="Left" Margin="0,8,0,0" />
+                                        <TextBlock Text="{Binding PetProfileSaveStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,6,0,0" />
                                     </StackPanel>
+                                    </Grid>
                                 </Border>
                             </StackPanel>
                         </ScrollViewer>
@@ -265,15 +335,11 @@
                                 </Border>
                                 <ListBox ItemsSource="{Binding AlbumPhotos, Mode=OneWay}"
                                          SelectedItem="{Binding SelectedAlbumPhoto, Mode=TwoWay}"
-                                         DisplayMemberPath="FileName" MinHeight="200" />
-                                <Image Source="{Binding SelectedPhotoPreview, Mode=OneWay}"
-                                       Height="220" Stretch="Uniform" Margin="0,10,0,0" />
-                                <TextBox Text="{Binding SelectedPhotoDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         AcceptsReturn="True" MinHeight="70" TextWrapping="Wrap"
-                                         Margin="0,8,0,8" />
-                                <Button Content="保存照片描述"
-                                        Command="{Binding SavePhotoDescriptionCommand}"
-                                        HorizontalAlignment="Left" />
+                                         MinHeight="240" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate><DataTemplate><Border Width="150" Margin="5" Padding="7" Background="White" BorderBrush="#E4DDDA" BorderThickness="1" CornerRadius="10"><StackPanel><Image Source="{Binding Thumbnail}" Width="132" Height="106" Stretch="UniformToFill"/><TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" Margin="0,5,0,0"/><TextBlock Text="{Binding AlbumName}" Style="{StaticResource Hint}"/></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
+                                </ListBox>
+                                <Border Style="{StaticResource Card}" Margin="0,10,0,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="260"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Image Source="{Binding SelectedPhotoPreview, Mode=OneWay}" Height="220" Stretch="Uniform"/><StackPanel Grid.Column="1" Margin="12,0,0,0"><TextBlock Text="照片记忆" Style="{StaticResource SectionTitle}"/><TextBox Text="{Binding SelectedPhotoDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="120" TextWrapping="Wrap" Margin="0,0,0,8"/><Button Content="保存照片描述" Command="{Binding SavePhotoDescriptionCommand}" HorizontalAlignment="Left"/></StackPanel></Grid></Border>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -281,8 +347,8 @@
             </TabItem>
 
             <TabItem Header="功能设置">
-                <TabControl Margin="8">
-                    <TabItem Header="性格与回复">
+                <TabControl x:Name="FeatureTabs" Margin="8">
+                    <TabItem Header="性格设定">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
@@ -309,13 +375,34 @@
                                     <StackPanel>
                                         <TextBlock Text="主人自定义宠物性格提示词"
                                                    Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="默认已填写傲娇猫式大模型提示词。可直接编辑；技术约束在开发者页说明，这里只写朴朴该怎样说话和相处。"
+                                        <TextBlock Text="这是对话角色的最高优先级设置，仅低于必要安全边界和档案身份事实。修改后，下一次模型回复必须明显体现新的语气与相处方式。"
                                                    Style="{StaticResource Hint}" />
                                         <TextBox Text="{Binding OwnerPersonalityPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  AcceptsReturn="True" TextWrapping="Wrap"
                                                  VerticalScrollBarVisibility="Auto"
                                                  MinHeight="190" Margin="0,8,0,8" />
                                         <Button Content="保存性格提示词"
+                                                Command="{Binding SavePetProfileCommand}"
+                                                HorizontalAlignment="Left" />
+                                        <TextBlock Text="{Binding PetProfileSaveStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <TextBlock Text="互动接受倾向" Style="{StaticResource SectionTitle}" />
+                                            <TextBlock DockPanel.Dock="Right"
+                                                       Text="{Binding OwnerInteractionAcceptanceLabel, Mode=OneWay}"
+                                                       Style="{StaticResource SectionTitle}" />
+                                        </DockPanel>
+                                        <TextBlock Text="单独控制主人明确发起的互动，不再由隐藏的性格、关系或随机概率决定。默认 90%；饱腹、睡眠、关笼子、旅行或当前动作不可中断等真实原因仍可阻止执行。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                        <Slider Minimum="0" Maximum="100" TickFrequency="5"
+                                                IsSnapToTickEnabled="True"
+                                                Value="{Binding OwnerInteractionAcceptance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Margin="0,8,0,4" />
+                                        <Button Content="保存互动接受倾向"
                                                 Command="{Binding SavePetProfileCommand}"
                                                 HorizontalAlignment="Left" />
                                     </StackPanel>
@@ -383,12 +470,21 @@
                                     </StackPanel>
                                 </Border>
                                 <Expander Header="计算方式（开发者说明）" IsExpanded="False">
-                                    <ItemsControl ItemsSource="{Binding HiddenActionRules, Mode=OneWay}" />
+                                    <ItemsControl ItemsSource="{Binding HiddenActionRules, Mode=OneWay}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,4" Padding="11,8" Background="#FFF9F4"
+                                                        BorderBrush="#EADDD2" BorderThickness="1" CornerRadius="10">
+                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </Expander>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
-                    <TabItem Header="大模型">
+                    <TabItem x:Name="ModelTab" Header="大模型与对话联调">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
@@ -396,6 +492,11 @@
                                         <TextBlock Text="回复模型" Style="{StaticResource SectionTitle}" />
                                         <CheckBox Content="启用大模型回复"
                                                   IsChecked="{Binding ModelApiEnabled, Mode=TwoWay}" />
+                                        <TextBlock Text="服务商" Margin="0,8,0,0" />
+                                        <ComboBox ItemsSource="{Binding ModelProviderOptions, Mode=OneWay}" SelectedItem="{Binding ModelApiProvider, Mode=TwoWay}" />
+                                        <TextBlock Text="接口协议" Margin="0,8,0,0" />
+                                        <ComboBox ItemsSource="{Binding ModelApiFormatOptions, Mode=OneWay}" SelectedItem="{Binding ModelApiRequestFormat, Mode=TwoWay}" />
+                                        <TextBlock Text="{Binding ModelApiProviderCapability, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,5,0,0" />
                                         <TextBlock Text="API 地址" Margin="0,8,0,0" />
                                         <TextBox Text="{Binding ModelApiEndpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                         <TextBlock Text="模型名称" Margin="0,8,0,0" />
@@ -413,6 +514,32 @@
                                                    Style="{StaticResource Hint}" Margin="0,7,0,0" />
                                     </StackPanel>
                                 </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="对话联调" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="这里与桌面宠物共用同一条对话、Persona、记忆与模型回退链路；无需关闭设置页即可连续测试。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                        <Border Margin="0,9,0,8" Padding="8" CornerRadius="8"
+                                                Background="#FFF9F5" BorderBrush="#E8D6CC" BorderThickness="1">
+                                            <ListBox ItemsSource="{Binding ChatMessages, Mode=OneWay}"
+                                                     ItemTemplate="{StaticResource ChatMessageTemplate}"
+                                                     MinHeight="120" MaxHeight="220" />
+                                        </Border>
+                                        <TextBox Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 KeyDown="ChatInput_KeyDown"
+                                                 AcceptsReturn="True"
+                                                 MinHeight="62"
+                                                 Padding="8"
+                                                 TextWrapping="Wrap"
+                                                 ToolTip="输入测试消息；Shift+Enter 换行，Enter 发送" />
+                                        <WrapPanel Margin="0,8,0,0">
+                                            <Button Content="发送测试消息"
+                                                    Command="{Binding SendChatCommand}" />
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding ModelApiStatus, Mode=OneWay}"
+                                                   Style="{StaticResource Hint}" Margin="0,7,0,0" />
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -422,16 +549,12 @@
             <TabItem Header="素材库">
                 <TabControl Margin="8">
                     <TabItem Header="动作预览">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding ActionGallery, Mode=OneWay}"
-                                          ItemTemplate="{StaticResource ActionCard}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
-                        </ScrollViewer>
+                        <TabControl Margin="6">
+                            <TabItem Header="自发行为"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding AutonomousActionGallery, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></ScrollViewer></TabItem>
+                            <TabItem Header="互动行为"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding InteractiveActionGallery, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></ScrollViewer></TabItem>
+                            <TabItem Header="魔法特辑"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding MagicActionGallery, Mode=OneWay}" ItemTemplate="{StaticResource ActionCard}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl></ScrollViewer></TabItem>
+                            <TabItem Header="节日特辑"><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding SeasonalActionGallery, Mode=OneWay}"><ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource Card}" Margin="5"><StackPanel><TextBlock Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" FontSize="15"/><TextBlock Text="{Binding Description, Mode=OneWay}" TextWrapping="Wrap" Margin="0,5,0,0"/><TextBlock Text="{Binding AvailabilityLabel, Mode=OneWay}" Style="{StaticResource Hint}" Margin="0,5,0,0"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer></TabItem>
+                        </TabControl>
                     </TabItem>
                     <TabItem Header="技术与存储">
                         <Grid Margin="8">
@@ -461,7 +584,7 @@
                                         <StackPanel>
                                             <TextBlock Text="银币组合更新"
                                                        Style="{StaticResource SectionTitle}" />
-                                            <TextBlock Text="V16 圆眼正脸四种正面状态与猫爪背面；下列实图、状态键、图集坐标和时长均直接读取当前正式清单。"
+                                            <TextBlock Text="V19 正脸银币：先呈现亮银与清晰高光，再自然降低光泽成为仍保留冷银色与头像色彩的暗银；不置灰，也不添加故意可见的锈迹。单击恢复亮银，双击经过真实侧缘翻面，按住拖拽移动。下列实图与坐标直接读取正式清单。"
                                                        Style="{StaticResource Hint}" />
                                             <ItemsControl ItemsSource="{Binding CoinUpdateStates, Mode=OneWay}"
                                                           ItemTemplate="{StaticResource CoinStateCard}"
@@ -484,8 +607,8 @@
             </TabItem>
 
             <TabItem Header="开发者">
-                <TabControl Margin="8">
-                    <TabItem Header="诊断">
+                <TabControl x:Name="DeveloperTabs" Margin="8">
+                    <TabItem x:Name="DiagnosticsTab" Header="诊断">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
@@ -512,20 +635,74 @@
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
-                    <TabItem Header="技术说明">
+                    <TabItem x:Name="TechnicalDocumentationTab" Header="技术说明">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="8">
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="模块边界" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="性格设定：主人显式底色与大模型说话方式。长期记忆：相处事件、位置回忆、纠正和 -100～100 的习惯证据。动作规则：决定何时选动作，不存进记忆正文。三者在“功能设置”中相邻，但数据职责互不混写。"
+                                        <TextBlock Text="从输入到表现的完整链路" Style="{StaticResource SectionTitle}" />
+                                        <WrapPanel Margin="0,8,0,4">
+                                            <Border Background="#FFF3EC" BorderBrush="#E7CFC2" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="① 输入事件&#x0a;桌面／面板／定时器" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#F4F7FF" BorderBrush="#CCD7EC" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="② 行为提案&#x0a;结构化上下文" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#F1FAF5" BorderBrush="#C8E0D1" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="③ 统一仲裁&#x0a;资格／优先级／租约" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#FFF8E9" BorderBrush="#E8D9AF" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="④ 表现意图&#x0a;行为 ID／回复草稿" TextAlignment="Center" /></Border>
+                                            <TextBlock Text="  →  " VerticalAlignment="Center" FontSize="18" />
+                                            <Border Background="#F8F1FA" BorderBrush="#DDCBE2" BorderThickness="1" CornerRadius="8" Padding="10,7"><TextBlock Text="⑤ WPF 适配&#x0a;动画／坐标／气泡" TextAlignment="Center" /></Border>
+                                        </WrapPanel>
+                                        <TextBlock Text="生命周期统一写入 Started／Progressed／Completed／Interrupted／Failed。模型只增强对话文本与 Persona 语气，不能绕过 BehaviorArbitrator 直接播放动作或改写状态。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="模块边界与责任" Style="{StaticResource SectionTitle}" />
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="145" />
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="2*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Text="模块" FontWeight="Bold" /><TextBlock Grid.Column="1" Text="负责" FontWeight="Bold" /><TextBlock Grid.Column="2" Text="不得越界" FontWeight="Bold" />
+                                            <TextBlock Grid.Row="1" Text="Pupu.Behavior" Margin="0,7,8,0" /><TextBlock Grid.Row="1" Grid.Column="1" Text="评分、仲裁、保护期、冷却" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="1" Grid.Column="2" Text="不依赖 WPF、Windows、LLM" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="2" Text="Pupu.Application" Margin="0,7,8,0" /><TextBlock Grid.Row="2" Grid.Column="1" Text="用例、提案、平台端口、生命周期" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="2" Grid.Column="2" Text="不直接操作窗口或凭据" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="3" Text="AssetPackService" Margin="0,7,8,0" /><TextBlock Grid.Row="3" Grid.Column="1" Text="V19 清单校验、完整解码、动作组解析" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="3" Grid.Column="2" Text="不决定行为是否可执行" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="4" Text="MainViewModel" Margin="0,7,8,0" /><TextBlock Grid.Row="4" Grid.Column="1" Text="表现编排、intro/loop/exit、状态绑定" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="4" Grid.Column="2" Text="不绕过仲裁器伪造业务状态" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                            <TextBlock Grid.Row="5" Text="Windows 平台" Margin="0,7,8,0" /><TextBlock Grid.Row="5" Grid.Column="1" Text="透明窗、输入、坐标、文件与凭据" TextWrapping="Wrap" Margin="0,7,8,0" /><TextBlock Grid.Row="5" Grid.Column="2" Text="不泄漏到跨平台核心" TextWrapping="Wrap" Margin="0,7,0,0" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="实时诊断快照" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="素材包" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding AssetPackStatus, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="当前意图" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding CurrentIntent, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="最近仲裁" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding LastArbitrationResult, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="模型／回退" FontWeight="SemiBold" Margin="0,7,0,0" />
+                                        <TextBlock Text="{Binding ModelApiStatus, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                        <TextBlock Text="{Binding LlmFallbackReason, Mode=OneWay}" TextWrapping="Wrap" Style="{StaticResource Hint}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="优先级与强制规则" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="主人明确发起魔法属于 OwnerForced，可中断普通待机、玩耍和散步；笼中、旅行中、石化等硬状态仍会阻止不兼容魔法。冻干和激光选点本身不占行为租约，只有落点后才提交一次 OwnerAnchor 提案。普通鼠标靠近始终是最低优先级注意力，不抢睡眠、如厕、进食、魔法或移动。"
                                                    TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="桌面与平台" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock Text="缩放、鼠标注意力、锚点投放、窗口移动和笼中锁定属于桌面运行能力，已并入对应交互与动作说明，不再占一个独立栏目。Windows 使用 WPF 与系统窗口接口；跨平台能力必须经平台适配层实现，不能把 Windows API 标成 macOS 已兼容。"
+                                        <TextBlock Text="数据与平台边界" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock Text="性格底色、运行状态、关系、具体行为偏好、长期记忆和动作规则分别存储；普通互动不会改写天生性格。Windows WPF 仅负责窗口、输入、渲染、文件选择和凭据；跨平台实现必须通过平台端口复用行为核心，不把 Windows API 伪装成 macOS 兼容。"
                                                    TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
@@ -534,6 +711,8 @@
                                         <TextBlock Text="素材契约" Style="{StaticResource SectionTitle}" />
                                         <TextBlock Text="{Binding AssetGenerationRequirements, Mode=OneWay}"
                                                    TextWrapping="Wrap" />
+                                        <TextBlock Text="动作切换：当前组有 exit 且下一组姿态不兼容时，先播退出段；下一组有 intro 时先播入场段，再进入 loop。移动序列保持相位，不在方向变化时回到第 0 帧。单次动作停在末帧，不再无限跳回首帧。"
+                                                   Style="{StaticResource Hint}" TextWrapping="Wrap" Margin="0,7,0,0" />
                                     </StackPanel>
                                 </Border>
                                 <ItemsControl ItemsSource="{Binding CodeImplementationCards, Mode=OneWay}" />

@@ -5,12 +5,11 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>Pupu.Installer</AssemblyName>
     <RootNamespace>Pupu.Installer</RootNamespace>
     <ApplicationIcon>..\Pupu.Desktop\Assets\pupu.ico</ApplicationIcon>
-    <Version>1.11.0</Version>
-    <Authors>Pupu &amp; 主人</Authors>
+    <Title>朴朴桌面宠物安装程序</Title>
+    <Description>朴朴桌面宠物一键安装程序</Description>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(PupuPayloadZip)' != '' and Exists('$(PupuPayloadZip)')">

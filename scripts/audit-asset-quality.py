@@ -17,8 +17,14 @@ MIN_LAPLACIAN_VARIANCE = 70.0
 MIN_TRANSPARENT_MARGIN = 20
 MAX_MOVEMENT_SIZE_RATIO = 1.25
 MAX_MOVEMENT_CENTROID_STEP = 10.0
-MAX_EDGE_GREEN_RATE = 0.01
-MAX_LEGACY_GREEN_RATE = 0.02
+MAX_EDGE_GREEN_RATE = 0.003
+# V10/V13 seasonal and magic props intentionally contain saturated green
+# clothing/light effects. They remain on the legacy detector; only the
+# V12/V15/V17/V18/V19 chroma-derived silhouette set uses the strict despill gate.
+MAX_LEGACY_GREEN_RATE = 0.04
+MAX_LOOP_CLOSURE_RATIO = 2.0
+MAX_LOOP_CLOSURE_DISTANCE = 0.20
+STRICT_EDGE_VERSIONS = ("-v12.png", "-v15.png", "-v17.png", "-v18.png", "-v19.png")
 MOVEMENT_ROWS: dict[str, set[int] | None] = {
     "directions": None,
     "walkModes": None,
@@ -39,6 +45,47 @@ def sharpness(rgb: np.ndarray, alpha: np.ndarray) -> float:
     return float(laplacian[opaque].var()) if opaque.any() else 0.0
 
 
+def load_png(path: Path) -> np.ndarray:
+    data = path.read_bytes()
+    iend = b"\x00\x00\x00\x00IEND\xaeB\x60\x82"
+    if not data.startswith(b"\x89PNG\r\n\x1a\n") or not data.endswith(iend):
+        raise ValueError(f"{path} is truncated or has no terminal PNG IEND chunk")
+    with Image.open(path) as image:
+        image.load()
+        return np.asarray(image.convert("RGBA"))
+
+
+def strict_edge_file(path: str) -> bool:
+    return any(version in path for version in STRICT_EDGE_VERSIONS)
+
+
+def green_edge_rate(cell: np.ndarray, strict: bool) -> float:
+    alpha = cell[:, :, 3]
+    visible = alpha > 8
+    edge = visible & ~ndimage.binary_erosion(visible, iterations=3)
+    rgb = cell[:, :, :3].astype(np.int16)
+    dominance = rgb[:, :, 1] - np.maximum(rgb[:, :, 0], rgb[:, :, 2])
+    threshold = 6 if strict else 18
+    minimum_green = 45 if strict else 90
+    green_edge = edge & (dominance > threshold) & (rgb[:, :, 1] > minimum_green)
+    return float(green_edge.sum() / max(1, edge.sum()))
+
+
+def frame_distance(first: np.ndarray, second: np.ndarray) -> float:
+    first_alpha = first[..., 3:4].astype(np.float32) / 255.0
+    second_alpha = second[..., 3:4].astype(np.float32) / 255.0
+    first_premultiplied = np.concatenate(
+        (first[..., :3].astype(np.float32) * first_alpha, first[..., 3:4]), axis=2
+    )
+    second_premultiplied = np.concatenate(
+        (second[..., :3].astype(np.float32) * second_alpha, second[..., 3:4]), axis=2
+    )
+    union = (first_alpha[..., 0] > 0.03) | (second_alpha[..., 0] > 0.03)
+    if not union.any():
+        return 0.0
+    return float(np.abs(first_premultiplied - second_premultiplied)[union].mean() / 255.0)
+
+
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     assets = root / "Pupu.Desktop" / "Assets"
@@ -50,11 +97,20 @@ def main() -> int:
     movement_size_ratios: list[float] = []
     movement_centroid_steps: list[float] = []
     edge_green_rates: list[float] = []
-    v15_edge_green_rates: list[float] = []
+    strict_edge_green_rates: list[float] = []
+    loop_closure_ratios: list[float] = []
     total = 0
     independent_total = 0
+    loaded_images: dict[Path, np.ndarray] = {}
+
+    def load_cached(path: Path) -> np.ndarray:
+        if path not in loaded_images:
+            loaded_images[path] = load_png(path)
+        return loaded_images[path]
+
     for atlas_id, atlas in manifest["atlases"].items():
-        image = np.asarray(Image.open(assets / atlas["file"]).convert("RGBA"))
+        image = load_cached(assets / atlas["file"])
+        strict_edges = strict_edge_file(atlas["file"])
         for row in range(atlas["rows"]):
             row_bounds: list[tuple[int, int]] = []
             row_centroids: list[tuple[float, float]] = []
@@ -66,21 +122,11 @@ def main() -> int:
                 ]
                 alpha = cell[:, :, 3]
                 visible = alpha > 16
-                edge = visible & ~ndimage.binary_erosion(visible, iterations=3)
-                rgb16 = cell[:, :, :3].astype(np.int16)
-                green_dominance = rgb16[:, :, 1] - np.maximum(
-                    rgb16[:, :, 0], rgb16[:, :, 2]
-                )
-                green_edge = edge & (green_dominance > 18) & (rgb16[:, :, 1] > 90)
-                edge_green_rate = float(green_edge.sum() / max(1, edge.sum()))
+                edge_green_rate = green_edge_rate(cell, strict_edges)
                 edge_green_rates.append(edge_green_rate)
-                if any(version in atlas["file"] for version in ("-v15.png", "-v16.png", "-v17.png")):
-                    v15_edge_green_rates.append(edge_green_rate)
-                green_limit = (
-                    MAX_EDGE_GREEN_RATE
-                    if any(version in atlas["file"] for version in ("-v15.png", "-v16.png", "-v17.png"))
-                    else MAX_LEGACY_GREEN_RATE
-                )
+                if strict_edges:
+                    strict_edge_green_rates.append(edge_green_rate)
+                green_limit = MAX_EDGE_GREEN_RATE if strict_edges else MAX_LEGACY_GREEN_RATE
                 if edge_green_rate > green_limit:
                     failures.append(
                         f"{atlas_id} {row}:{column} green edge rate is "
@@ -157,6 +203,8 @@ def main() -> int:
         "unhappyColor",
         "unhappyFaded",
         "back",
+        "normalEdge",
+        "backEdge",
     }
     coin_states = manifest.get("coinStates")
     if coin_states is not None:
@@ -186,6 +234,54 @@ def main() -> int:
             failures.append(
                 f"action group {group_id} has neither source file nor fallback"
             )
+
+    def action_frame(group: dict, frame_index: int) -> np.ndarray:
+        source = group.get("source") or {}
+        if source.get("type", "atlasRow") == "atlasRow":
+            atlas = manifest["atlases"][source["atlas"]]
+            sheet = load_cached(assets / atlas["file"])
+            row = int(source.get("row", 0))
+            return sheet[row * CELL : (row + 1) * CELL,
+                         frame_index * CELL : (frame_index + 1) * CELL]
+        frame_width = int(source.get("frameWidth") or CELL)
+        frame_height = int(source.get("frameHeight") or CELL)
+        sheet = load_cached(assets / source["file"])
+        if source.get("vertical"):
+            return sheet[frame_index * frame_height : (frame_index + 1) * frame_height,
+                         :frame_width]
+        return sheet[:frame_height,
+                     frame_index * frame_width : (frame_index + 1) * frame_width]
+
+    for group_id, group in manifest.get("actionGroups", {}).items():
+        loop_mode = group.get("loopMode", "loop")
+        if loop_mode not in {"loop", "pingPong"}:
+            continue
+        sequences = [list(group.get("frames") or [])]
+        directions = group.get("directions") or {}
+        if directions:
+            sequences = [list(value.get("frames") or []) for value in directions.values()]
+        for sequence in sequences:
+            if len(sequence) < 2:
+                continue
+            if loop_mode == "pingPong" and len(sequence) > 2:
+                sequence = sequence + list(reversed(sequence[1:-1]))
+            frames = [action_frame(group, frame) for frame in sequence]
+            distances = [
+                frame_distance(first, second)
+                for first, second in zip(frames, frames[1:] + frames[:1])
+            ]
+            internal = distances[:-1] or distances
+            median_internal = float(np.median(internal))
+            ratio = distances[-1] / max(0.001, median_internal)
+            loop_closure_ratios.append(ratio)
+            if (
+                distances[-1] > MAX_LOOP_CLOSURE_DISTANCE
+                and ratio > MAX_LOOP_CLOSURE_RATIO
+            ):
+                failures.append(
+                    f"action group {group_id} loop closes with a visible jump "
+                    f"({distances[-1]:.3f}, {ratio:.2f}x median transition)"
+                )
     independent_sources: dict[str, tuple[int, int]] = {}
     for group in manifest.get("actionGroups", {}).values():
         source = group.get("source") or {}
@@ -200,7 +296,8 @@ def main() -> int:
         if not path.exists():
             failures.append(f"independent action source is missing: {source_file}")
             continue
-        image = np.asarray(Image.open(path).convert("RGBA"))
+        image = load_cached(path)
+        strict_edges = strict_edge_file(source_file)
         if image.shape[0] != frame_height or image.shape[1] % frame_width:
             failures.append(f"independent action source has invalid grid: {source_file}")
             continue
@@ -209,21 +306,11 @@ def main() -> int:
             cell = image[:, frame_index * frame_width : (frame_index + 1) * frame_width]
             alpha = cell[:, :, 3]
             visible = alpha > 16
-            edge = visible & ~ndimage.binary_erosion(visible, iterations=3)
-            rgb16 = cell[:, :, :3].astype(np.int16)
-            green_dominance = rgb16[:, :, 1] - np.maximum(
-                rgb16[:, :, 0], rgb16[:, :, 2]
-            )
-            green_edge = edge & (green_dominance > 18) & (rgb16[:, :, 1] > 90)
-            edge_green_rate = float(green_edge.sum() / max(1, edge.sum()))
+            edge_green_rate = green_edge_rate(cell, strict_edges)
             edge_green_rates.append(edge_green_rate)
-            if "-v15.png" in source_file:
-                v15_edge_green_rates.append(edge_green_rate)
-            green_limit = (
-                MAX_EDGE_GREEN_RATE
-                if "-v15.png" in source_file
-                else MAX_LEGACY_GREEN_RATE
-            )
+            if strict_edges:
+                strict_edge_green_rates.append(edge_green_rate)
+            green_limit = MAX_EDGE_GREEN_RATE if strict_edges else MAX_LEGACY_GREEN_RATE
             if edge_green_rate > green_limit:
                 failures.append(
                     f"{source_file} frame {frame_index} green edge rate is "
@@ -247,31 +334,35 @@ def main() -> int:
                 failures.append(
                     f"{source_file} frame {frame_index} is too soft ({focus:.1f})"
                 )
-        if "chase-gait-8dir" in source_file:
+        if "chase-gait-8dir" in source_file or "broom-flight-8dir" in source_file:
             frame_count = image.shape[1] // frame_width
-            if frame_count != 32:
+            if frame_count != 64:
                 failures.append(
-                    f"{source_file} must contain 8 directions x 4 gait phases"
+                    f"{source_file} must contain 8 directions x 8 motion phases"
                 )
-            else:
+            elif "chase-gait-8dir" in source_file:
                 for direction in range(8):
                     lower_body_hashes: set[str] = set()
-                    for phase in range(4):
-                        index = direction * 4 + phase
+                    for phase in range(8):
+                        index = direction * 8 + phase
                         frame = image[
                             :,
                             index * frame_width : (index + 1) * frame_width,
                         ]
                         lower = frame[int(frame_height * 0.52) :, :, :]
                         lower_body_hashes.add(hashlib.sha256(lower.tobytes()).hexdigest())
-                    if len(lower_body_hashes) < 3:
+                    # The source provides two photographed foot swaps. V19
+                    # must expose at least four distinct lower-body rasters
+                    # across eight clean display phases; all eight complete
+                    # frames are also covered by the adjacent-frame gate.
+                    if len(lower_body_hashes) < 4:
                         failures.append(
                             f"{source_file} direction {direction} has frozen feet"
                         )
 
     gaze_coin = manifest["atlases"].get("gazeCoin")
     if gaze_coin:
-        coin_image = np.asarray(Image.open(assets / gaze_coin["file"]).convert("RGBA"))
+        coin_image = load_cached(assets / gaze_coin["file"])
         for state_name in ("normalColor", "normalFaded", "unhappyColor", "unhappyFaded"):
             state = (coin_states or {}).get(state_name, {})
             for frame in state.get("frames", []):
@@ -298,15 +389,17 @@ def main() -> int:
     maximum_size_ratio = max(movement_size_ratios)
     maximum_centroid_step = max(movement_centroid_steps)
     maximum_edge_green_rate = max(edge_green_rates)
-    maximum_v15_edge_green_rate = max(v15_edge_green_rates, default=0.0)
+    maximum_strict_edge_green_rate = max(strict_edge_green_rates, default=0.0)
+    maximum_loop_closure_ratio = max(loop_closure_ratios, default=0.0)
     print(
         f"Audited {total} atlas cells and {independent_total} independent frames: effective subject >= "
         f"{minimum_short}x{minimum_long}px; minimum focus {minimum_focus:.1f}; "
         f"movement size drift <= {maximum_size_ratio:.3f}x; "
         f"centroid step <= {maximum_centroid_step:.2f}px; "
-        f"V15 green edge <= {maximum_v15_edge_green_rate:.2%} "
+        f"V12/V15/V17/V18/V19 green edge <= {maximum_strict_edge_green_rate:.2%}; "
         f"(legacy reference maximum {maximum_edge_green_rate:.2%}); "
-        "pursuit gait 8 directions x 4 phases."
+        f"loop closure <= {maximum_loop_closure_ratio:.2f}x median; "
+        "pursuit gait 8 directions x 8 display phases."
     )
     if warnings:
         print("\n".join(warnings))

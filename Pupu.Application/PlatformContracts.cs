@@ -19,6 +19,7 @@ public interface IDesktopPresentationHost
     IUiTimer CreateTimer(TimeSpan interval);
     object? CropImage(object? source, int x, int y, int width, int height);
     object? LoadImage(string? path, int decodePixelWidth);
+    string? SelectImageFile(string title);
     void ShowActionPreview(
         string title,
         IReadOnlyList<object> frames,
@@ -53,6 +54,7 @@ public interface IModelApiService : IDisposable
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         CancellationToken cancellationToken = default);
@@ -60,6 +62,7 @@ public interface IModelApiService : IDisposable
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         IReadOnlyList<ChatMessage>? history,
@@ -70,6 +73,14 @@ public interface IModelApiService : IDisposable
         PersonalityBehaviorState state,
         string identity,
         CancellationToken cancellationToken = default);
+}
+
+public interface IModelCredentialStore
+{
+    bool Exists(string target);
+    string? Read(string target);
+    void Write(string target, string secret);
+    void Delete(string target);
 }
 
 public interface IAssetPackService
@@ -106,9 +117,13 @@ public sealed class AssetActionGroupStatus
     public required int Row { get; init; }
     public required string File { get; init; }
     public required string SourceType { get; init; }
+    public IReadOnlyList<int> IntroFrames { get; init; } = Array.Empty<int>();
+    public IReadOnlyList<int> LoopFrames { get; init; } = Array.Empty<int>();
+    public IReadOnlyList<int> ExitFrames { get; init; } = Array.Empty<int>();
 
     public string TimingLabel =>
-        $"{FrameCount} 帧 · {FrameDurationMs} ms 基准 · {LoopMode}";
+        $"{FrameCount} 帧 · {FrameDurationMs} ms 基准 · {LoopMode} · " +
+        $"I/L/E {IntroFrames.Count}/{LoopFrames.Count}/{ExitFrames.Count}";
 }
 
 public sealed class ResolvedAssetAnimation
@@ -123,4 +138,11 @@ public sealed class ResolvedAssetAnimation
     public required bool Vertical { get; init; }
     public required bool AtlasRowSource { get; init; }
     public required string SourceLabel { get; init; }
+    public string GroupId { get; init; } = string.Empty;
+    public string BehaviorId { get; init; } = string.Empty;
+    public string LoopMode { get; init; } = AssetLoopModes.Loop;
+    public int[] IntroFrames { get; init; } = Array.Empty<int>();
+    public int[] LoopFrames { get; init; } = Array.Empty<int>();
+    public int[] ExitFrames { get; init; } = Array.Empty<int>();
+    public string[] CompatiblePostures { get; init; } = Array.Empty<string>();
 }

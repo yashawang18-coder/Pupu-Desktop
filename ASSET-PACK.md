@@ -10,7 +10,7 @@
 %LOCALAPPDATA%\PupuDesktop\assets
 ```
 
-应用启动时优先读取该目录中的 `pupu-assets.json`。保持既有网格时，可以直接替换清单指向的 PNG：
+应用只在本地清单版本与内置清单完全一致时读取该目录；版本不一致会安全回退内置 V19。点击“打开可编辑素材目录”升级时会覆盖刷新当前版 PNG，避免历史文件继续覆盖新版。保持既有网格时，可以直接替换清单指向的 PNG：
 
 - `core`：8×6；
 - `life`：8×8；
@@ -32,11 +32,11 @@
 
 ## schema 1 / schema 2 兼容
 
-- schema 1 继续只需要 `atlases`；运行时会为面板合成只读旧图集动作组。
+- schema 1 只作为读取兼容；正式 V19 运行包使用 schema 2。
 - schema 2 可增加 `actionGroups`。每组包含 `groupId`、`behaviorId`、`source`、`frameCount`、`frameDurationMs`／`frameDurationsMs`、`frames`、`loopMode`、`intro`、`loop`、`exit`、`directions`、`compatiblePostures`、`mouseGaze`、`interactions` 和 `fallback`。
 - `source.type=atlasRow` 复用旧图集；`spriteStrip` 表示横向或纵向独立动作条带；`singleFile` 预留单帧动作 PNG。
-- schema 2 字段不完整时使用本地默认值；来源不可读时先尝试组内 fallback，再回到 C# 原有 `AnimationSequence`，不会让旧素材包失效。
-- 当前正式清单已登记侧躺、低趴、板鸭趴、逗猫棒、冻干、窗口休息和八方向视线代表组；其他旧动作仍通过 atlas row 正常播放，后续可逐组迁移。
+- schema 2 字段不完整时使用本地默认值；来源不可读时先尝试组内 fallback，再回到 C# 原有 `AnimationSequence`。
+- 当前正式清单已登记全部实际行为映射；新动作不能只把 PNG 放入目录，必须同时登记行为 ID、触发、表现映射、预览和测试。
 
 ## 固定身体坐标系与生成要求
 
@@ -44,23 +44,22 @@
 2. 禁止按每帧整只宠物的外接框自动铺满。先建立固定“宠物身体坐标系”，以头部、身体骨架、脚底线和重心为尺度锚点。
 3. 同一宠物跨动作组保持主体比例、身体长度、短腿程度、头身比和落地点一致。每个动作组单独输出、维护、逐帧预览，并登记帧数、帧时长、循环方式和行为标签。
 4. `idle.prone_observe` 需要八方向局部视线；`idle.side_lie` 需要左／右／上；`idle.sploot` 需要低头／左／右；`rest.near_owner` 需要慢眨眼。不具备局部眼睛、耳朵或头部素材时，只记录轻反馈，不硬切大动作。
-5. 银币正式状态为 `normalColor`、`normalFaded`、`unhappyColor`、`unhappyFaded`、`back`。V17 四个正面状态从主人参考图重制的正视亮银边透明母版确定性派生，不含黑色透视侧缘；背面继续使用同圆心浮雕猫爪。
-6. V15 色键源必须经过连通域切分、固定主体中线、脚底基线、20px 透明安全边距与边缘去绿；不得把生成图的等宽网格线直接当作宠物边界。
-7. 追逐素材为方向优先的 8×4 帧条带；运行时只允许在脚步换帧时推进窗口坐标，不允许静止图案漂移。
-6. V13 四组魔法已按固定身体坐标系统一尺度，石化为硬质晶面；素材审计继续检测主体过小、透明边距异常、清晰度不足、移动体型漂移和中心跳动。
+5. 每个动作至少提供 8 个可显示相位。4 个关键姿态可增加轻微呼吸或重心变化，但禁止直接重复相邻帧、整猫平移冒充动作或交叉淡化造成双重曝光。
+6. 银币状态为 `normalColor`、`normalFaded`、`unhappyColor`、`unhappyFaded`、`back`。V19 彩色态提高银质高光和色彩，褪色态使用暖棕旧化与轻微锈迹，不允许只做灰度置换。
+7. 追逐素材为 8 方向 × 8 相位的 64 帧横向条带；运行时只允许在脚步换帧时推进窗口坐标，不允许静止图案漂移。
+8. 魔法和节日素材必须与日常 V19 身份一致；装扮只能覆盖道具和服饰，不改变脸型、头身比、腿长、身体长度或尾巴。
+9. 清单的 `intro`、`loop`、`exit` 必须形成可执行片段。姿态不兼容的组切换先退出、再入场；移动方向切换保留相位。
 
 ## 开发者重新生成
 
 透明源图位于 `AssetSources`。在安装 ImageMagick 的环境运行：
 
 ```bash
-./scripts/rebuild-v8-activity.sh
-./scripts/rebuild-v12-assets.sh
-./scripts/rebuild-v13-assets.sh
-python scripts/rebuild-v17-coin.py
+python scripts/rebuild-v19-assets.py
+python scripts/audit-asset-quality.py
 ./scripts/verify-assets.sh
 ```
 
-规范化脚本会清除色键，并按固定身体坐标系归一化整猫、道具和局部覆盖层。V13 在 V12 基线上重做魔法、硬质石化、五态银币、如厕、激光笔和社交触摸，并增加 16 方向锚点追逐、16 方向背带遛猫及 16 帧局部视线覆盖层，同时删除无法可靠感知环境的窗口上沿素材行。`rebuild-v13-assets.sh` 先写临时 PNG、完整解码后再原子替换正式文件。`verify-assets.sh` 会检查 616 个图集单元格和 48 个独立动作帧；Windows 正式构建还会运行 `scripts/verify-assets.ps1`。
+V19 脚本从 V18 身份母表、V19 魔法／节日母表和稳定银币源重建正式图集，不读取旧运行图作为隐式底图。审计会完整解码 PNG、检查透明边距、绿边、主体尺度、质心、清晰度、相邻帧和循环闭合；Windows 正式构建运行同一套门禁。
 
 面部身份参考位于 `AssetSources/reference/pupu-face-2026-07-23/`。V13 色键源位于 `AssetSources/v13/`，退役正式图只保留在素材源归档中供审计和回退，不进入应用发布目录。正式运行仅读取清单指向文件。

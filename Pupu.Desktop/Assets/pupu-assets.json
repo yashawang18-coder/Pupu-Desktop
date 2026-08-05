@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "name": "pupu 幼态半写实素材包",
-  "version": "1.11.0-v17-front-facing-silver-coin",
+  "version": "1.11.3-v19-refined-flight-chat",
   "cellSize": 256,
   "atlases": {
     "core": {
-      "file": "pupu-core-youthful-v12.png",
+      "file": "pupu-core-youthful-v19.png",
       "columns": 8,
       "rows": 6,
       "rowActions": [
@@ -18,7 +18,7 @@
       ]
     },
     "life": {
-      "file": "pupu-life-youthful-v15.png",
+      "file": "pupu-life-youthful-v19.png",
       "columns": 8,
       "rows": 8,
       "rowActions": [
@@ -33,7 +33,7 @@
       ]
     },
     "directions": {
-      "file": "pupu-directions-youthful-v12.png",
+      "file": "pupu-directions-youthful-v19.png",
       "columns": 8,
       "rows": 4,
       "rowActions": [
@@ -44,7 +44,7 @@
       ]
     },
     "touch": {
-      "file": "pupu-touch-youthful-v15.png",
+      "file": "pupu-touch-youthful-v19.png",
       "columns": 8,
       "rows": 6,
       "rowActions": [
@@ -57,7 +57,7 @@
       ]
     },
     "routines": {
-      "file": "pupu-routines-youthful-v15.png",
+      "file": "pupu-routines-youthful-v19.png",
       "columns": 8,
       "rows": 8,
       "rowActions": [
@@ -72,7 +72,7 @@
       ]
     },
     "walkModes": {
-      "file": "pupu-walk-modes-youthful-v12.png",
+      "file": "pupu-walk-modes-youthful-v19.png",
       "columns": 8,
       "rows": 8,
       "rowActions": [
@@ -87,22 +87,22 @@
       ]
     },
     "activity": {
-      "file": "pupu-activity-youthful-v15.png",
+      "file": "pupu-activity-youthful-v19.png",
       "columns": 8,
       "rows": 8,
       "rowActions": [
-        "V14 全身视线兼容行 A",
-        "V14 全身视线兼容行 B",
+        "V19 低伏追逐激光点",
+        "V19 低趴视线兼容",
         "团成一团睡",
         "四仰八叉睡",
         "侧身伸展睡",
         "睡姿平滑转换",
         "板鸭趴",
-        "兼容占位（不触发）"
+        "V19 安静卧下兼容"
       ]
     },
     "lifeEquipment": {
-      "file": "pupu-life-equipment-youthful-v15.png",
+      "file": "pupu-life-equipment-youthful-v19.png",
       "columns": 8,
       "rows": 3,
       "rowActions": [
@@ -112,7 +112,7 @@
       ]
     },
     "motion": {
-      "file": "pupu-motion-youthful-v15.png",
+      "file": "pupu-motion-youthful-v19.png",
       "columns": 8,
       "rows": 10,
       "rowActions": [
@@ -129,7 +129,7 @@
       ]
     },
     "gazeCoin": {
-      "file": "pupu-gaze-coin-youthful-v17.png",
+      "file": "pupu-gaze-coin-youthful-v19.png",
       "columns": 8,
       "rows": 3,
       "rowActions": [
@@ -139,7 +139,7 @@
       ]
     },
     "litter": {
-      "file": "pupu-litter-youthful-v15.png",
+      "file": "pupu-litter-youthful-v19.png",
       "columns": 8,
       "rows": 4,
       "rowActions": [
@@ -150,26 +150,26 @@
       ]
     },
     "specials": {
-      "file": "pupu-specials-youthful-v13.png",
+      "file": "pupu-specials-youthful-v19.png",
       "columns": 8,
       "rows": 5,
       "rowActions": [
-        "鼠标八方向视线跟随",
-        "Accio Broom 紫色斗篷与流光",
-        "Apparate 扩大弧光与魔法重现",
-        "Petrificus Totalus 石化与银币高光",
-        "Scourgify 放大光环与擦拭光效"
+        "V19 低趴视线兼容",
+        "V19 Accio Broom 斗篷召唤与飞行",
+        "V19 Apparate 弧光消失与重现",
+        "V19 Petrificus 石化渐变与银币",
+        "V19 Scourgify 挥爪与清洁光环"
       ]
     },
     "seasonal": {
-      "file": "pupu-seasonal-youthful-v10.png",
+      "file": "pupu-seasonal-youthful-v19.png",
       "columns": 8,
       "rows": 4,
       "rowActions": [
-        "圣诞帽",
-        "万圣节斗篷帽",
-        "春节红围巾",
-        "主人生日祝福"
+        "V19 圣诞帽低趴微动",
+        "V19 万圣节斗篷帽低趴微动",
+        "V19 春节红围巾低趴微动",
+        "V19 主人生日帽与轻量彩纸"
       ]
     }
   },
@@ -223,6 +223,26 @@
       "frameDurations": [
         1200
       ]
+    },
+    "normalEdge": {
+      "atlas": "gazeCoin",
+      "row": 2,
+      "frames": [
+        5
+      ],
+      "frameDurations": [
+        90
+      ]
+    },
+    "backEdge": {
+      "atlas": "gazeCoin",
+      "row": 2,
+      "frames": [
+        6
+      ],
+      "frameDurations": [
+        90
+      ]
     }
   },
   "actionGroups": {
@@ -234,7 +254,7 @@
         "atlas": "motion",
         "row": 9
       },
-      "frameCount": 8,
+      "frameCount": 14,
       "frameDurationMs": 1600,
       "frameDurationsMs": [
         1750,
@@ -254,29 +274,40 @@
         4,
         5,
         6,
-        7
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
       ],
-      "loopMode": "pingPong",
+      "loopMode": "loop",
       "intro": {
         "frames": [
           0,
           1
-        ]
+        ],
+        "next": "loop"
       },
       "loop": {
         "frames": [
-          1,
           2,
           3,
           4,
           5,
           6,
-          7
+          7,
+          6,
+          5,
+          4,
+          3
         ],
         "next": "loop"
       },
       "exit": {
         "frames": [
+          3,
           2,
           1,
           0
@@ -321,7 +352,7 @@
         "atlas": "routines",
         "row": 1
       },
-      "frameCount": 8,
+      "frameCount": 14,
       "frameDurationMs": 1500,
       "frameDurationsMs": [
         1500,
@@ -341,29 +372,40 @@
         4,
         5,
         6,
-        7
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
       ],
-      "loopMode": "pingPong",
+      "loopMode": "loop",
       "intro": {
         "frames": [
-          0
-        ]
+          0,
+          1
+        ],
+        "next": "loop"
       },
       "loop": {
         "frames": [
-          0,
-          1,
           2,
           3,
           4,
           5,
           6,
-          7
+          7,
+          6,
+          5,
+          4,
+          3
         ],
         "next": "loop"
       },
       "exit": {
         "frames": [
+          3,
           2,
           1,
           0
@@ -431,7 +473,7 @@
         "atlas": "activity",
         "row": 6
       },
-      "frameCount": 8,
+      "frameCount": 14,
       "frameDurationMs": 1450,
       "frames": [
         0,
@@ -441,29 +483,40 @@
         4,
         5,
         6,
-        7
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
       ],
-      "loopMode": "pingPong",
+      "loopMode": "loop",
       "intro": {
         "frames": [
-          0
-        ]
+          0,
+          1
+        ],
+        "next": "loop"
       },
       "loop": {
         "frames": [
-          0,
-          1,
           2,
           3,
           4,
           5,
           6,
-          7
+          7,
+          6,
+          5,
+          4,
+          3
         ],
         "next": "loop"
       },
       "exit": {
         "frames": [
+          3,
           2,
           1,
           0
@@ -506,7 +559,7 @@
         "atlas": "core",
         "row": 3
       },
-      "frameCount": 8,
+      "frameCount": 14,
       "frameDurationMs": 380,
       "frameDurationsMs": [
         460,
@@ -519,21 +572,28 @@
         390
       ],
       "frames": [
+        0,
+        1,
         2,
         3,
         4,
         5,
         6,
+        7,
+        6,
         5,
         4,
-        3
+        3,
+        2,
+        1
       ],
       "loopMode": "loop",
       "intro": {
         "frames": [
           0,
           1
-        ]
+        ],
+        "next": "loop"
       },
       "loop": {
         "frames": [
@@ -541,6 +601,8 @@
           3,
           4,
           5,
+          6,
+          7,
           6,
           5,
           4,
@@ -550,6 +612,7 @@
       },
       "exit": {
         "frames": [
+          3,
           2,
           1,
           0
@@ -590,7 +653,7 @@
         "atlas": "routines",
         "row": 4
       },
-      "frameCount": 6,
+      "frameCount": 14,
       "frameDurationMs": 330,
       "frameDurationsMs": [
         360,
@@ -601,37 +664,50 @@
         290
       ],
       "frames": [
+        0,
+        1,
+        2,
+        3,
         4,
         5,
         6,
         7,
         6,
-        5
+        5,
+        4,
+        3,
+        2,
+        1
       ],
       "loopMode": "loop",
       "intro": {
         "frames": [
           0,
-          1,
-          2,
-          3
-        ]
+          1
+        ],
+        "next": "loop"
       },
       "loop": {
         "frames": [
+          2,
+          3,
           4,
           5,
           6,
           7,
           6,
-          5
+          5,
+          4,
+          3
         ],
         "next": "loop"
       },
       "exit": {
         "frames": [
-          5,
-          4
+          3,
+          2,
+          1,
+          0
         ]
       },
       "compatiblePostures": [
@@ -666,7 +742,7 @@
       "behaviorId": "attention.mouse.fullbody",
       "source": {
         "type": "spriteStrip",
-        "file": "Actions/pupu-gaze-fullbody-youthful-v15.png",
+        "file": "Actions/pupu-gaze-fullbody-youthful-v19.png",
         "columns": 16,
         "rows": 1,
         "frameWidth": 256,
@@ -727,13 +803,13 @@
       "behaviorId": "anchor.toy.approach",
       "source": {
         "type": "spriteStrip",
-        "file": "Actions/pupu-chase-gait-8dir-youthful-v15.png",
-        "columns": 32,
+        "file": "Actions/pupu-laser-chase-gait-8dir-youthful-v19.png",
+        "columns": 64,
         "rows": 1,
         "frameWidth": 256,
         "frameHeight": 256
       },
-      "frameCount": 32,
+      "frameCount": 64,
       "frameDurationMs": 165,
       "frames": [
         0,
@@ -767,7 +843,39 @@
         28,
         29,
         30,
-        31
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
       ],
       "loopMode": "loop",
       "fallback": "prone-idle",
@@ -787,18 +895,11 @@
         "主人普通点击桌面投放激光点",
         "按真实移动向量选择八方向低伏追逐姿态",
         "到达后短暂扑点",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进"
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进"
       ],
       "directions": {
         "left": {
@@ -806,63 +907,95 @@
             0,
             1,
             2,
-            3
-          ]
-        },
-        "upLeft": {
-          "frames": [
+            3,
             4,
             5,
             6,
             7
           ]
         },
-        "up": {
+        "upLeft": {
           "frames": [
             8,
             9,
             10,
-            11
-          ]
-        },
-        "upRight": {
-          "frames": [
+            11,
             12,
             13,
             14,
             15
           ]
         },
-        "right": {
+        "up": {
           "frames": [
             16,
             17,
             18,
-            19
-          ]
-        },
-        "downRight": {
-          "frames": [
+            19,
             20,
             21,
             22,
             23
           ]
         },
-        "down": {
+        "upRight": {
           "frames": [
             24,
             25,
             26,
-            27
-          ]
-        },
-        "downLeft": {
-          "frames": [
+            27,
             28,
             29,
             30,
             31
+          ]
+        },
+        "right": {
+          "frames": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        },
+        "downRight": {
+          "frames": [
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47
+          ]
+        },
+        "down": {
+          "frames": [
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55
+          ]
+        },
+        "downLeft": {
+          "frames": [
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ]
         }
       }
@@ -872,13 +1005,13 @@
       "behaviorId": "anchor.food.approach",
       "source": {
         "type": "spriteStrip",
-        "file": "Actions/pupu-chase-gait-8dir-youthful-v15.png",
-        "columns": 32,
+        "file": "Actions/pupu-snack-chase-gait-8dir-youthful-v19.png",
+        "columns": 64,
         "rows": 1,
         "frameWidth": 256,
         "frameHeight": 256
       },
-      "frameCount": 32,
+      "frameCount": 64,
       "frameDurationMs": 165,
       "frames": [
         0,
@@ -912,7 +1045,39 @@
         28,
         29,
         30,
-        31
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
       ],
       "loopMode": "loop",
       "fallback": "prone-idle",
@@ -932,18 +1097,11 @@
         "主人普通点击桌面投放冻干",
         "按真实移动向量选择八方向急切小跑姿态",
         "到达后衔接冻干进食",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进",
-        "每个方向包含四个连续脚步相位；窗口位移严格随换帧推进"
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进",
+        "每方向八个无重复显示相位连续播放；窗口位移严格随换帧推进"
       ],
       "directions": {
         "left": {
@@ -951,63 +1109,95 @@
             0,
             1,
             2,
-            3
-          ]
-        },
-        "upLeft": {
-          "frames": [
+            3,
             4,
             5,
             6,
             7
           ]
         },
-        "up": {
+        "upLeft": {
           "frames": [
             8,
             9,
             10,
-            11
-          ]
-        },
-        "upRight": {
-          "frames": [
+            11,
             12,
             13,
             14,
             15
           ]
         },
-        "right": {
+        "up": {
           "frames": [
             16,
             17,
             18,
-            19
-          ]
-        },
-        "downRight": {
-          "frames": [
+            19,
             20,
             21,
             22,
             23
           ]
         },
-        "down": {
+        "upRight": {
           "frames": [
             24,
             25,
             26,
-            27
-          ]
-        },
-        "downLeft": {
-          "frames": [
+            27,
             28,
             29,
             30,
             31
+          ]
+        },
+        "right": {
+          "frames": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        },
+        "downRight": {
+          "frames": [
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47
+          ]
+        },
+        "down": {
+          "frames": [
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55
+          ]
+        },
+        "downLeft": {
+          "frames": [
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
           ]
         }
       }
@@ -1071,40 +1261,40 @@
       "behaviorId": "owner.cage",
       "source": {
         "type": "spriteStrip",
-        "file": "Actions/pupu-cage-rest-youthful-v15.png",
+        "file": "Actions/pupu-cage-rest-youthful-v19.png",
         "columns": 12,
         "rows": 1,
         "frameWidth": 256,
         "frameHeight": 256
       },
-      "frameCount": 12,
+      "frameCount": 14,
       "frameDurationMs": 1250,
       "frames": [
         0,
         1,
         2,
         3,
-        2,
-        1,
         4,
         5,
         6,
         7,
         6,
-        5
+        5,
+        4,
+        3,
+        2,
+        1
       ],
       "loopMode": "loop",
       "behaviorTags": [
         "cage",
         "rest",
-        "front",
-        "side",
-        "back"
+        "closed_carrier"
       ],
       "triggerConditions": [
-        "主人右键选择关起来",
-        "笼中仅循环正面、侧面和背面安静躺卧",
-        "释放后恢复普通待机"
+        "主人通过同一个笼子菜单项切换为关起来",
+        "笼中循环完整闭门载具与猫咪安静微动",
+        "再次触发同一菜单项后放出并恢复普通待机"
       ]
     },
     "harness-walk-16": {
@@ -1112,7 +1302,7 @@
       "behaviorId": "walk.harnessed.directional",
       "source": {
         "type": "spriteStrip",
-        "file": "Actions/pupu-walk-harness-16dir-youthful-v13.png",
+        "file": "Actions/pupu-walk-harness-16dir-youthful-v19.png",
         "columns": 16,
         "rows": 1,
         "frameWidth": 256,
@@ -1254,7 +1444,7 @@
         "atlas": "specials",
         "row": 4
       },
-      "frameCount": 8,
+      "frameCount": 14,
       "frameDurationMs": 320,
       "frames": [
         0,
@@ -1264,7 +1454,13 @@
         4,
         5,
         6,
-        7
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
       ],
       "loopMode": "loop",
       "behaviorTags": [
@@ -1275,7 +1471,37 @@
         "主人明确选择 Scourgify 时执行",
         "Windows 下缩小当前浏览器或文件夹窗口后沿边缘清扫",
         "平台能力不可用时明确提示并只播放视觉动作"
-      ]
+      ],
+      "intro": {
+        "frames": [
+          0,
+          1
+        ],
+        "next": "loop"
+      },
+      "loop": {
+        "frames": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          6,
+          5,
+          4,
+          3
+        ],
+        "next": "loop"
+      },
+      "exit": {
+        "frames": [
+          3,
+          2,
+          1,
+          0
+        ]
+      }
     },
     "toilet-relieve": {
       "groupId": "toilet-relieve",
@@ -1495,6 +1721,275 @@
         "叼起孔雀蓝牵引绳向主人展示",
         "未回应时放下并结束，不责怪主人"
       ]
+    },
+    "fur-groom-daily": {
+      "groupId": "fur-groom-daily",
+      "behaviorId": "self.groom",
+      "source": {
+        "type": "atlasRow",
+        "atlas": "lifeEquipment",
+        "row": 0
+      },
+      "frameCount": 14,
+      "frameDurationMs": 860,
+      "frameDurationsMs": [
+        980,
+        760,
+        820,
+        720,
+        900,
+        760,
+        860,
+        1120
+      ],
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "loopMode": "loop",
+      "fallback": "prone-idle",
+      "behaviorTags": [
+        "self_care",
+        "groom",
+        "quiet"
+      ],
+      "triggerConditions": [
+        "自主舔毛经 BehaviorArbitrator 选中",
+        "往返播放避免末帧直接跳回首帧",
+        "原地动作不移动窗口"
+      ],
+      "intro": {
+        "frames": [
+          0,
+          1
+        ],
+        "next": "loop"
+      },
+      "loop": {
+        "frames": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          6,
+          5,
+          4,
+          3
+        ],
+        "next": "loop"
+      },
+      "exit": {
+        "frames": [
+          3,
+          2,
+          1,
+          0
+        ]
+      }
+    },
+    "magic-accio-broom-flight-8dir": {
+      "groupId": "magic-accio-broom-flight-8dir",
+      "behaviorId": "magic.accio_broom",
+      "source": {
+        "type": "spriteStrip",
+        "file": "Actions/pupu-broom-flight-8dir-youthful-v19.png",
+        "columns": 64,
+        "rows": 1,
+        "frameWidth": 256,
+        "frameHeight": 256
+      },
+      "frameCount": 64,
+      "frameDurationMs": 115,
+      "frames": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ],
+      "loopMode": "loop",
+      "behaviorTags": [
+        "magic",
+        "movement",
+        "broom",
+        "eight_direction"
+      ],
+      "directions": {
+        "left": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        },
+        "upLeft": {
+          "frames": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "up": {
+          "frames": [
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23
+          ]
+        },
+        "upRight": {
+          "frames": [
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31
+          ]
+        },
+        "right": {
+          "frames": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39
+          ]
+        },
+        "downRight": {
+          "frames": [
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47
+          ]
+        },
+        "down": {
+          "frames": [
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55
+          ]
+        },
+        "downLeft": {
+          "frames": [
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63
+          ]
+        }
+      },
+      "triggerConditions": [
+        "召唤与上扫帚结束后进入飞行循环",
+        "八方向各使用八个连续相位并保持换向相位",
+        "窗口路线使用连续相邻方向而非无序折返"
+      ]
     }
   },
   "qualityRequirements": {
@@ -1524,6 +2019,7 @@
       "rest.near_owner:fullBody-left/up/right/slowBlink",
       "unsupported:lightFeedback"
     ],
-    "knownIssues": []
+    "knownIssues": [],
+    "frameExpansion": "4 个生成关键姿态 + 4 个无重影呼吸/重心相位；禁止相邻重复帧"
   }
 }

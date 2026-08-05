@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using Pupu.Application;
 
 namespace Pupu.Desktop.Services;
@@ -46,6 +47,18 @@ public sealed class WpfPresentationHost : IDesktopPresentationHost
         }
     }
 
+    public string? SelectImageFile(string title)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = title,
+            Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp|PNG 图片|*.png|JPEG 图片|*.jpg;*.jpeg|位图|*.bmp",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
+    }
+
     public void ShowActionPreview(
         string title,
         IReadOnlyList<object> frames,
@@ -58,7 +71,8 @@ public sealed class WpfPresentationHost : IDesktopPresentationHost
             title,
             loop ? "独立循环预览；不会改变当前行为或冷却。" : "独立单次预览；不会改变当前行为或冷却。",
             imageFrames,
-            frameDurations);
+            frameDurations,
+            loop);
         var control = System.Windows.Application.Current.Windows
             .OfType<ControlWindow>()
             .FirstOrDefault(window => window.IsVisible);

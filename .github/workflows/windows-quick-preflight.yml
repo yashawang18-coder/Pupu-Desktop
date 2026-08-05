@@ -1,0 +1,45 @@
+name: Windows quick preflight
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Compile, contracts, and tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Verify release and asset contracts
+        shell: pwsh
+        run: |
+          ./scripts/verify-release-contract.ps1
+          ./scripts/verify-asset-manifest.ps1
+          ./scripts/verify-architecture.ps1
+          ./scripts/verify-bindings.ps1
+
+      - name: Restore and compile Release
+        shell: pwsh
+        run: |
+          dotnet restore ./Pupu.sln --runtime win-x64
+          dotnet build ./Pupu.sln --configuration Release --no-restore
+
+      - name: Run deterministic test suite
+        shell: pwsh
+        run: dotnet run --project ./Pupu.Tests/Pupu.Tests.csproj --configuration Release --no-build
+
+      - name: Run desktop chat integration test with mock API
+        shell: pwsh
+        run: dotnet run --project ./Pupu.Desktop.IntegrationTests/Pupu.Desktop.IntegrationTests.csproj --configuration Release --no-build

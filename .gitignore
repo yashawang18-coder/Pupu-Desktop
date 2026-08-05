@@ -8,3 +8,5 @@ dist/
 *.pfx
 *.snk
 appsettings.*.json
+__pycache__/
+*.pyc

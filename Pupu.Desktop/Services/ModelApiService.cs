@@ -25,16 +25,21 @@ public sealed class ModelApiService : IModelApiService
 
     private readonly HttpClient _httpClient;
     private readonly PetSpeechComposer _speech;
+    private readonly IModelCredentialStore _credentialStore;
     private readonly ModelContextPrivacyFilter _contextPrivacy = new();
     private readonly ModelProtocolAdapter _protocol = new();
     private string _activeCredentialTarget = LegacyCredentialTarget;
     private bool _allowLegacyCredentialFallback = true;
     private bool _disposed;
 
-    public ModelApiService(PetSpeechComposer speech, HttpMessageHandler? handler = null)
+    public ModelApiService(
+        PetSpeechComposer speech,
+        HttpMessageHandler? handler = null,
+        IModelCredentialStore? credentialStore = null)
     {
         _speech = speech;
         _httpClient = handler is null ? new HttpClient() : new HttpClient(handler);
+        _credentialStore = credentialStore ?? new WindowsModelCredentialStore();
         _httpClient.Timeout = TimeSpan.FromSeconds(45);
     }
 
@@ -99,43 +104,44 @@ public sealed class ModelApiService : IModelApiService
         _activeCredentialTarget = CredentialTargetFor(settings);
         _allowLegacyCredentialFallback = false;
         if (!string.IsNullOrWhiteSpace(apiKey))
-            WindowsCredentialVault.Write(_activeCredentialTarget, apiKey.Trim());
+            _credentialStore.Write(_activeCredentialTarget, apiKey.Trim());
     }
 
     public bool HasStoredApiKey() =>
-        WindowsCredentialVault.Exists(_activeCredentialTarget) ||
+        _credentialStore.Exists(_activeCredentialTarget) ||
         (_allowLegacyCredentialFallback &&
-         WindowsCredentialVault.Exists(LegacyCredentialTarget));
+         _credentialStore.Exists(LegacyCredentialTarget));
 
     public bool HasStoredApiKey(ModelApiSettings settings)
     {
         var target = CredentialTargetFor(settings);
-        return WindowsCredentialVault.Exists(target) ||
+        return _credentialStore.Exists(target) ||
                (_allowLegacyCredentialFallback &&
                 string.Equals(target, _activeCredentialTarget, StringComparison.Ordinal) &&
-                WindowsCredentialVault.Exists(LegacyCredentialTarget));
+                _credentialStore.Exists(LegacyCredentialTarget));
     }
 
     public void DeleteStoredApiKey()
     {
-        WindowsCredentialVault.Delete(_activeCredentialTarget);
+        _credentialStore.Delete(_activeCredentialTarget);
         if (_allowLegacyCredentialFallback)
-            WindowsCredentialVault.Delete(LegacyCredentialTarget);
+            _credentialStore.Delete(LegacyCredentialTarget);
     }
 
     public void DeleteStoredApiKey(ModelApiSettings settings)
     {
         var target = CredentialTargetFor(settings);
-        WindowsCredentialVault.Delete(target);
+        _credentialStore.Delete(target);
         if (_allowLegacyCredentialFallback &&
             string.Equals(target, _activeCredentialTarget, StringComparison.Ordinal))
-            WindowsCredentialVault.Delete(LegacyCredentialTarget);
+            _credentialStore.Delete(LegacyCredentialTarget);
     }
 
     public async Task<string> SendAsync(
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         CancellationToken cancellationToken = default)
@@ -143,6 +149,7 @@ public sealed class ModelApiService : IModelApiService
             settings,
             state,
             identity,
+            ownerRolePrompt,
             memoryContext,
             ownerMessage,
             history: null,
@@ -155,6 +162,7 @@ public sealed class ModelApiService : IModelApiService
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         IReadOnlyList<ChatMessage>? history,
@@ -164,6 +172,7 @@ public sealed class ModelApiService : IModelApiService
             settings,
             state,
             identity,
+            ownerRolePrompt,
             memoryContext,
             ownerMessage,
             history,
@@ -176,6 +185,7 @@ public sealed class ModelApiService : IModelApiService
         ModelApiSettings settings,
         PersonalityBehaviorState state,
         string identity,
+        string ownerRolePrompt,
         string memoryContext,
         string ownerMessage,
         IReadOnlyList<ChatMessage>? history,
@@ -198,7 +208,11 @@ public sealed class ModelApiService : IModelApiService
         // a remote request. Callers may keep full-fidelity local data, but the
         // model receives only a bounded, path-free context.
         var safeMemoryContext = _contextPrivacy.Prepare(memoryContext);
-        var prompt = _speech.BuildSystemPrompt(state, identity, safeMemoryContext);
+        var prompt = _speech.BuildSystemPrompt(
+            state,
+            identity,
+            ownerRolePrompt,
+            safeMemoryContext);
         var requestJson = _protocol.BuildRequestJson(
             settings,
             prompt,
@@ -216,7 +230,9 @@ public sealed class ModelApiService : IModelApiService
             var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                var reply = _protocol.ExtractReply(responseText);
+                var reply = _speech.ApplyProfileSelfReference(
+                    _protocol.ExtractReply(responseText),
+                    identity);
                 if (!enforcePetBoundary)
                     return string.IsNullOrWhiteSpace(reply)
                         ? throw new InvalidOperationException("模型服务已连接，但没有返回文字。")
@@ -252,6 +268,7 @@ public sealed class ModelApiService : IModelApiService
             settings,
             state,
             identity,
+            PetProfile.DefaultSystemPrompt,
             string.Empty,
             "只用一句很短的话向主人打招呼。",
             history: null,
@@ -276,11 +293,11 @@ public sealed class ModelApiService : IModelApiService
     private string? ReadApiKey(ModelApiSettings settings)
     {
         var target = CredentialTargetFor(settings);
-        var apiKey = WindowsCredentialVault.Read(target);
+        var apiKey = _credentialStore.Read(target);
         if (!string.IsNullOrWhiteSpace(apiKey)) return apiKey;
         if (_allowLegacyCredentialFallback &&
             string.Equals(target, _activeCredentialTarget, StringComparison.Ordinal))
-            return WindowsCredentialVault.Read(LegacyCredentialTarget);
+            return _credentialStore.Read(LegacyCredentialTarget);
         return null;
     }
 
@@ -292,14 +309,14 @@ public sealed class ModelApiService : IModelApiService
         _allowLegacyCredentialFallback = legacySettings;
         if (!legacySettings ||
             string.Equals(_activeCredentialTarget, LegacyCredentialTarget, StringComparison.Ordinal) ||
-            WindowsCredentialVault.Exists(_activeCredentialTarget))
+            _credentialStore.Exists(_activeCredentialTarget))
             return;
 
-        var legacyKey = WindowsCredentialVault.Read(LegacyCredentialTarget);
+        var legacyKey = _credentialStore.Read(LegacyCredentialTarget);
         if (string.IsNullOrWhiteSpace(legacyKey)) return;
         try
         {
-            WindowsCredentialVault.Write(_activeCredentialTarget, legacyKey);
+            _credentialStore.Write(_activeCredentialTarget, legacyKey);
         }
         catch (Win32Exception)
         {
@@ -444,6 +461,14 @@ public sealed class ModelApiService : IModelApiService
         _disposed = true;
         _httpClient.Dispose();
     }
+}
+
+internal sealed class WindowsModelCredentialStore : IModelCredentialStore
+{
+    public bool Exists(string target) => WindowsCredentialVault.Exists(target);
+    public string? Read(string target) => WindowsCredentialVault.Read(target);
+    public void Write(string target, string secret) => WindowsCredentialVault.Write(target, secret);
+    public void Delete(string target) => WindowsCredentialVault.Delete(target);
 }
 
 internal static class WindowsCredentialVault

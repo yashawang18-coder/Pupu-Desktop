@@ -150,6 +150,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         public bool VerticalStrip { get; init; }
         public bool AtlasRowSource { get; init; }
         public string ResolvedSource { get; init; } = string.Empty;
+        public string ActionGroupId { get; init; } = string.Empty;
+        public string BehaviorId { get; init; } = string.Empty;
+        public string LoopMode { get; init; } = AssetLoopModes.Loop;
+        public int[] IntroFrames { get; init; } = Array.Empty<int>();
+        public int[] LoopFrames { get; init; } = Array.Empty<int>();
+        public int[] ExitFrames { get; init; } = Array.Empty<int>();
+        public string[] CompatiblePostures { get; init; } = Array.Empty<string>();
+        public bool IsSegmentPlayback { get; init; }
         public int DurationAt(int position) =>
             FrameDurations[Math.Min(position, FrameDurations.Length - 1)];
     }
@@ -167,7 +175,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         params int[] frames) => new(name, atlas, row, frames, durations);
 
     private static AnimationSequence OneShot(AnimationSequence sequence) =>
-        sequence with { Loop = false };
+        sequence with
+        {
+            Loop = false,
+            LoopMode = AssetLoopModes.Once
+        };
 
     private static readonly AnimationSequence IdleSequence = Sequence(
         "idle-breathe", SpriteAtlas.Core, 0,
@@ -415,13 +427,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private static readonly AnimationSequence LaserAnchorChaseSequence = Sequence(
         "laser-chase-8", SpriteAtlas.Directions, 0,
-        new[] { 165, 165, 165, 165 },
-        0, 1, 2, 3);
+        Enumerable.Repeat(150, 8).ToArray(),
+        0, 1, 2, 3, 4, 5, 6, 7);
 
     private static readonly AnimationSequence SnackAnchorChaseSequence = Sequence(
         "snack-chase-8", SpriteAtlas.Directions, 0,
-        new[] { 165, 165, 165, 165 },
-        0, 1, 2, 3);
+        Enumerable.Repeat(150, 8).ToArray(),
+        0, 1, 2, 3, 4, 5, 6, 7);
+
+    private static readonly AnimationSequence LaserPounceSequence = Sequence(
+        "laser-pounce", SpriteAtlas.Activity, 0,
+        new[] { 360, 280, 240, 260, 320, 260, 240, 300 },
+        0, 1, 2, 3, 4, 5, 6, 7);
 
     private static readonly AnimationSequence SleepCurledSequence = Sequence(
         "sleep-curled", SpriteAtlas.Activity, 2,
@@ -492,6 +509,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         new[] { 620, 520, 520, 560, 620, 720 },
         0, 1, 2, 3, 4, 5));
 
+    private static readonly AnimationSequence PetrifyStoneHoldSequence = Sequence(
+        "magic-petrificus-stone-hold", SpriteAtlas.Specials, 3,
+        new[] { 720, 820, 720, 820 },
+        6, 7, 6, 7);
+
     private static readonly AnimationSequence SilverCoinSequence = Sequence(
         "magic-petrificus-coin-front", SpriteAtlas.GazeCoin, 2,
         new[] { 920, 1180 },
@@ -501,6 +523,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         "magic-petrificus-coin-back", SpriteAtlas.GazeCoin, 2,
         new[] { 980, 1220 },
         4, 5);
+
+    private static readonly AnimationSequence SilverCoinFrontEdgeSequence = Sequence(
+        "magic-petrificus-coin-front-edge", SpriteAtlas.GazeCoin, 2,
+        new[] { 90 },
+        5);
+
+    private static readonly AnimationSequence SilverCoinBackEdgeSequence = Sequence(
+        "magic-petrificus-coin-back-edge", SpriteAtlas.GazeCoin, 2,
+        new[] { 90 },
+        6);
 
     private static readonly AnimationSequence PetrificationReleaseStretchSequence = OneShot(Sequence(
         "magic-petrificus-release-stretch", SpriteAtlas.Core, 5,
@@ -605,6 +637,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private CancellationTokenSource? _bubbleCancellation;
     private CancellationTokenSource? _touchReactionCancellation;
     private AnimationSequence _currentSequence = SideLieIdleSequence;
+    private AnimationSequence? _pendingSequence;
+    private AnimationSequence? _settleAfterSequenceCompletion;
     private int _framePosition;
     private bool _synchronizedMovement;
     private bool _activeAnchorIsFood;
@@ -668,6 +702,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private string _naturalRuleStatus = "可以直接描述你希望pupu如何表现，规则与记忆只保存在本机。";
     private string _editableMemoryText = string.Empty;
     private string _editableMemoryStatus = "Markdown 长期记忆正在加载…";
+    private string _petProfileSaveStatus = "修改档案后点击保存；保存结果会在这里显示。";
     private string _codexIterationRequest = string.Empty;
     private string _codexProjectPath = string.Empty;
     private string _codexIterationStatus = "写下新动作或设定后，可生成一份带当前性格与记忆上下文的 Codex 任务。";
@@ -752,6 +787,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         ReleaseCageCommand = AsyncCommand(
             ReleaseCageAsync,
             () => IsReady && IsCaged);
+        ToggleCageCommand = AsyncCommand(
+            ToggleCageAsync,
+            () => IsReady && !IsTraveling);
         StartTravelCommand = AsyncCommand(
             () => StartTravelAsync(TravelDestinationInput, TimeSpan.FromHours(TravelDurationHours)),
             () => IsReady && !IsTraveling && !IsCaged);
@@ -775,6 +813,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         UndoCorrectionCommand = AsyncCommand(UndoCorrectionAsync, () => IsReady);
         SavePersonalityCommand = AsyncCommand(SavePersonalityAsync, () => IsReady);
         SavePetProfileCommand = AsyncCommand(SavePetProfileAsync, () => IsReady);
+        UploadPetAvatarCommand = AsyncCommand(UploadPetAvatarAsync, () => IsReady);
         ResetLearningCommand = AsyncCommand(ResetLearningAsync, () => IsReady);
         ZoomInCommand = AsyncCommand(() => ChangeScaleAsync(0.1), () => IsReady);
         ZoomOutCommand = AsyncCommand(() => ChangeScaleAsync(-0.1), () => IsReady);
@@ -822,6 +861,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand CancelMouseModeCommand { get; }
     public ICommand CageCommand { get; }
     public ICommand ReleaseCageCommand { get; }
+    public ICommand ToggleCageCommand { get; }
     public ICommand StartTravelCommand { get; }
     public ICommand RecallTravelCommand { get; }
     public ICommand StopCurrentActionCommand { get; }
@@ -841,6 +881,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand UndoCorrectionCommand { get; }
     public ICommand SavePersonalityCommand { get; }
     public ICommand SavePetProfileCommand { get; }
+    public ICommand UploadPetAvatarCommand { get; }
     public ICommand ResetLearningCommand { get; }
     public ICommand ZoomInCommand { get; }
     public ICommand ZoomOutCommand { get; }
@@ -859,12 +900,18 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ObservableCollection<string> BehaviorProposalItems { get; } = new();
     public ObservableCollection<ActionGalleryItem> ActionGallery { get; } = new();
     public ObservableCollection<ActionGalleryGroupItem> RegularActionGalleryGroups { get; } = new();
+    public ObservableCollection<ActionGalleryItem> AutonomousActionGallery { get; } = new();
+    public ObservableCollection<ActionGalleryItem> InteractiveActionGallery { get; } = new();
     public ObservableCollection<ActionGalleryItem> MagicActionGallery { get; } = new();
     public ObservableCollection<SeasonalGalleryItem> SeasonalActionGallery { get; } = new();
     public ObservableCollection<InformationCardItem> ProductDesignCards { get; } = new();
     public ObservableCollection<InformationCardItem> CodeImplementationCards { get; } = new();
     public ObservableCollection<AssetActionGroupViewItem> AssetActionGroups { get; } = new();
     public ObservableCollection<CoinStateViewItem> CoinUpdateStates { get; } = new();
+    public IReadOnlyList<ModelProvider> ModelProviderOptions { get; } =
+        Enum.GetValues<ModelProvider>();
+    public IReadOnlyList<ModelApiFormat> ModelApiFormatOptions { get; } =
+        Enum.GetValues<ModelApiFormat>();
     public AssetActionGroupViewItem? SelectedAssetActionGroup
     {
         get => _selectedAssetActionGroup;
@@ -906,6 +953,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public bool IsTraveling => IsReady && _memory.State.Travel.IsTraveling;
     public bool IsPetOnDesktop => !IsTraveling;
     public bool IsMovementLocked => IsCaged || IsTraveling;
+    public string CageToggleLabel => IsCaged ? "笼子 · 放出来" : "笼子 · 关起来";
     public string ConfinementStatus => IsCaged
         ? "关笼子／锁定中：不会移动或切换普通大姿态，需主人释放。"
         : "未关笼子";
@@ -966,7 +1014,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public string CurrentPersonaSummary =>
         $"{_persona.DisplayName} · {_persona.Id} · {_persona.Identity} · {_persona.SpeakingStyle}";
     public string CurrentPromptPreview =>
-        $"{_persona.PromptSummary()} 只注入相关长期记忆摘要与最多三条相册经历摘要；不包含本地绝对路径。";
+        IsReady
+            ? $"档案自称：{_memory.Profile.SelfReference}{Environment.NewLine}" +
+              $"主人性格提示词：{_memory.Profile.SystemPrompt}{Environment.NewLine}" +
+              $"长期记忆：{string.Join("；", _memory.Profile.ManualMemories.TakeLast(5))}{Environment.NewLine}" +
+              "只注入相关长期记忆摘要与最多三条相册经历摘要；不包含本地绝对路径。"
+            : "提示词正在加载…";
     public int CurrentPromptTokenEstimate =>
         Math.Max(1, (int)Math.Ceiling(CurrentPromptPreview.Length / 3.2));
     public string LlmFallbackReason => _modelApiSettings.Enabled
@@ -974,7 +1027,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         : "模型未启用：当前使用本地规则 PetAgent。";
     public string AssetCompatibilityStatus => _assetPack.CompatibilityStatus;
     public string AssetGenerationRequirements =>
-        "统一 256×256 画布与透明背景；以头部、身体骨架、脚底线和重心建立固定身体坐标系，禁止按整只宠物外接框逐帧铺满。每个动作组独立输出、维护和逐帧预览，记录帧数、帧时长、循环方式、行为标签与触发条件。V13 已补齐等比例魔法、五态银币、局部视线覆盖层、16 方向锚点追逐和背带遛猫；姿态不支持局部视线时只做轻反馈。";
+        "V19 素材契约：每格 256×256 RGBA，四边至少 20px 透明安全区；同一动作行共享身体尺度、重心和脚底线，完整保留耳朵、四肢与大尾巴。每组至少 8 个可显示相位，禁止相邻重复帧和双重曝光式补间；八方向追逐为每方向 8 相位。动作清单的 intro／loop／exit 会被播放器实际执行，并按兼容姿态决定是否先播退出段。正式运行文件只由 pupu-assets.json 引用；历史本地包版本不一致时不会覆盖内置 V19。";
     public string TravelDestinationInput
     {
         get => _travelDestinationInput;
@@ -1404,6 +1457,35 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    public double OwnerInteractionAcceptance
+    {
+        get => _editableProfile.OwnerInteractionAcceptance * 100;
+        set
+        {
+            var normalized = Math.Clamp(value / 100, 0, 1);
+            if (Math.Abs(_editableProfile.OwnerInteractionAcceptance - normalized) < 0.0001)
+                return;
+            _editableProfile.OwnerInteractionAcceptance = normalized;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(OwnerInteractionAcceptanceLabel));
+            RaiseCommands();
+        }
+    }
+
+    public string OwnerInteractionAcceptanceLabel =>
+        $"{_editableProfile.OwnerInteractionAcceptance:P0}";
+
+    public string PetSelfReference
+    {
+        get => _editableProfile.SelfReference;
+        set
+        {
+            _editableProfile.SelfReference = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(PetProfileSummary));
+        }
+    }
+
     public string PetBreed
     {
         get => _editableProfile.Breed;
@@ -1419,7 +1501,27 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public DateTime? PetBirthday
     {
         get => _editableProfile.Birthday;
-        set { _editableProfile.Birthday = value; OnPropertyChanged(); OnPropertyChanged(nameof(PetProfileSummary)); }
+        set
+        {
+            _editableProfile.Birthday = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(PetBirthdayYear));
+            OnPropertyChanged(nameof(PetProfileSummary));
+        }
+    }
+
+    public IReadOnlyList<int> BirthdayYearOptions { get; } =
+        Enumerable.Range(1900, 201).Reverse().ToArray();
+
+    public int? PetBirthdayYear
+    {
+        get => PetBirthday?.Year;
+        set
+        {
+            if (value is null) return;
+            PetBirthday = WithYear(PetBirthday ?? new DateTime(value.Value, 7, 14), value.Value);
+            OnPropertyChanged();
+        }
     }
 
     public string OwnerNickname
@@ -1437,7 +1539,30 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public DateTime? OwnerBirthday
     {
         get => _editableProfile.OwnerBirthday;
-        set { _editableProfile.OwnerBirthday = value; OnPropertyChanged(); OnPropertyChanged(nameof(PetProfileSummary)); }
+        set
+        {
+            _editableProfile.OwnerBirthday = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(OwnerBirthdayYear));
+            OnPropertyChanged(nameof(PetProfileSummary));
+        }
+    }
+
+    public int? OwnerBirthdayYear
+    {
+        get => OwnerBirthday?.Year;
+        set
+        {
+            if (value is null) return;
+            OwnerBirthday = WithYear(OwnerBirthday ?? new DateTime(value.Value, 7, 14), value.Value);
+            OnPropertyChanged();
+        }
+    }
+
+    public string PetProfileSaveStatus
+    {
+        get => _petProfileSaveStatus;
+        private set => SetField(ref _petProfileSaveStatus, value);
     }
 
     public string PetProfileSummary
@@ -1450,9 +1575,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 ? "主人"
                 : _editableProfile.OwnerNickname;
             return $"{_editableProfile.ChineseName} / {_editableProfile.EnglishName} · {_editableProfile.Breed} · " +
-                   $"{_editableProfile.Sex} · 生日 {petBirthday} · 是主人的{_editableProfile.RelationshipToOwner} · " +
+                   $"{_editableProfile.Sex} · 自称 {_editableProfile.SelfReference} · 生日 {petBirthday} · 是主人的{_editableProfile.RelationshipToOwner} · " +
                    $"称呼主人为 {address} · 主人生日 {ownerBirthday}";
         }
+    }
+
+    private static DateTime WithYear(DateTime date, int year)
+    {
+        var day = Math.Min(date.Day, DateTime.DaysInMonth(year, date.Month));
+        return new DateTime(year, date.Month, day);
     }
 
     public string PetProfileTitle
@@ -1760,12 +1891,12 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private static string RejectionBubble(BehaviorArbitrationResult result) =>
         result.ReasonCode switch
         {
-            "state_forbidden" => "现在不想换。挑个轻松点的，也许会赏脸。",
-            "current_not_interruptible" => "看见了。等本猫把爪子收好，再考虑理你。",
-            "minimum_duration" => "才刚躺稳就催？先让尾巴摆完这一拍。",
-            "lower_priority" => "嗯，先放那儿。本猫有空再审。",
-            "request_cooldown" => "刚理过你一次。别得寸进尺，等一小会儿。",
-            _ => "这次没兴趣。过会儿拿点诚意再来。"
+            "state_forbidden" => "当前状态不能执行这个互动，解除限制后就可以啦。",
+            "current_not_interruptible" => "当前动作还不能中断，结束后再试一次。",
+            "minimum_duration" => "这个动作刚开始，需要先完成最短阶段。",
+            "lower_priority" => "当前有更重要的动作正在处理，稍后再试。",
+            "request_cooldown" => "这个互动正在冷却，过一小会儿就能再次触发。",
+            _ => "当前有明确的执行冲突，恢复后再试一次。"
         };
 
     private void ResetArbitrationToIdle()
@@ -1789,7 +1920,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             _memory.Personality,
             kind,
             context,
-            _random.NextDouble());
+            _memory.Profile.OwnerInteractionAcceptance);
         if (decision.Accepted) return true;
 
         var owner = _memory.Profile.OwnerAddress;
@@ -1802,8 +1933,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             "not_playful" => "看见啦，不过现在不想追。晚一点再来。",
             "not_touching_now" => "今天的毛先自己管。梳子晚点再拿来。",
             "no_need" => "这里现在很干净。让我先检查完再说。",
-            "chose_other" => "这次不参加。猫已经有别的安排了。",
-            _ => "现在不想做这个。等朴朴自己点头。"
+            _ => "现在有明确原因不能开始，等状态恢复后再试一次。"
         };
         SetBehavior(
             $"interaction.refused.{kind.ToString().ToLowerInvariant()}",
@@ -2446,40 +2576,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         if (mode is MouseInteractionMode.Attention) return;
         var isFood = mode == MouseInteractionMode.FoodAnchor;
-        if (!TryAcceptBehaviorRequest(
-                isFood ? "anchor.food.prepare" : "anchor.toy.prepare",
-                BehaviorArbitrationSource.OwnerAnchor,
-                BehaviorPriority.OwnerAnchor,
-                TimeSpan.Zero,
-                TimeSpan.FromSeconds(2),
-                interruptible: true,
-                BehaviorStateBlockers.Caged |
-                BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Sleeping |
-                BehaviorStateBlockers.Toilet |
-                BehaviorStateBlockers.Magic |
-                BehaviorStateBlockers.Movement |
-                BehaviorStateBlockers.TouchReaction |
-                BehaviorStateBlockers.Feeding |
-                BehaviorStateBlockers.Playing |
-                BehaviorStateBlockers.Petrified,
-                cooldownKey: isFood ? "anchor.food" : "anchor.toy"))
-            return;
-
+        // Selecting a placement cursor is UI state, not a pet behavior. The old
+        // implementation admitted an "anchor.*.prepare" lease here, then the
+        // real approach proposal was rejected by that lease. Admission now
+        // happens exactly once, after the owner chooses the desktop target.
         EndCursorGaze();
         MouseInteractionMode = mode;
-        SetBehavior(
-            isFood ? "anchor.food.prepare" : "anchor.toy.prepare",
-            isFood
-                ? "等待主人点击桌面位置投放食物锚点"
-                : "等待主人点击桌面位置投放玩具锚点",
-            "owner_anchor",
-            "desktop",
-            "local:anchor-cursor");
         _ = ShowBubbleAsync(
             isFood
-                ? "好吧，把吃的放在哪里？点一下桌面位置给我看。"
-                : "玩具藏在哪里？点一下桌面，我先看看要不要追。",
+                ? "把冻干丢到哪里？点一下桌面位置。"
+                : "激光点放在哪里？点一下桌面，我去抓。",
             5200,
             isFood ? PetSpeechIntent.General : PetSpeechIntent.Play);
     }
@@ -2506,8 +2612,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             target.Y,
             _clock.Now);
         var participates = await TryParticipateAsync(
-            isFood ? OwnerInteractionKind.Feeding : OwnerInteractionKind.WandPlay,
-            isFood ? "追到食物锚点" : "追到玩具锚点");
+            isFood ? OwnerInteractionKind.Feeding : OwnerInteractionKind.LaserPlay,
+            isFood ? "追到冻干落点" : "追到激光点");
         if (!participates)
         {
             ResetArbitrationToIdle();
@@ -2525,7 +2631,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 ExpiresAt = _clock.Now.AddSeconds(18),
                 Cancellable = true,
                 AllowDelay = true,
-                Reason = isFood ? "主人放置食物锚点" : "主人放置玩具锚点",
+                Reason = isFood ? "主人投掷冻干" : "主人放置激光点",
                 MinimumDuration = TimeSpan.FromSeconds(5),
                 Cooldown = TimeSpan.FromSeconds(4),
                 Interruptible = false,
@@ -2593,9 +2699,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 return false;
             }
 
-            PlaySequence(isFood ? FreezeDriedEatingLoopSequence : WandLoopSequence);
+            PlaySequence(isFood ? FreezeDriedEatingLoopSequence : LaserPounceSequence);
             _ = ShowBubbleAsync(
-                isFood ? "找到了。这个位置吃起来很安心。" : "抓到你了。再晃一下试试。",
+                isFood ? "找到了。这个位置吃起来很安心。" : "抓到光点了。再放一个试试。",
                 3600,
                 isFood ? PetSpeechIntent.General : PetSpeechIntent.Play);
             if (!await WaitPhaseAsync(TimeSpan.FromSeconds(isFood ? 4.5 : 5.5), token))
@@ -2620,14 +2726,14 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "owner_anchor",
                 isFood
                     ? "主人在桌面投放食物锚点，pupu接受后移动到目标并短暂进食。"
-                    : "主人在桌面投放玩具锚点，pupu接受后移动到目标并短暂扑玩。",
+                    : "主人在桌面放置激光点，pupu接受后低伏追到目标并短暂扑抓。",
                 proposal.BehaviorId,
                 0.46,
                 0.52,
                 true,
-                isFood ? "feed_anchor" : "toy_anchor",
+                isFood ? "feed_anchor" : "laser_anchor",
                 $"x={anchor.X:0};y={anchor.Y:0};created={anchor.CreatedAt:O}",
-                isFood ? "routines:freeze-dried-eating-loop" : "core:wand-loop");
+                isFood ? "routines:freeze-dried-eating-loop" : "activity:laser-pounce");
             await _memory.SaveStateAsync();
             return true;
         }
@@ -2665,7 +2771,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             "关笼子／原地锁定，等待主人释放",
             "owner_forced",
             "desktop",
-            "Actions:pupu-cage-rest-youthful-v14.png");
+            "Actions:pupu-cage-rest-youthful-v19.png");
         PlaySequence(CageRestSequence);
         await _memory.SaveStateAsync();
         await _memory.RecordAsync(
@@ -2681,6 +2787,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         RaiseRestrictedStateProperties();
         _ = ShowBubbleAsync("我先待在这里。记得等会儿放我出来。", 5200);
     }
+
+    private Task ToggleCageAsync() => IsCaged ? ReleaseCageAsync() : CageAsync();
 
     private async Task ReleaseCageAsync()
     {
@@ -2858,6 +2966,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private void RaiseRestrictedStateProperties()
     {
         OnPropertyChanged(nameof(IsCaged));
+        OnPropertyChanged(nameof(CageToggleLabel));
         OnPropertyChanged(nameof(IsTraveling));
         OnPropertyChanged(nameof(IsPetOnDesktop));
         OnPropertyChanged(nameof(IsMovementLocked));
@@ -2905,7 +3014,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                         _memory.State.Cleanliness,
                         _memory.State.LitterLevel,
                         "command=self_play"),
-                    _random.NextDouble());
+                    _memory.Profile.OwnerInteractionAcceptance);
                 if (!participation.Accepted)
                 {
                     ResetArbitrationToIdle();
@@ -3540,16 +3649,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(8),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -3567,6 +3677,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             _ = ShowBubbleAsync("Accio Broom！扫帚，过来。", 4200, PetSpeechIntent.Play);
             if (!await WaitPhaseAsync(TimeSpan.FromSeconds(3.2), token)) return;
+            InteractionScale = 1.14;
             PlaySequence(BroomFlightSequence);
             var move = new DesktopMoveRequestEventArgs(
                 DesktopMoveMode.BroomFlight,
@@ -3596,6 +3707,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         finally
         {
+            InteractionScale = 1;
             if (!session.IsTerminal)
                 await _interactionLifecycle.InterruptAsync(session, StopReasonFor(token));
             if (ReferenceEquals(_activeInteraction, session)) _activeInteraction = null;
@@ -3613,16 +3725,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(5),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -3690,16 +3803,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(5),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -3719,7 +3833,15 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "Petrificus Totalus！等我变成银币以后，要记得解除。",
                 4600,
                 PetSpeechIntent.Play);
-            if (!await WaitPhaseAsync(TimeSpan.FromSeconds(4.1), token))
+            if (!await WaitPhaseAsync(TimeSpan.FromSeconds(3.45), token))
+            {
+                await _interactionLifecycle.InterruptAsync(session, StopReasonFor(token));
+                _petrificationSession = null;
+                if (ReferenceEquals(_activeInteraction, session)) _activeInteraction = null;
+                return;
+            }
+            PlaySequence(PetrifyStoneHoldSequence);
+            if (!await WaitPhaseAsync(TimeSpan.FromSeconds(1.85), token))
             {
                 await _interactionLifecycle.InterruptAsync(session, StopReasonFor(token));
                 _petrificationSession = null;
@@ -3769,18 +3891,25 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             for (var index = 1; index <= halfSteps; index++)
             {
                 if (!_isPetrified) return;
-                CoinFlipScaleX = 1 - 0.84 * (index / (double)halfSteps);
-                await Task.Delay(45, _lifetimeCancellation.Token);
+                CoinFlipScaleX = 1 - 0.66 * (index / (double)halfSteps);
+                await Task.Delay(38, _lifetimeCancellation.Token);
             }
+            PlaySequence(
+                _isCoinBackVisible
+                    ? ResolveCoinSequence("backEdge", SilverCoinBackEdgeSequence)
+                    : ResolveCoinSequence("normalEdge", SilverCoinFrontEdgeSequence));
+            CoinFlipScaleX = 1;
+            await Task.Delay(105, _lifetimeCancellation.Token);
             PlaySequence(
                 turnToBack
                     ? ResolveCoinSequence("back", SilverCoinBackSequence)
                     : ResolveCurrentCoinFrontSequence());
+            CoinFlipScaleX = 0.34;
             for (var index = 1; index <= halfSteps; index++)
             {
                 if (!_isPetrified) return;
-                CoinFlipScaleX = 0.16 + 0.84 * (index / (double)halfSteps);
-                await Task.Delay(45, _lifetimeCancellation.Token);
+                CoinFlipScaleX = 0.34 + 0.66 * (index / (double)halfSteps);
+                await Task.Delay(38, _lifetimeCancellation.Token);
             }
             _isCoinBackVisible = turnToBack;
             PlaySequence(
@@ -3912,16 +4041,17 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 behaviorId,
                 autonomous
                     ? BehaviorArbitrationSource.ContinuousEffect
-                    : BehaviorArbitrationSource.PanelCommand,
+                    : BehaviorArbitrationSource.OwnerForced,
                 autonomous
                     ? BehaviorPriority.ContinuousEffect
-                    : BehaviorPriority.ExplicitCommand,
+                    : BehaviorPriority.OwnerForced,
                 TimeSpan.FromSeconds(8),
-                TimeSpan.FromMinutes(2),
+                autonomous ? TimeSpan.FromMinutes(2) : TimeSpan.Zero,
                 interruptible: false,
                 BehaviorStateBlockers.Caged |
                 BehaviorStateBlockers.Traveling |
-                BehaviorStateBlockers.Petrified))
+                BehaviorStateBlockers.Petrified,
+                forceInterrupt: !autonomous))
             return;
         var token = BeginAction(
             behaviorId,
@@ -4098,11 +4228,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         await _memory.SaveEditableNotebookAsync(EditableMemoryText);
         _editableTraits = _memory.Profile.Baseline.Clone();
+        _editableProfile = _memory.Profile.Clone();
         RefreshEditableTraits();
+        RefreshEditableProfile();
         RefreshNaturalRules();
         RefreshAll();
         await RefreshEditableNotebookAsync();
-        EditableMemoryStatus = $"已保存并应用：{StoragePaths.EditableMemoryFile}";
+        OnPropertyChanged(nameof(CurrentPromptPreview));
+        OnPropertyChanged(nameof(CurrentPromptTokenEstimate));
+        EditableMemoryStatus = $"已保存并应用到下一次对话：{_memory.Profile.ManualMemories.Count} 条长期记忆，" +
+                               $"性格提示词 {_memory.Profile.SystemPrompt.Length} 字。{StoragePaths.EditableMemoryFile}";
         _ = ShowBubbleAsync(null, 4200, PetSpeechIntent.Remembered);
     }
 
@@ -4111,7 +4246,9 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         EditableMemoryText = await _memory.GetEditableNotebookAsync();
         await _memory.SaveEditableNotebookAsync(EditableMemoryText);
         _editableTraits = _memory.Profile.Baseline.Clone();
+        _editableProfile = _memory.Profile.Clone();
         RefreshEditableTraits();
+        RefreshEditableProfile();
         RefreshNaturalRules();
         RefreshAll();
         EditableMemoryStatus = $"已从磁盘重新载入：{StoragePaths.EditableMemoryFile}";
@@ -4121,6 +4258,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         EditableMemoryText = await _memory.GetEditableNotebookAsync();
         OnPropertyChanged(nameof(PersonalityMemoryMatchSummary));
+        OnPropertyChanged(nameof(CurrentPromptPreview));
+        OnPropertyChanged(nameof(CurrentPromptTokenEstimate));
     }
 
     private static void OpenEditableMemoryFile()
@@ -4188,8 +4327,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 _memory.Personality,
                 _memory.Profile.SelfIdentity,
                 _lifetimeCancellation.Token);
+            _modelApiSettings.Enabled = true;
+            await _modelApi.SaveAsync(_modelApiSettings, null);
+            OnPropertyChanged(nameof(ModelApiEnabled));
             OnPropertyChanged(nameof(HasStoredModelApiKey));
-            ModelApiStatus = "连接测试成功。此测试只验证地址、模型、密钥与协议，不要求先启用模型对话。";
+            ModelApiStatus = "连接测试成功，已启用模型回复；现在可在桌宠下方空白处双击展开对话，或在主人页／大模型联调栏直接发送。";
             _ = ShowBubbleAsync(null, 3600, PetSpeechIntent.Conversation);
         }
         catch (Exception ex)
@@ -4237,118 +4379,131 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 reply = localCommandReply;
                 ModelApiStatus = "本次口令由本地规则识别并经行为仲裁执行；未让模型控制状态。";
             }
-            else if (!TryAcceptBehaviorRequest(
-                         "conversation",
-                         BehaviorArbitrationSource.DialogueCommand,
-                         BehaviorPriority.ExplicitCommand,
-                         TimeSpan.FromSeconds(3),
-                         TimeSpan.FromMilliseconds(800),
-                         interruptible: true,
-                         BehaviorStateBlockers.Caged |
-                         BehaviorStateBlockers.Traveling |
-                         BehaviorStateBlockers.Toilet |
-                         BehaviorStateBlockers.Magic |
-                         BehaviorStateBlockers.Movement |
-                         BehaviorStateBlockers.TouchReaction |
-                         BehaviorStateBlockers.Feeding |
-                         BehaviorStateBlockers.Playing |
-                         BehaviorStateBlockers.Petrified,
-                         cooldownKey: "conversation"))
-            {
-                reply = "我听见了，不过现在正忙着把这个动作做完整。等一下再认真回答你。";
-                ModelApiStatus = "本次对话行为被统一仲裁拒绝；未调用模型。";
-            }
-            else if (_modelApiSettings.Enabled)
-            {
-                SetBehavior("conversation", "听主人说话并按照当前性格回应", "conversation");
-                PlaySequence(ExpressionSequence);
-                var memoryContext = await _memory.BuildChatContextAsync();
-                memoryContext =
-                    $"{_persona.PromptSummary()}{Environment.NewLine}{memoryContext.TrimStart()}";
-                var albumMemory = await BuildAlbumConversationMemoryAsync(
-                    input,
-                    includeLlmPayload: true,
-                    cancellationToken: _lifetimeCancellation.Token);
-                if (!string.IsNullOrWhiteSpace(albumMemory.Context))
-                    memoryContext = $"{memoryContext.TrimEnd()}{Environment.NewLine}{albumMemory.Context}";
-                var history = await _conversationSession.LoadAsync(
-                    _modelApiSettings.ConversationTurns,
-                    _lifetimeCancellation.Token);
-                reply = await _modelApi.SendAsync(
-                    _modelApiSettings,
-                    _memory.Personality,
-                    _memory.Profile.SelfIdentity,
-                    memoryContext,
-                    input,
-                    history,
-                    albumMemory.Images,
-                    _lifetimeCancellation.Token);
-                LastExperienceRuleUsed = false;
-                OnPropertyChanged(nameof(ExperienceDebugStatus));
-                ModelApiStatus = albumMemory.Images.Count > 0
-                    ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条经历摘要，并读取了 {albumMemory.Images.Count} 张主人授权的相册图片。"
-                    : albumMemory.InjectedExperienceCount > 0
-                        ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条主人授权的经历摘要。"
-                        : "最近一次模型回复已通过角色边界检查。";
-            }
             else
             {
-                SetBehavior("conversation", "听主人说话并按照当前性格回应", "conversation");
-                PlaySequence(ExpressionSequence);
-                var localAgent = _agentKernel.Handle(
-                    new PetAgentEvent
-                    {
-                        Kind = PetAgentEventKind.UserChat,
-                        At = _clock.Now,
-                        Text = input
-                    },
-                    new PetAgentContext
-                    {
-                        CurrentStateSummary = RuntimeStateSummary,
-                        Temperament = _memory.Personality.Temperament.Clone(),
-                        RelationshipSummary = RelationshipStateSummary,
-                        RecentConversation = ChatMessages
-                            .TakeLast(4)
-                            .Select(message => message.Text)
-                            .ToList(),
-                        CurrentBehaviorId = _currentBehaviorKey,
-                        ArbitrationSummary = LastArbitrationResult
-                    });
-                var albumMemory = await BuildAlbumConversationMemoryAsync(
-                    input,
-                    includeLlmPayload: false,
-                    cancellationToken: _lifetimeCancellation.Token);
-                var ruleRecord = albumMemory.Matches
-                    .Select(x => x.Record)
-                    .FirstOrDefault(x =>
-                        x.AllowRules &&
-                        x.IncludeInConversation &&
-                        _experienceSettings.AllowConversation &&
-                        _experienceSettings.AllowRuleMode);
-                if (ruleRecord is not null ||
-                    (AlbumExperienceService.LooksLikeExperienceQuery(input) &&
-                     _experienceSettings.AllowConversation &&
-                     _experienceSettings.AllowRuleMode))
+                // Arbitration decides whether the expression animation may
+                // interrupt the current action; it never suppresses the text
+                // reply or the configured model request.
+                var conversationPresentationAccepted = TryAcceptBehaviorRequest(
+                    "conversation",
+                    BehaviorArbitrationSource.DialogueCommand,
+                    BehaviorPriority.ExplicitCommand,
+                    TimeSpan.FromSeconds(3),
+                    TimeSpan.FromMilliseconds(800),
+                    interruptible: true,
+                    BehaviorStateBlockers.Caged |
+                    BehaviorStateBlockers.Traveling |
+                    BehaviorStateBlockers.Toilet |
+                    BehaviorStateBlockers.Magic |
+                    BehaviorStateBlockers.Movement |
+                    BehaviorStateBlockers.TouchReaction |
+                    BehaviorStateBlockers.Feeding |
+                    BehaviorStateBlockers.Playing |
+                    BehaviorStateBlockers.Petrified,
+                    showRejectedBubble: false,
+                    cooldownKey: "conversation");
+                if (conversationPresentationAccepted)
                 {
-                    reply = AlbumExperienceService.ComposeRuleReply(ruleRecord);
-                    LastExperienceRuleUsed = true;
-                    LastExperienceLlmCount = 0;
-                    LastExperienceImageCount = 0;
-                    await TryApplyExperienceBehaviorSuggestionAsync(ruleRecord);
-                    ModelApiStatus = ruleRecord is null
-                        ? "模型对话未启用；本地经历检索没有命中。"
-                        : "模型对话未启用；本次使用本地经历摘要和规则模板。";
+                    SetBehavior("conversation", "听主人说话并按照当前性格回应", "conversation");
+                    // The model request may take much longer than this one-shot
+                    // expression. Return to a live idle loop as soon as the
+                    // animation itself completes instead of freezing on its
+                    // final frame until the network request finishes.
+                    PlaySequence(
+                        ExpressionSequence,
+                        settleAfterCompletion: SideLieIdleSequence);
+                }
+
+                if (_modelApiSettings.Enabled)
+                {
+                    ModelApiStatus = "正在请求模型回复…";
+                    var memoryContext = await _memory.BuildChatContextAsync();
+                    memoryContext =
+                        $"{_persona.PromptSummary()}{Environment.NewLine}{memoryContext.TrimStart()}";
+                    var albumMemory = await BuildAlbumConversationMemoryAsync(
+                        input,
+                        includeLlmPayload: true,
+                        cancellationToken: _lifetimeCancellation.Token);
+                    if (!string.IsNullOrWhiteSpace(albumMemory.Context))
+                        memoryContext = $"{memoryContext.TrimEnd()}{Environment.NewLine}{albumMemory.Context}";
+                    var history = await _conversationSession.LoadAsync(
+                        _modelApiSettings.ConversationTurns,
+                        _lifetimeCancellation.Token);
+                    reply = await _modelApi.SendAsync(
+                        _modelApiSettings,
+                        _memory.Personality,
+                        _memory.Profile.SelfIdentity,
+                        _memory.Profile.SystemPrompt,
+                        memoryContext,
+                        input,
+                        history,
+                        albumMemory.Images,
+                        _lifetimeCancellation.Token);
+                    LastExperienceRuleUsed = false;
+                    OnPropertyChanged(nameof(ExperienceDebugStatus));
+                    ModelApiStatus = albumMemory.Images.Count > 0
+                        ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条经历摘要，并读取了 {albumMemory.Images.Count} 张主人授权的相册图片。"
+                        : albumMemory.InjectedExperienceCount > 0
+                            ? $"最近一次模型回复注入 {albumMemory.InjectedExperienceCount} 条主人授权的经历摘要。"
+                            : "最近一次模型回复已通过角色边界检查。";
                 }
                 else
                 {
-                    // Preserve the existing default Pupu phrasing while still
-                    // running the same Persona-backed local PetAgent pipeline.
-                    CurrentIntent = string.Join(" · ", localAgent.Debug);
-                    reply = ComposePetSpeech(PetSpeechIntent.Conversation);
-                    LastExperienceRuleUsed = false;
-                    ModelApiStatus = "模型对话未启用，本次使用本地性格台词。";
+                    var localAgent = _agentKernel.Handle(
+                        new PetAgentEvent
+                        {
+                            Kind = PetAgentEventKind.UserChat,
+                            At = _clock.Now,
+                            Text = input
+                        },
+                        new PetAgentContext
+                        {
+                            CurrentStateSummary = RuntimeStateSummary,
+                            Temperament = _memory.Personality.Temperament.Clone(),
+                            RelationshipSummary = RelationshipStateSummary,
+                            RecentConversation = ChatMessages
+                                .TakeLast(4)
+                                .Select(message => message.Text)
+                                .ToList(),
+                            CurrentBehaviorId = _currentBehaviorKey,
+                            ArbitrationSummary = LastArbitrationResult
+                        });
+                    var albumMemory = await BuildAlbumConversationMemoryAsync(
+                        input,
+                        includeLlmPayload: false,
+                        cancellationToken: _lifetimeCancellation.Token);
+                    var ruleRecord = albumMemory.Matches
+                        .Select(x => x.Record)
+                        .FirstOrDefault(x =>
+                            x.AllowRules &&
+                            x.IncludeInConversation &&
+                            _experienceSettings.AllowConversation &&
+                            _experienceSettings.AllowRuleMode);
+                    if (ruleRecord is not null ||
+                        (AlbumExperienceService.LooksLikeExperienceQuery(input) &&
+                         _experienceSettings.AllowConversation &&
+                         _experienceSettings.AllowRuleMode))
+                    {
+                        reply = AlbumExperienceService.ComposeRuleReply(ruleRecord);
+                        LastExperienceRuleUsed = true;
+                        LastExperienceLlmCount = 0;
+                        LastExperienceImageCount = 0;
+                        await TryApplyExperienceBehaviorSuggestionAsync(ruleRecord);
+                        ModelApiStatus = ruleRecord is null
+                            ? "模型对话未启用；本地经历检索没有命中。"
+                            : "模型对话未启用；本次使用本地经历摘要和规则模板。";
+                    }
+                    else
+                    {
+                        CurrentIntent = string.Join(" · ", localAgent.Debug);
+                        reply = ComposePetSpeech(
+                            PetSpeechIntent.Conversation,
+                            localAgent.ReplyText);
+                        LastExperienceRuleUsed = false;
+                        ModelApiStatus = "模型对话未启用，本次使用一岁朴朴的本地性格台词。";
+                    }
+                    OnPropertyChanged(nameof(ExperienceDebugStatus));
                 }
-                OnPropertyChanged(nameof(ExperienceDebugStatus));
             }
             ChatMessages.Add(new ChatMessage { Text = reply });
             await PersistConversationExchangeAsync(input, reply);
@@ -4375,7 +4530,6 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         finally
         {
             IsChatBusy = false;
-            IsChatComposerVisible = false;
             if (!IsCaged &&
                 !IsTraveling &&
                 MouseInteractionMode is MouseInteractionMode.Attention)
@@ -4418,6 +4572,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private async Task SavePetProfileAsync()
     {
+        if (string.IsNullOrWhiteSpace(_editableProfile.SystemPrompt))
+        {
+            _editableProfile.SystemPrompt = PetProfile.DefaultSystemPrompt;
+            OnPropertyChanged(nameof(OwnerPersonalityPrompt));
+        }
         _editableProfile.Normalize();
         await _memory.SaveProfileAsync(_editableProfile);
         _editableProfile = _memory.Profile.Clone();
@@ -4429,11 +4588,36 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         RefreshEditableProfile();
         await RefreshEditableNotebookAsync();
         RefreshAll();
+        PetProfileSaveStatus = $"已保存并立即生效 · {DateTime.Now:HH:mm:ss} · " +
+                               $"自称“{_memory.Profile.SelfReference}” · 性格提示词 {_memory.Profile.SystemPrompt.Length} 字 · " +
+                               $"互动接受倾向 {_memory.Profile.OwnerInteractionAcceptance:P0}";
         _ = ShowBubbleAsync(
             $"档案记好啦。{_memory.Profile.ChineseName}还是主人的{_memory.Profile.RelationshipToOwner}。",
             4600,
             PetSpeechIntent.Remembered);
         _ = TryRunCalendarSpecialAsync();
+    }
+
+    private async Task UploadPetAvatarAsync()
+    {
+        var source = _presentationHost.SelectImageFile("选择宠物档案头像");
+        if (string.IsNullOrWhiteSpace(source)) return;
+        var extension = Path.GetExtension(source).ToLowerInvariant();
+        if (extension is not (".png" or ".jpg" or ".jpeg" or ".bmp"))
+            throw new InvalidOperationException("头像只支持 PNG、JPG、JPEG 或 BMP 图片。");
+
+        Directory.CreateDirectory(StoragePaths.ProfileMediaDirectory);
+        var fileName = $"pet-avatar{extension}";
+        var destination = StoragePaths.ProfileAvatarFile(fileName);
+        if (!string.Equals(Path.GetFullPath(source), Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+            File.Copy(source, destination, overwrite: true);
+        _editableProfile.AvatarFileName = fileName;
+        await _memory.SaveProfileAsync(_editableProfile);
+        _editableProfile = _memory.Profile.Clone();
+        _petProfilePortrait = null;
+        OnPropertyChanged(nameof(PetProfilePortrait));
+        PetProfileSaveStatus = $"头像已保存并立即生效 · {DateTime.Now:HH:mm:ss}";
+        await RefreshEditableNotebookAsync();
     }
 
     private async Task ResetLearningAsync()
@@ -4948,6 +5132,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             ["social.ask_play"] = new(
                 AttentionSequence,
                 "短暂提示想玩，未响应就自然结束"),
+            ["social.ask_walk"] = new(
+                AskWalkSequence,
+                "叼起孔雀蓝牵引绳主动邀请主人散步",
+                "要不要一起出去走走？"),
             ["vigilance.observe"] = new(ProneIdleSequence, "敏感地观察环境变化"),
             ["vigilance.guard"] = new(AnnoyedTouchSequence, "压力升高时压耳警戒"),
             ["avoid.quiet_place"] = new(RearIdleSequence, "压力较高时寻找安静位置"),
@@ -4960,7 +5148,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             ["independent.patrol"] = new(RunLeftSequence, "独自在桌面短距离巡视")
         };
         return new DictionaryBehaviorPresentationResolver<DesktopBehaviorPresentation>(
-            "sprite-atlas-v17",
+            "sprite-atlas-v19",
             map,
             new DesktopBehaviorPresentation(ProneIdleSequence, "安静陪伴"));
     }
@@ -5031,7 +5219,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             "autonomous",
             $"time={TimeBucket(_clock.Now)};location=desktop",
             $"{sequence.Atlas}:{sequence.Name}");
-        PlaySequence(sequence, restart: false);
+        PlaySequence(
+            sequence,
+            restart: false,
+            settleAfterCompletion: SideLieIdleSequence);
         ApplyAutonomousRuntimeEffect(behaviorId);
 
         if (definition.IsOwnerInitiative)
@@ -5184,7 +5375,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "关笼子／原地锁定，等待主人释放",
                 "owner_forced",
                 "desktop",
-                "Actions:pupu-cage-rest-youthful-v14.png");
+                "Actions:pupu-cage-rest-youthful-v19.png");
             PlaySequence(CageRestSequence, restart: false);
         }
         else
@@ -5372,7 +5563,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         "seasonal-owner-birthday" => "seasonal.owner_birthday",
         "laser-chase-8" => "anchor.toy.approach",
         "snack-chase-8" => "anchor.food.approach",
-        "ask-walk" => "social.respond_call",
+        "ask-walk" => "social.ask_walk",
         var value when value.StartsWith("harness-", StringComparison.Ordinal) => "walk.harnessed",
         var value when value.StartsWith("free-", StringComparison.Ordinal) => "walk.free",
         var value when value.StartsWith("run-", StringComparison.Ordinal) => "explore.short_walk",
@@ -5398,8 +5589,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 "关笼子／原地锁定，等待主人释放",
                 "owner_forced",
                 "desktop",
-                "routines:prone-idle");
-            PlaySequence(ProneIdleSequence, restart: false);
+                "Actions:pupu-cage-rest-youthful-v19.png");
+            PlaySequence(CageRestSequence, restart: false);
             return;
         }
         ResetArbitrationToIdle();
@@ -5431,16 +5622,118 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         CurrentBehaviorLabel = label;
     }
 
-    private void PlaySequence(AnimationSequence sequence, bool restart = true)
+    private void PlaySequence(
+        AnimationSequence sequence,
+        bool restart = true,
+        AnimationSequence? settleAfterCompletion = null)
     {
         var resolved = ResolveAnimationSequence(sequence);
-        if (!restart && _currentSequence.Name == resolved.Name) return;
-        _currentSequence = resolved;
+        if (!restart &&
+            _currentSequence.Name == resolved.Name &&
+            (resolved.Loop || resolved.LoopMode == AssetLoopModes.Hold))
+            return;
+        _settleAfterSequenceCompletion = settleAfterCompletion;
+        _pendingSequence = null;
+        if (ShouldPlayExitSegment(_currentSequence, resolved))
+        {
+            _pendingSequence = resolved;
+            StartSequenceCore(SegmentSequence(
+                _currentSequence,
+                _currentSequence.ExitFrames,
+                loop: false,
+                "exit"));
+            return;
+        }
+        StartResolvedSequence(resolved);
+    }
+
+    private void StartResolvedSequence(AnimationSequence sequence)
+    {
+        if (!sequence.IsSegmentPlayback &&
+            sequence.IntroFrames.Length > 0 &&
+            sequence.LoopFrames.Length > 0)
+        {
+            _pendingSequence = SegmentSequence(
+                sequence,
+                sequence.LoopFrames,
+                loop: sequence.Loop,
+                "loop");
+            StartSequenceCore(SegmentSequence(
+                sequence,
+                sequence.IntroFrames,
+                loop: false,
+                "intro"));
+            return;
+        }
+        StartSequenceCore(sequence);
+    }
+
+    private void StartSequenceCore(AnimationSequence sequence)
+    {
+        _currentSequence = sequence;
         _framePosition = 0;
         if (!_synchronizedMovement)
             _animationTimer.Start();
         RenderNextFrame();
     }
+
+    private static AnimationSequence SegmentSequence(
+        AnimationSequence source,
+        int[] frames,
+        bool loop,
+        string segment)
+    {
+        var durations = frames
+            .Select(frame => DurationForSourceFrame(source, frame))
+            .ToArray();
+        return source with
+        {
+            Name = $"{source.Name}#{segment}",
+            Frames = frames,
+            FrameDurations = durations,
+            Loop = loop,
+            IntroFrames = Array.Empty<int>(),
+            LoopFrames = Array.Empty<int>(),
+            IsSegmentPlayback = true
+        };
+    }
+
+    private static int DurationForSourceFrame(AnimationSequence sequence, int frame)
+    {
+        for (var index = 0; index < sequence.Frames.Length; index++)
+        {
+            if (sequence.Frames[index] == frame)
+                return sequence.DurationAt(index);
+        }
+        return sequence.FrameDurations.Length == 0 ? 600 : sequence.FrameDurations[^1];
+    }
+
+    private static bool ShouldPlayExitSegment(
+        AnimationSequence current,
+        AnimationSequence next)
+    {
+        if (current.ExitFrames.Length == 0 ||
+            (current.IsSegmentPlayback && current.Name.EndsWith("#exit", StringComparison.Ordinal)) ||
+            string.Equals(current.ActionGroupId, next.ActionGroupId, StringComparison.OrdinalIgnoreCase) ||
+            IsMovementAnimation(current.Name) ||
+            IsMovementAnimation(next.Name) ||
+            current.Name.StartsWith("coin-", StringComparison.Ordinal) ||
+            next.Name.StartsWith("coin-", StringComparison.Ordinal))
+            return false;
+        if (current.CompatiblePostures.Length == 0 || next.CompatiblePostures.Length == 0)
+            return true;
+        return !current.CompatiblePostures.Intersect(
+            next.CompatiblePostures,
+            StringComparer.OrdinalIgnoreCase).Any();
+    }
+
+    private static bool IsMovementAnimation(string name) =>
+        name.StartsWith("run-", StringComparison.Ordinal) ||
+        name.StartsWith("harness-", StringComparison.Ordinal) ||
+        name.StartsWith("free-", StringComparison.Ordinal) ||
+        name.StartsWith("laser-chase-", StringComparison.Ordinal) ||
+        name.StartsWith("snack-chase-", StringComparison.Ordinal) ||
+        name.StartsWith("magic-accio-broom-flight-", StringComparison.Ordinal);
 
     private AnimationSequence ResolveAnimationSequence(AnimationSequence fallback)
     {
@@ -5457,12 +5750,25 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             FrameHeight = resolved.FrameHeight,
             VerticalStrip = resolved.Vertical,
             AtlasRowSource = resolved.AtlasRowSource,
-            ResolvedSource = resolved.SourceLabel
+            ResolvedSource = resolved.SourceLabel,
+            ActionGroupId = resolved.GroupId,
+            BehaviorId = resolved.BehaviorId,
+            LoopMode = resolved.LoopMode,
+            IntroFrames = resolved.IntroFrames,
+            LoopFrames = resolved.LoopFrames,
+            ExitFrames = resolved.ExitFrames,
+            CompatiblePostures = resolved.CompatiblePostures
         };
     }
 
     private void BuildActionGallery()
     {
+        ActionGallery.Clear();
+        RegularActionGalleryGroups.Clear();
+        AutonomousActionGallery.Clear();
+        InteractiveActionGallery.Clear();
+        MagicActionGallery.Clear();
+        SeasonalActionGallery.Clear();
         AddGallery("侧躺慢呼吸", "安静待机", "最常用的幼猫侧躺姿态，慢呼吸、眨眼和尾尖轻动", SideLieIdleSequence);
         AddGallery("低趴观察", "安静待机", "胸口贴地趴着，从侧面观察主人", ProneIdleSequence);
         AddGallery("舔脚吃脚", "安静待机", "抱住后脚舔毛并轻轻啃爪子", PawNibbleSequence);
@@ -5491,7 +5797,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         AddGallery("过度rua", "生活互动", "只表现猫本体：移开视线、贴地甩尾、退开并安静表达边界", OverPetSequence);
         AddGallery("梳理毛发", "生活互动", "梳后背、大尾巴和舔爪整理", GroomSequence);
         AddGallery("玩逗猫棒", "玩耍服务", "观察、伏低、挥爪和扑跳", WandLoopSequence);
-        AddGallery("追逐激光点", "移动互动", "八方向低伏追逐；每个方向四个脚步相位，换帧与位移同步", LaserAnchorChaseSequence);
+        AddGallery("追逐激光点", "移动互动", "八方向低伏追逐；每个方向八个连续脚步相位，换帧与位移同步", LaserAnchorChaseSequence);
         AddGallery("追逐冻干", "移动互动", "八方向急切小跑；脚步不动时窗口也不会漂移", SnackAnchorChaseSequence);
         AddGallery("笼中安静躺卧", "限制状态", "正面、侧面与背面三组笼中躺卧；释放前不切换普通动作", CageRestSequence);
         AddGallery("主动求关注", "自主行为", "趴卧、歪头、伸爪吸引主人", AttentionSequence);
@@ -5630,7 +5936,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             });
             return;
         }
-        sequence = ResolveAnimationSequence(sequence);
+        sequence = GalleryPreviewSequence(sequence);
         var sheet = sequence.ExternalSheet ?? SheetFor(sequence.Atlas);
         var x = sequence.VerticalStrip ? 0 : sequence.Frames[0] * sequence.FrameWidth;
         var y = sequence.ExternalSheet is null || sequence.AtlasRowSource
@@ -5665,6 +5971,10 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             return;
         }
         ActionGallery.Add(item);
+        if (IsInteractiveGalleryCategory(category))
+            InteractiveActionGallery.Add(item);
+        else
+            AutonomousActionGallery.Add(item);
         var group = RegularActionGalleryGroups.FirstOrDefault(x =>
             string.Equals(x.Name, category, StringComparison.Ordinal));
         if (group is null)
@@ -5674,6 +5984,34 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         group.Items.Add(item);
     }
+
+    private static AnimationSequence GalleryPreviewSequence(AnimationSequence sequence)
+    {
+        if (sequence.ExternalSheet is null ||
+            (!string.Equals(sequence.Name, "laser-chase-8", StringComparison.Ordinal) &&
+             !string.Equals(sequence.Name, "snack-chase-8", StringComparison.Ordinal)))
+            return sequence;
+
+        // A direction-major strip is eight separate gait loops, not one
+        // continuous 64-frame movie. The gallery previews the complete
+        // right-facing eight-phase loop.
+        return sequence with
+        {
+            Frames = Enumerable.Range(32, 8).ToArray(),
+            FrameDurations = Enumerable.Repeat(150, 8).ToArray(),
+            Loop = true
+        };
+    }
+
+    private static bool IsInteractiveGalleryCategory(string category) => category is
+        "触摸反应" or
+        "投喂互动" or
+        "生活互动" or
+        "玩耍服务" or
+        "移动互动" or
+        "限制状态" or
+        "背带遛猫" or
+        "无背带遛猫";
 
     private void BuildInformationCards()
     {
@@ -5688,7 +6026,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      ("记忆与档案", "宠物档案、主人称呼、天生性格、关系、纠正、长期记忆、相册描述和短期会话共同构成连续相处背景；主人可在 Markdown 页面维护核心设定。"),
                      ("相册经历记忆库", "相册只链接主人选择的本地文件夹，不复制、移动或改写原图。逐图描述、Markdown／JSON 发帖和可选旅行返回故事进入独立经历索引；规则模式和模型模式共用同一检索结果，发送图片仍需显式授权。"),
                      ("无 API 与 LLM 共存", "本地规则 PetAgent 是默认可运行后端；LLM 只增强回复文本。两者读取同一 Persona 和同一批脱敏记忆摘要，行为候选与记忆候选仍由本地代码验证，不能由模型直接执行或写入。"),
-                     ("素材包动作组化", "旧 SpriteAtlas + row 图集继续有效；schema 2 可按行为 ID 定义动作组、独立动作文件、帧节奏、intro／loop／exit、方向、姿态、鼠标视线、食物／玩具能力与 fallback。动作组在素材包页逐帧只读预览。"),
+                     ("素材包动作组化", "V19 运行包由清单唯一引用，不再把旧行静默拼入新版图集；schema 2 按行为 ID 定义动作组、独立动作文件、帧节奏、intro／loop／exit、方向、姿态、鼠标视线、食物／玩具能力与 fallback。动作组在素材包页逐帧只读预览。"),
                      ("隐私与离线", "档案、行为、相册索引、描述、对话和 API 设置默认保存在本机。主人离线不会形成照料欠账、责怪、关系惩罚或报复性行为。")
                  })
             ProductDesignCards.Add(new InformationCardItem { Title = title, Body = body });
@@ -5699,8 +6037,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      ("界面架构", "MainWindow 承载透明宠物窗、气泡和真实坐标移动；ControlWindow 承载产品设置、档案、相册、动作库、模型、记忆和调试视图；两者共享同一个 MainViewModel。"),
                      ("行为核心", "Pupu.Behavior 将资格过滤、效用评分、选择策略和动作调度分层。状态、关系、天生性格和具体 LearnedPreference 各自独立，互动不会偷偷回写天生性格。"),
                      ("行为仲裁与提案执行", "BehaviorArbitrator 继续负责优先级、保护期、可打断性、冷却和状态禁用；BehaviorProposalQueue／Executor 为口令、锚点和相册经历建议提供统一路径。暂时不能打断的提案可延迟，过期后取消；接受和拒绝原因都进入调试。"),
+                     ("主人强制与普通互动", "主人从魔法菜单明确发起时使用 OwnerForced 优先级和 ForceInterrupt，只允许笼中、旅行中或已石化等硬状态阻止；自主魔法仍受每日一次、冷却和资格评分限制。普通照料与玩耍不使用强制优先级，继续尊重疲劳、压力和动作保护期。"),
+                     ("冻干／激光投放链路", "点击按钮只进入一次性选点模式，不创建行为租约；主人选中桌面坐标后才生成一个 OwnerAnchor 提案。仲裁通过后显示冻干或激光实体、按目标向量选择八方向八相步态、同步移动窗口，到达后分别衔接进食或低伏扑光点。取消、拒绝、超时和路径不可达都会退出选点模式并给出反馈。"),
                      ("PetAgent／Persona", "RulePetAgent 是不依赖 API 的薄层，接收聊天、口令、面板、锚点、经历、旅游和自主定时器等结构化事件，输出回复草稿、行为提案、记忆候选和调试信息。Persona 不只是提示词，也保存默认性格、行为偏好和记忆偏好；默认朴朴配置保持原效果。"),
-                     ("素材运行时", "AssetPackService 同时支持 schema 1 的 SpriteAtlas + row 和 schema 2 动作组。播放时优先解析动作组，来源缺失或无效则回到动作组 fallback 或原硬编码序列；单文件 PNG 与条带动作文件已预留解析和预览能力。"),
+                     ("素材运行时", "AssetPackService 以 V19 schema 2 动作组为正式路径：启动时完整解码图集，解析行为 ID、帧时长、兼容姿态和 intro／loop／exit。自定义包只有与内置版本完全一致才可覆盖；打开素材目录升级时会覆盖刷新本版文件，避免历史 PNG 残留继续生效。"),
+                     ("动作预览分类", "动作页按行为来源划分为自发行为、互动行为、魔法特辑和节日特辑四个页签。卡片保留更细的动作类别、行为 ID、动画来源、帧数、循环方式和预览；节日卡只展示日期门禁说明，不允许通过预览绕过日期规则。"),
                      ("模型协议", "ModelProtocolAdapter 负责 Chat Completions / Responses 的请求与响应翻译；ModelApiService 负责 HTTPS、凭据、重试和安全错误。OpenAI、Qwen、DeepSeek 与 Custom 共用同一会话管线。"),
                      ("系统提示词", "固定角色安全边界由 PetSpeechComposer 生成；宠物档案、状态、关系、自然语言规则和 pupu-memory.md 的宠物系统提示词作为 system 背景注入。模型回复仍要通过宠物语言边界。"),
                      ("相册与经历索引", "PhotoAlbumService 继续维护 albums.json、子相册和逐图描述；AlbumExperienceService 以独立 schema 版本索引图片、Markdown／JSON 和 travelEvent，后台扫描带取消与过期保护，索引只保存相对素材引用。"),
@@ -5806,6 +6147,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         };
         var groupId = mode == DesktopMoveMode.AnchorApproach
             ? (_activeAnchorIsFood ? "snack-chase-8" : "laser-chase-8")
+            : mode == DesktopMoveMode.BroomFlight
+                ? "magic-accio-broom-flight-8dir"
             : mode == DesktopMoveMode.HarnessedWalk
                 ? "harness-walk-16"
                 : string.Empty;
@@ -5827,16 +6170,20 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             PetDirection.DownLeft => 7,
             _ => 4
         };
-        var isFourPhaseAnchor = mode == DesktopMoveMode.AnchorApproach;
-        var frames = isFourPhaseAnchor
-            ? Enumerable.Range(direction8 * 4, 4).ToArray()
+        var isEightPhaseMovement = mode is DesktopMoveMode.AnchorApproach or DesktopMoveMode.BroomFlight;
+        var firstDirectionFrame = direction8 * 8;
+        var frames = isEightPhaseMovement
+            ? Enumerable.Range(firstDirectionFrame, 8).ToArray()
             : new[] { direction16 };
         var sequence = new AnimationSequence(
-            $"{groupId}-{(isFourPhaseAnchor ? direction8 : direction16):00}",
+            $"{groupId}-{(isEightPhaseMovement ? direction8 : direction16):00}",
             SpriteAtlas.Directions,
             0,
             frames,
-            Enumerable.Repeat(isFourPhaseAnchor ? 165 : 180, frames.Length).ToArray())
+            Enumerable.Repeat(
+                mode == DesktopMoveMode.BroomFlight ? 115 :
+                isEightPhaseMovement ? 150 : 180,
+                frames.Length).ToArray())
         {
             Loop = true,
             ExternalSheet = resolved.Sheet,
@@ -5853,6 +6200,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         sequence = ResolveAnimationSequence(sequence);
         if (_currentSequence.Name == sequence.Name) return;
+        _pendingSequence = null;
         var preservePhase =
             _currentSequence.Name.StartsWith("run-", StringComparison.Ordinal) ||
             _currentSequence.Name.StartsWith("harness-", StringComparison.Ordinal) ||
@@ -5933,7 +6281,22 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         if (!_currentSequence.Loop && position == _currentSequence.Frames.Length - 1)
         {
             _framePosition = position;
-            _animationTimer.Stop();
+            if (_pendingSequence is not null)
+            {
+                var pending = _pendingSequence;
+                _pendingSequence = null;
+                StartResolvedSequence(pending);
+            }
+            else if (_settleAfterSequenceCompletion is not null)
+            {
+                var settle = _settleAfterSequenceCompletion;
+                _settleAfterSequenceCompletion = null;
+                PlaySequence(settle, restart: false);
+            }
+            else
+            {
+                _animationTimer.Stop();
+            }
         }
         else
         {
@@ -6013,7 +6376,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         HiddenActionRules.Add("淘气：清醒、低压力、有精力时可自然选择拨弄物品、藏起、绕行和扑击；不再要求长期忽略，深夜/会议/勿扰/全屏压制高干扰动作。");
         HiddenActionRules.Add($"长互动：投喂、梳毛、逗猫棒和散步按进度提交效果；Started/Progressed/Completed/Interrupted/Failed 全部写 events.md。“停下”始终有效，当前散步约 {policy.WalkDurationMinutes} 分钟。");
         HiddenActionRules.Add("自发如厕：每个本地日期随机安排 2–3 个时段，只有 toilet_due 才进入统一自主评分；离线错过不补播，如厕后固定衔接抓砂埋屎，抬头仅是概率变化。主人手动铲屎入口已停用。");
-        HiddenActionRules.Add("主人互动参与：吃饭、遛猫、梳毛、玩具、姿势和魔法先读取饱腹、精力、压力、疲劳、关系、性格与具体偏好；拒绝使用宠物台词说明，不扣信任。");
+        HiddenActionRules.Add($"主人互动参与：当前独立接受倾向为 {_memory.Profile.OwnerInteractionAcceptance:P0}。正常状态下明确互动直接接受，不再叠加性格、关系、偏好或随机拒绝；只在饱腹、极度疲劳/压力、关笼子、旅行、动作不可中断、冷却等可解释原因下阻止执行。");
         HiddenActionRules.Add("宠物魔法：四项魔法和普通自主行为进入同一过滤、评分、偏好与选择管线；daily_magic_available 是硬门槛，每个本地日期最多一次自发施法。");
         HiddenActionRules.Add("节日装扮：圣诞帽仅 12 月 25 日、万圣节斗篷帽仅 10 月 31 日、春节红围巾仅农历正月初一；主人生日按档案月日匹配并计算年龄。");
         HiddenActionRules.Add("统一行为仲裁：主人强制 > 主动锚点 > 明确口令/面板 > 触摸 > 持续魔法 > 自主移动 > 普通鼠标注意力 > 装饰 idle；每次请求检查保护期、冷却、可打断性和禁用状态。");
@@ -6046,11 +6409,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(PetEnglishName));
         OnPropertyChanged(nameof(PetBreed));
         OnPropertyChanged(nameof(PetSex));
+        OnPropertyChanged(nameof(PetSelfReference));
         OnPropertyChanged(nameof(PetBirthday));
+        OnPropertyChanged(nameof(PetBirthdayYear));
         OnPropertyChanged(nameof(OwnerNickname));
         OnPropertyChanged(nameof(RelationshipToOwner));
         OnPropertyChanged(nameof(OwnerBirthday));
+        OnPropertyChanged(nameof(OwnerBirthdayYear));
         OnPropertyChanged(nameof(OwnerPersonalityPrompt));
+        OnPropertyChanged(nameof(OwnerInteractionAcceptance));
+        OnPropertyChanged(nameof(OwnerInteractionAcceptanceLabel));
         OnPropertyChanged(nameof(PetProfileSummary));
         OnPropertyChanged(nameof(PetProfileTitle));
     }
@@ -6061,7 +6429,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
             _memory.Personality,
             authoredDraft,
             _memory.Profile.ChineseName,
-            _memory.Profile.OwnerAddress);
+            _memory.Profile.OwnerAddress,
+            _memory.Profile.SelfReference);
 
     private void RefreshAll()
     {
@@ -6083,6 +6452,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(AutomaticPersonalitySummary));
         OnPropertyChanged(nameof(RelationshipStageDisplay));
         OnPropertyChanged(nameof(IsCaged));
+        OnPropertyChanged(nameof(CageToggleLabel));
         OnPropertyChanged(nameof(IsTraveling));
         OnPropertyChanged(nameof(IsPetOnDesktop));
         OnPropertyChanged(nameof(IsMovementLocked));
@@ -6104,12 +6474,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged, IDisposable
                      CleanCommand, PetCommand, GroomCommand,
                      PlayWandCommand, PlayLaserCommand, LieDownCommand, RollCommand, SpinCommand, SendChatCommand,
                      AccioBroomCommand, ApparateCommand, PetrificusTotalusCommand, ScourgifyCommand,
-                     ReleasePetrificationCommand, CageCommand, ReleaseCageCommand,
+                     ReleasePetrificationCommand, CageCommand, ReleaseCageCommand, ToggleCageCommand,
                      StartTravelCommand, RecallTravelCommand,
                      SaveModelApiCommand, TestModelApiCommand, DeleteModelApiKeyCommand, ApplyNaturalRuleCommand,
                      SaveEditableMemoryCommand, ReloadEditableMemoryCommand, CreateCodexIterationCommand,
                      LikeBehaviorCommand, DislikeBehaviorCommand, UndoCorrectionCommand,
                      SavePersonalityCommand, SavePetProfileCommand, ResetLearningCommand,
+                     UploadPetAvatarCommand,
                      ZoomInCommand, ZoomOutCommand, ResetZoomCommand
                  }.OfType<AsyncRelayCommand>())
             command.RaiseCanExecuteChanged();

@@ -24,12 +24,12 @@ $readOnlyBindings = @(
     "ConfinementStatus",
     "PersonalityMemoryMatchSummary",
     "EditableMemoryStatus",
+    "PetProfileSaveStatus",
     "NaturalPolicySummary",
     "NaturalRuleStatus",
     "NaturalRules",
     "HiddenActionRules",
     "ModelApiStatus",
-    "ActionGallery",
     "AssetPackStatus",
     "AssetCompatibilityStatus",
     "AssetActionGroups",
@@ -58,11 +58,14 @@ foreach ($header in $requiredTopLevelHeaders) {
     }
 }
 
-$requiredFunctionalHeaders = @("性格与回复", "长期记忆", "动作规则", "大模型")
+$requiredFunctionalHeaders = @("性格设定", "动作规则", "长期记忆")
 foreach ($header in $requiredFunctionalHeaders) {
-    if ($controlXaml -notmatch "<TabItem\s+Header=`"$header`"") {
+    if ($controlXaml -notmatch "<TabItem[^>]*Header=`"$header`"") {
         throw "功能设置缺少区域：$header"
     }
+}
+if ($controlXaml -notmatch "<TabItem[^>]*Header=`"大模型与对话联调`"") {
+    throw "主人页缺少大模型与对话联调区域。"
 }
 
 if ($controlXaml -match "<TabItem\s+Header=`"(桌面设置|素材包|性格|记忆|行为)`"") {
@@ -71,9 +74,19 @@ if ($controlXaml -match "<TabItem\s+Header=`"(桌面设置|素材包|性格|记�
 if ($controlXaml -notmatch "\{Binding\s+OwnerPersonalityPrompt,\s+Mode=TwoWay") {
     throw "主人自定义宠物性格提示词没有可编辑绑定。"
 }
-if ($controlXaml -notmatch "\{Binding\s+ActionGallery,\s+Mode=OneWay" -or
-    $controlXaml -notmatch "\{Binding\s+AssetActionGroups,\s+Mode=OneWay") {
-    throw "素材库没有同时提供用户动作预览与技术映射。"
+$requiredGalleries = @(
+    "AutonomousActionGallery",
+    "InteractiveActionGallery",
+    "MagicActionGallery",
+    "SeasonalActionGallery"
+)
+foreach ($gallery in $requiredGalleries) {
+    if ($controlXaml -notmatch "\{Binding\s+$gallery,\s+Mode=OneWay") {
+        throw "素材库缺少动作分类绑定：$gallery"
+    }
+}
+if ($controlXaml -notmatch "\{Binding\s+AssetActionGroups,\s+Mode=OneWay") {
+    throw "素材库缺少技术动作映射。"
 }
 
 Write-Host "绑定与面板信息架构检查通过。" -ForegroundColor Green

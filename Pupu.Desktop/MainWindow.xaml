@@ -66,7 +66,7 @@
                MouseLeftButtonUp="PetImage_MouseLeftButtonUp"
                MouseMove="PetImage_MouseMove"
                MouseWheel="PetImage_MouseWheel"
-               ToolTip="左键会区分轻触、轻抚、按住、抱起意图、快速移动窗口、连续触摸和释放；双击仍是两次触摸。右键发起主人互动并打开面板，滚轮缩放">
+               ToolTip="普通形态：左键轻触或拖拽移动窗口。银币形态：单击恢复亮彩、双击翻面、按住拖拽移动。右键打开面板，滚轮缩放。">
             <Image.Style>
                 <Style TargetType="Image">
                     <Setter Property="Visibility" Value="Visible" />
@@ -113,10 +113,8 @@
                               Command="{Binding CleanCommand}"
                               Visibility="{Binding IsManualLitterCleaningAvailable, Converter={StaticResource BoolToVisibility}}" />
                     <MenuItem Header="梳毛" Command="{Binding GroomCommand}" />
-                    <MenuItem Header="关起来" Command="{Binding CageCommand}" />
-                    <MenuItem Header="放出来"
-                              Command="{Binding ReleaseCageCommand}"
-                              Visibility="{Binding IsCaged, Converter={StaticResource BoolToVisibility}}" />
+                    <MenuItem Header="{Binding CageToggleLabel, Mode=OneWay}"
+                              Command="{Binding ToggleCageCommand, Mode=OneWay}" />
                     <MenuItem Header="停下" Command="{Binding StopCurrentActionCommand}" />
                     <Separator />
                     <MenuItem Header="面板">
@@ -131,25 +129,62 @@
                 </ContextMenu>
             </Image.ContextMenu>
         </Image>
-        </Grid>
+        <!-- The double-click target sits inside the sprite's lower transparent
+             safety padding, immediately beside the visible paws. -->
+        <Border Height="22"
+                VerticalAlignment="Bottom"
+                Margin="5,0"
+                Background="#01FFFFFF"
+                Cursor="Arrow"
+                Panel.ZIndex="2"
+                MouseLeftButtonDown="ChatBlankArea_MouseLeftButtonDown"
+                ToolTip="双击打开桌面对话栏" />
 
-        <Button Content="和朴朴说话"
-                Command="{Binding ToggleChatComposerCommand}"
-                HorizontalAlignment="Center"
-                Margin="0,2,0,0"
-                Padding="10,4"
-                ToolTip="按需唤起输入框；也可以在陪伴面板中聊天">
-            <Button.Style>
-                <Style TargetType="Button">
-                    <Setter Property="Visibility" Value="Visible" />
+        <!-- A WPF overlay guarantees an immediately visible cage transition,
+             while the registered cage sprite continues its breathing loop. -->
+        <Border IsHitTestVisible="False"
+                Margin="12,15,12,8"
+                BorderBrush="#90705B45"
+                BorderThickness="4"
+                CornerRadius="18"
+                Panel.ZIndex="3"
+                RenderTransformOrigin="0.5,0.5">
+            <Border.RenderTransform>
+                <TranslateTransform Y="-20" />
+            </Border.RenderTransform>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Setter Property="Opacity" Value="0" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsPetOnDesktop, Mode=OneWay}" Value="False">
-                            <Setter Property="Visibility" Value="Collapsed" />
+                        <DataTrigger Binding="{Binding IsCaged, Mode=OneWay}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0" To="1" Duration="0:0:0.32" />
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                         From="-20" To="0" Duration="0:0:0.32" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
-            </Button.Style>
-        </Button>
+            </Border.Style>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                    <ColumnDefinition /><ColumnDefinition /><ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="1" Width="4" Background="#90705B45" />
+                <Border Grid.Column="2" Width="4" Background="#90705B45" />
+                <Border Grid.Column="3" Width="4" Background="#90705B45" />
+                <Border Grid.Column="4" Width="4" Background="#90705B45" />
+            </Grid>
+        </Border>
+        </Grid>
 
         <Grid Width="{Binding PetDisplaySize, Mode=OneWay}"
               MinWidth="180"
@@ -172,7 +207,8 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0"
+            <TextBox x:Name="ChatInputBox"
+                     Grid.Column="0"
                      Text="{Binding ChatInput, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      MinHeight="30"
                      Padding="9,5"

@@ -35,14 +35,14 @@ var tests = new (string Name, Func<Task> Run)[]
     ("continuous petting load expires after a quiet gap", TestPettingLoadQuietGap),
     ("pet speech blocks technical language and follows temperament", TestPetSpeechBoundary),
     ("retired window edge behaviors are no longer autonomous candidates", TestWindowEdgeEligibility),
-    ("owner interactions use state-dependent participation probabilities", TestInteractionParticipation),
+    ("owner interactions use explicit acceptance tendency and real blockers", TestInteractionParticipation),
     ("autonomous magic is limited to one trigger per local day", TestDailyMagicLimit),
     ("daily toilet plan is random idempotent and skips offline slots", TestDailyToiletPlan),
     ("autonomous toilet requires a due schedule signal", TestToiletEligibility),
     ("blue bed rest favors sleepy safe states and stays settled", TestBedRestCandidate),
     ("self grooming remains a low-frequency quiet daily behavior", TestSelfGroomCadence),
     ("holiday outfits are enabled only on exact calendar dates", TestHolidayDateGates),
-    ("profile names and owner address flow into pet speech", TestProfileSpeechIdentity),
+    ("profile names owner address and self-reference flow into pet speech", TestProfileSpeechIdentity),
     ("walk and autonomous routes are continuous nonzero and bounded", TestContinuousDesktopRoutes),
     ("broom route uses smooth paced eight-direction coverage", TestBroomRouteCoverage),
     ("model provider defaults normalize DeepSeek base endpoint", TestModelProviderDefaults),
@@ -59,8 +59,11 @@ var tests = new (string Name, Func<Task> Run)[]
     ("travel blocks ordinary behavior until return or recall", TestTravelArbitration),
     ("local commands work without a model API", TestLocalInteractionCommands),
     ("food and toy anchors are accepted cooled down or state-blocked", TestAnchorArbitration),
+    ("owner-triggered magic interrupts ordinary behavior but respects hard states", TestOwnerForcedMagicArbitration),
     ("coin drag click and double click remain distinct", TestCoinPointerGestures),
     ("asset manifest keeps schema 1 and normalizes schema 2 action groups", TestAssetActionGroupCompatibility),
+    ("V19 runtime pack has no inherited cat atlases and uses eight-phase pursuit", TestV19RuntimeAssetContract),
+    ("ask-walk is an autonomous behavior instead of a preview-only alias", TestAskWalkBehavior),
     ("default persona round-trips without changing Pupu identity", TestDefaultPersonaCompatibility),
     ("rule PetAgent works without API and only returns candidates", TestRulePetAgent),
     ("behavior proposal executor always arbitrates before execution", TestBehaviorProposalExecutor),
@@ -429,6 +432,30 @@ static Task TestAssetActionGroupCompatibility()
            !strip.IsLooping &&
            strip.TriggerConditions.SequenceEqual(new[] { "owner anchor accepted" }),
         "independent action file source did not normalize");
+
+    var pingPong = new AssetActionGroupDefinition
+    {
+        GroupId = "closed-gait",
+        BehaviorId = "anchor.closed_gait",
+        Source = new AssetActionSourceDefinition
+        {
+            Type = AssetActionSourceKinds.SpriteStrip,
+            File = "gait.png",
+            FrameWidth = 256,
+            FrameHeight = 256,
+            Columns = 4
+        },
+        FrameCount = 4,
+        Frames = new List<int> { 0, 1, 2, 3 },
+        FrameDurationMs = 165,
+        LoopMode = AssetLoopModes.PingPong
+    };
+    pingPong.Normalize(pingPong.GroupId, 256, sourceFrameCapacity: 4);
+    Assert(
+        pingPong.Frames.SequenceEqual(new[] { 0, 1, 2, 3, 2, 1 }) &&
+        pingPong.FrameDurationsMs.Count == 6 &&
+        pingPong.IsLooping,
+        "ping-pong gait did not close without a last-to-first pose snap");
     return Task.CompletedTask;
 }
 
@@ -471,6 +498,17 @@ static Task TestRulePetAgent()
     Assert(result.MemoryCandidates.Count == 0 &&
            result.Debug.Contains("backend=local-rules"),
         "rule PetAgent wrote memory or failed to report local backend");
+    var chat = agent.Handle(
+        new PetAgentEvent
+        {
+            Kind = PetAgentEventKind.UserChat,
+            Text = "朴朴你好可爱"
+        },
+        new PetAgentContext());
+    Assert(chat.ReplyText.Contains("眼光不错", StringComparison.Ordinal) &&
+           !chat.ReplyText.Contains("动作做完整", StringComparison.Ordinal) &&
+           !chat.ReplyText.Contains("认真回答", StringComparison.Ordinal),
+        "local chat did not use the short energetic one-year-old Pupu persona");
     return Task.CompletedTask;
 }
 
@@ -837,6 +875,59 @@ static Task TestAnchorArbitration()
     return Task.CompletedTask;
 }
 
+static Task TestOwnerForcedMagicArbitration()
+{
+    var now = DateTimeOffset.Now;
+    var arbitrator = new BehaviorArbitrator();
+    var request = new BehaviorArbitrationRequest
+    {
+        BehaviorId = "magic.accio_broom",
+        Source = BehaviorArbitrationSource.OwnerForced,
+        Priority = BehaviorPriority.OwnerForced,
+        RequestedAt = now,
+        ForceInterrupt = true,
+        Interruptible = false,
+        ForbiddenStates =
+            BehaviorStateBlockers.Caged |
+            BehaviorStateBlockers.Traveling |
+            BehaviorStateBlockers.Petrified
+    };
+    var ordinary = new BehaviorArbitrationContext
+    {
+        CurrentBehaviorId = "play.wand",
+        CurrentPriority = BehaviorPriority.ExplicitCommand,
+        CurrentStartedAt = now.AddSeconds(-1),
+        CurrentMinimumDuration = TimeSpan.FromMinutes(1),
+        CurrentInterruptible = false,
+        ActiveStates = BehaviorStateBlockers.Playing
+    };
+    Assert(arbitrator.Evaluate(request, ordinary).Accepted,
+        "owner-forced magic did not interrupt ordinary protected play");
+
+    var blocked = new BehaviorArbitrationContext
+    {
+        CurrentBehaviorId = "owner.cage",
+        CurrentPriority = BehaviorPriority.OwnerForced,
+        CurrentStartedAt = now,
+        CurrentInterruptible = false,
+        ActiveStates = BehaviorStateBlockers.Caged
+    };
+    var blockedRequest = new BehaviorArbitrationRequest
+    {
+        BehaviorId = request.BehaviorId,
+        Source = request.Source,
+        Priority = request.Priority,
+        RequestedAt = now.AddSeconds(1),
+        ForceInterrupt = request.ForceInterrupt,
+        Interruptible = request.Interruptible,
+        ForbiddenStates = request.ForbiddenStates
+    };
+    var result = new BehaviorArbitrator().Evaluate(blockedRequest, blocked);
+    Assert(!result.Accepted && result.ReasonCode == "state_forbidden",
+        "owner-forced magic bypassed the cage hard-state gate");
+    return Task.CompletedTask;
+}
+
 static Task TestCoinPointerGestures()
 {
     Assert(CoinPointerGestureClassifier.Classify(dragged: true, clickCount: 2) ==
@@ -848,6 +939,59 @@ static Task TestCoinPointerGestures()
     Assert(CoinPointerGestureClassifier.Classify(dragged: false, clickCount: 2) ==
            CoinPointerAction.Flip,
         "double coin click did not flip");
+    return Task.CompletedTask;
+}
+
+static Task TestAskWalkBehavior()
+{
+    var definition = BehaviorCatalog.Find("social.ask_walk");
+    Assert(definition is not null, "social.ask_walk is missing from the behavior catalog");
+    Assert(definition!.IsOwnerInitiative, "ask-walk must remain a bounded owner initiative");
+    Assert(!definition.RequiresMovement, "showing the leash must not move the desktop window");
+    Assert(definition.Cooldown >= TimeSpan.FromMinutes(20),
+        "ask-walk can repeat too frequently");
+    return Task.CompletedTask;
+}
+
+static Task TestV19RuntimeAssetContract()
+{
+    var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+    var path = Path.Combine(root, "Pupu.Desktop", "Assets", "pupu-assets.json");
+    using var document = JsonDocument.Parse(File.ReadAllText(path));
+    var manifest = document.RootElement;
+    Assert(manifest.GetProperty("version").GetString()!.Contains("v19", StringComparison.OrdinalIgnoreCase),
+        "runtime manifest is not V19");
+    foreach (var atlas in manifest.GetProperty("atlases").EnumerateObject())
+    {
+        var file = atlas.Value.GetProperty("file").GetString() ?? string.Empty;
+        Assert(file.Contains("v19", StringComparison.OrdinalIgnoreCase),
+            $"cat atlas {atlas.Name} still references an inherited file: {file}");
+    }
+    foreach (var id in new[]
+             {
+                 "laser-chase-8",
+                 "snack-chase-8",
+                 "magic-accio-broom-flight-8dir"
+             })
+    {
+        var group = manifest.GetProperty("actionGroups").GetProperty(id);
+        Assert(group.GetProperty("frameCount").GetInt32() == 64,
+            $"{id} is not eight directions times eight phases");
+        foreach (var direction in group.GetProperty("directions").EnumerateObject())
+            Assert(direction.Value.GetProperty("frames").GetArrayLength() == 8,
+                $"{id}/{direction.Name} does not expose eight phases");
+    }
+    var askWalk = manifest.GetProperty("actionGroups").GetProperty("ask-walk");
+    Assert(askWalk.GetProperty("behaviorId").GetString() == "social.ask_walk",
+        "ask-walk still aliases another behavior");
+    var cage = manifest.GetProperty("actionGroups").GetProperty("cage-rest-12");
+    Assert(cage.GetProperty("source").GetProperty("file").GetString() ==
+           "Actions/pupu-cage-rest-youthful-v19.png",
+        "cage rest does not use the V19 closed-carrier strip");
+    var coinStates = manifest.GetProperty("coinStates");
+    Assert(coinStates.TryGetProperty("normalEdge", out _) &&
+           coinStates.TryGetProperty("backEdge", out _),
+        "coin flip is missing real front/back edge frames");
     return Task.CompletedTask;
 }
 
@@ -1584,11 +1728,16 @@ static Task TestPetSpeechBoundary()
     var systemPrompt = composer.BuildSystemPrompt(
         affectionate,
         "圆脸银灰白长毛幼猫",
+        "说话冷静克制，先直接回答，不要傲娇或故意拒绝。",
         "喜欢靠近主人");
-    Assert(systemPrompt.Contains("不处处答应主人") &&
-           systemPrompt.Contains("绝对禁止提及或泄露") &&
-           systemPrompt.Contains("像有主见、爱答不理又会暗中关心人的猫"),
-        "model system prompt omitted autonomy or technical-language boundary");
+    Assert(systemPrompt.Contains("说话冷静克制，先直接回答，不要傲娇或故意拒绝。") &&
+           systemPrompt.Contains("必要边界") &&
+           systemPrompt.Contains("最高角色优先级") &&
+           !systemPrompt.Contains("不处处答应主人") &&
+           !systemPrompt.Contains("爱答不理") &&
+           systemPrompt.IndexOf("说话冷静克制", StringComparison.Ordinal) >
+           systemPrompt.IndexOf("喜欢靠近主人", StringComparison.Ordinal),
+        "owner role prompt was not highest priority or forced refusal persona remained");
     return Task.CompletedTask;
 }
 
@@ -1612,36 +1761,51 @@ static Task TestInteractionParticipation()
     var tired = CloneForDistribution(active);
     tired.Runtime.PlayDesire = 0.18;
     tired.Runtime.Curiosity = 0.20;
-    tired.Runtime.Fatigue = 0.92;
-    tired.Runtime.Stress = 0.66;
+    tired.Runtime.Fatigue = 0.98;
+    tired.Runtime.Stress = 0.96;
 
     var activeDecision = evaluator.Evaluate(
         active,
         OwnerInteractionKind.WandPlay,
         new OwnerInteractionContext(48, 92, 88, 10, "general"),
-        0.50);
+        0.90);
     var tiredDecision = evaluator.Evaluate(
         tired,
         OwnerInteractionKind.WandPlay,
         new OwnerInteractionContext(48, 18, 88, 10, "general"),
-        0.50);
-    Assert(activeDecision.Probability > tiredDecision.Probability + 0.35,
-        $"state did not materially change participation: {activeDecision.Probability:0.00} vs {tiredDecision.Probability:0.00}");
+        0.90);
     Assert(activeDecision.Accepted && !tiredDecision.Accepted,
-        "the same deterministic roll did not produce accept/refuse from state");
+        "normal interaction was rejected or genuine exhausted state was ignored");
+    Assert(Math.Abs(activeDecision.Probability - 0.90) < 0.001,
+        "visible owner acceptance setting was not the reported participation tendency");
+
+    var pressured = CloneForDistribution(active);
+    pressured.Runtime.Stress = 0.80;
+    var lowAcceptance = evaluator.Evaluate(
+        pressured,
+        OwnerInteractionKind.Grooming,
+        new OwnerInteractionContext(48, 80, 88, 10, "general"),
+        0.50);
+    var highAcceptance = evaluator.Evaluate(
+        pressured,
+        OwnerInteractionKind.Grooming,
+        new OwnerInteractionContext(48, 80, 88, 10, "general"),
+        0.95);
+    Assert(!lowAcceptance.Accepted && highAcceptance.Accepted,
+        "changing the explicit acceptance setting did not change the same interaction result");
 
     var hungry = evaluator.Evaluate(
         active,
         OwnerInteractionKind.Feeding,
         new OwnerInteractionContext(12, 80, 88, 10, "general"),
-        0.50);
+        0.90);
     var full = evaluator.Evaluate(
         active,
         OwnerInteractionKind.Feeding,
         new OwnerInteractionContext(96, 80, 88, 10, "general"),
-        0.50);
-    Assert(hungry.Probability > full.Probability + 0.30,
-        "fullness did not reduce feeding participation");
+        0.90);
+    Assert(hungry.Accepted && !full.Accepted && full.ReasonCode == "full",
+        "feeding was not accepted normally or genuine fullness did not block it");
     return Task.CompletedTask;
 }
 
@@ -1816,12 +1980,28 @@ static Task TestProfileSpeechIdentity()
         state,
         "主人回来啦。朴朴在这里。",
         "团团",
-        "哥哥");
-    Assert(line.Contains("团团") && line.Contains("哥哥"),
+        "哥哥",
+        "本喵");
+    Assert(line.Contains("本喵") && line.Contains("哥哥") && !line.Contains("团团"),
         $"profile identity was not applied to authored speech: {line}");
-    var generated = composer.Compose(PetSpeechIntent.Startup, state, null, "团团", "哥哥");
-    Assert(generated.Contains("团团") && generated.Contains("哥哥"),
+    var generated = composer.Compose(PetSpeechIntent.Startup, state, null, "团团", "哥哥", "本喵");
+    Assert(generated.Contains("本喵") && generated.Contains("哥哥"),
         $"profile identity was not applied to generated speech: {generated}");
+    var firstPerson = composer.Compose(
+        PetSpeechIntent.Rest,
+        state,
+        "我先睡一会儿，我们晚点再玩。",
+        "团团",
+        "哥哥",
+        "本喵");
+    Assert(firstPerson.Contains("本喵先睡", StringComparison.Ordinal) &&
+           firstPerson.Contains("我们晚点", StringComparison.Ordinal),
+        $"custom self-reference was not applied to local daily speech: {firstPerson}");
+    var profile = new PetProfile { SelfReference = "本喵", AvatarFileName = "..\\unsafe.png" };
+    profile.Normalize();
+    Assert(profile.SelfIdentity.Contains("宠物自称为“本喵”", StringComparison.Ordinal) &&
+           profile.AvatarFileName == "unsafe.png",
+        "profile normalization lost the self-reference or did not constrain the avatar file name");
     return Task.CompletedTask;
 }
 
@@ -1899,10 +2079,10 @@ static Task TestBroomRouteCoverage()
                 $"broom segment {bucket}:{index} was disconnected");
             Assert(segment.Distance >= 24,
                 $"broom segment {bucket}:{index} was too small");
-            Assert(segment.Duration >= TimeSpan.FromMilliseconds(500) &&
-                   segment.Duration <= TimeSpan.FromMilliseconds(900),
-                $"broom segment {bucket}:{index} was outside the 500-900ms cruise window");
-            Assert(Math.Abs(segment.Bend) <= 82.001 && Math.Abs(segment.Flutter) <= 2.001,
+            Assert(segment.Duration >= TimeSpan.FromMilliseconds(850) &&
+                   segment.Duration <= TimeSpan.FromMilliseconds(1550),
+                $"broom segment {bucket}:{index} was outside the 850-1550ms cruise window");
+            Assert(Math.Abs(segment.Bend) <= 48.001 && Math.Abs(segment.Flutter) <= 1.501,
                 $"broom segment {bucket}:{index} used an excessive arc or flutter");
             Assert(directions.Add(segment.Direction),
                 $"broom bucket {bucket} repeated {segment.Direction}");

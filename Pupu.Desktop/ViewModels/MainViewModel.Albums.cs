@@ -535,6 +535,12 @@ public sealed partial class MainViewModel
             if (_petProfilePortrait is not null) return _petProfilePortrait;
             try
             {
+                var avatarPath = StoragePaths.ProfileAvatarFile(_editableProfile.AvatarFileName);
+                if (!string.IsNullOrWhiteSpace(avatarPath))
+                {
+                    _petProfilePortrait = _presentationHost.LoadImage(avatarPath, 320);
+                    if (_petProfilePortrait is not null) return _petProfilePortrait;
+                }
                 var cell = _assetPack.CellSize;
                 _petProfilePortrait = _presentationHost.CropImage(
                     _assetPack.GetSheet("core"),
